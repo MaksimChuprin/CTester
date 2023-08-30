@@ -53,7 +53,7 @@ int main(void)
   SystemClock_Config();
 
   /* Initialize LEDs */
-  BSP_LED_Init(LED3);
+//  BSP_LED_Init(LED3);
 
   /* Init Device Library */
   USBD_Init(&USBD_Device, &VCP_Desc, 0);
