@@ -179,7 +179,7 @@ static void UsbCDCThread(const void *argument)
 	for( uint32_t i = 0; ; )
 	{
 		// wait message
-		uint32_t event = ulTaskNotifyTake( pdTRUE, 100);
+		uint32_t event = ulTaskNotifyTake( pdTRUE, pdMS_TO_TICKS(1000) );
 
 		if(event)
 		{
@@ -188,6 +188,8 @@ static void UsbCDCThread(const void *argument)
 			getCDCmessage( &message[p] );
 			sendCDCmessage( message );
 		}
+
+		BSP_LED_Toggle(LED_BLUE);
 	}
 
 }

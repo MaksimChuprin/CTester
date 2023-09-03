@@ -200,8 +200,8 @@ static int8_t CDC_Itf_Receive(uint8_t * Buf, uint32_t * Len)
   */
 void getCDCmessage(char * Buf)
 {
-	memcpy( Buf, UserRxBufferCopy, strlen(UserRxBufferCopy));
-	USBD_CDC_ReceivePacket(&USBD_Device);
+	memcpy( Buf, UserRxBufferCopy, strlen(UserRxBufferCopy) + 1 );
+	USBD_CDC_ReceivePacket( &USBD_Device );
 }
 
 
