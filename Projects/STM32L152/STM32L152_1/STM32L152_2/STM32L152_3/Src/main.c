@@ -18,6 +18,10 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
+
+TaskHandle_t	USBThreadHandle;
+TaskHandle_t	LedThreadHandle;
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -26,9 +30,11 @@
 USBD_HandleTypeDef USBD_Device;
 
 /* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
-
+static void 	SystemClock_Config		(void);
+static void 	UsbCDCThread			(const void *argument);
+static void 	LedBlinkThread			(const void *argument);
 /* Private functions ---------------------------------------------------------*/
+
 
 /**
   * @brief  Main program
@@ -53,24 +59,30 @@ int main(void)
   SystemClock_Config();
 
   /* Initialize LEDs */
-//  BSP_LED_Init(LED3);
-
-  /* Init Device Library */
-  USBD_Init(&USBD_Device, &VCP_Desc, 0);
-
-  /* Add Supported Class */
-  USBD_RegisterClass(&USBD_Device, USBD_CDC_CLASS);
-
-  /* Add CDC Interface Class */
-  USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_fops);
-
-  /* Start Device Process */
-  USBD_Start(&USBD_Device);
+  BSP_LED_Init(LED_GREEN);
+  BSP_LED_Init(LED_BLUE);
 
   /* Run Application (Interrupt mode) */
-  while (1)
-  {
-  }
+  osThreadDef( USBThread, UsbCDCThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 2 );
+  USBThreadHandle = osThreadCreate( osThread(USBThread), NULL);
+
+  osThreadDef( LedThread, LedBlinkThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE );
+  LedThreadHandle = osThreadCreate( osThread(LedThread), NULL);
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
+  for (;;);
+}
+
+/**
+  * @brief  Initialize the MSP.
+  * @retval None
+  */
+void HAL_MspInit(void)
+{
+
 }
 
 /**
@@ -91,7 +103,7 @@ int main(void)
   * @param  None
   * @retval None
   */
-void SystemClock_Config(void)
+static void SystemClock_Config(void)
 {
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -136,11 +148,63 @@ void SystemClock_Config(void)
   */
 void Error_Handler(void)
 {
-  /* Turn LED3 on */
-  BSP_LED_On(LED3);
-  while (1)
-  {
-  }
+  BSP_LED_On(LED_BLUE);
+  while (1);
+}
+
+/**
+  * @brief  Message Queue Producer Thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+static void UsbCDCThread(const void *argument)
+{
+	static char message[64];
+
+	/* Init Device Library */
+	USBD_Init(&USBD_Device, &VCP_Desc, 0);
+
+	/* Add Supported Class */
+	USBD_RegisterClass(&USBD_Device, USBD_CDC_CLASS);
+
+	/* Add CDC Interface Class */
+	USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_fops);
+
+	/* Start Device Process */
+	USBD_Start(&USBD_Device);
+
+	// wait for connect
+	for( ; sendCDCmessage("CTS version 1.000b\n"); osDelay(1000) );
+
+	for( uint32_t i = 0; ; )
+	{
+		// wait message
+		uint32_t event = ulTaskNotifyTake( pdTRUE, 100);
+
+		if(event)
+		{
+			i++;
+			uint32_t p = sprintf( message, "Got message N%lu ", i );
+			getCDCmessage( &message[p] );
+			sendCDCmessage( message );
+		}
+	}
+
+}
+
+/**
+  * @brief  Message Queue Producer Thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+static void LedBlinkThread(const void *argument)
+{
+
+	while(1)
+	{
+		osDelay(500);
+		BSP_LED_Toggle(LED_GREEN);
+	}
 }
 
 #ifdef  USE_FULL_ASSERT
