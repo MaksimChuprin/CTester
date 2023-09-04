@@ -140,7 +140,6 @@ static void SystemClock_Config(void)
   }
 }
 
-
 /**
   * @brief  This function is executed in case of error occurrence.
   * @param  None
@@ -174,13 +173,14 @@ static void UsbCDCThread(const void *argument)
 	USBD_Start(&USBD_Device);
 
 	// wait for connect
-	for( ; sendCDCmessage("CTS version 1.000b\n"); osDelay(1000) );
+	for(; sendCDCmessage("CTS version 1.000b\n"); osDelay(1000));
 
-	for( uint32_t i = 0; ; )
+	for(uint32_t i = 0; ;)
 	{
 		// wait message
 		uint32_t event = ulTaskNotifyTake( pdTRUE, pdMS_TO_TICKS(1000) );
 
+		BSP_LED_Toggle(LED_BLUE);
 		if(event)
 		{
 			i++;
@@ -188,10 +188,7 @@ static void UsbCDCThread(const void *argument)
 			getCDCmessage( &message[p] );
 			sendCDCmessage( message );
 		}
-
-		BSP_LED_Toggle(LED_BLUE);
 	}
-
 }
 
 /**
@@ -201,7 +198,6 @@ static void UsbCDCThread(const void *argument)
   */
 static void LedBlinkThread(const void *argument)
 {
-
 	while(1)
 	{
 		osDelay(500);
