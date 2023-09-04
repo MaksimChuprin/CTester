@@ -26,51 +26,6 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>Doc/readme.txt</name>
-			<type>1</type>
-			<locationURI>copy_PARENT1/readme.txt</locationURI>
-		</link>
-		<link>
-			<name>Application/SW4STM32/startup_stm32l152xd.s</name>
-			<type>1</type>
-			<locationURI>copy_PARENT/startup_stm32l152xd.s</locationURI>
-		</link>
-		<link>
-			<name>Application/User/main.c</name>
-			<type>1</type>
-			<locationURI>copy_PARENT1/Src/main.c</locationURI>
-		</link>
-		<link>
-			<name>Application/User/stm32l1xx_hal_msp.c</name>
-			<type>1</type>
-			<locationURI>copy_PARENT1/Src/stm32l1xx_hal_msp.c</locationURI>
-		</link>
-		<link>
-			<name>Application/User/stm32l1xx_it.c</name>
-			<type>1</type>
-			<locationURI>copy_PARENT1/Src/stm32l1xx_it.c</locationURI>
-		</link>
-		<link>
-			<name>Application/User/usbd_cdc_interface.c</name>
-			<type>1</type>
-			<locationURI>copy_PARENT1/Src/usbd_cdc_interface.c</locationURI>
-		</link>
-		<link>
-			<name>Application/User/usbd_conf.c</name>
-			<type>1</type>
-			<locationURI>copy_PARENT1/Src/usbd_conf.c</locationURI>
-		</link>
-		<link>
-			<name>Application/User/usbd_desc.c</name>
-			<type>1</type>
-			<locationURI>copy_PARENT1/Src/usbd_desc.c</locationURI>
-		</link>
-		<link>
-			<name>Drivers/CMSIS/system_stm32l1xx.c</name>
-			<type>1</type>
-			<locationURI>copy_PARENT1/Src/system_stm32l1xx.c</locationURI>
-		</link>
-		<link>
 			<name>Drivers/STM32L1xx_HAL_Driver/stm32l1xx_hal.c</name>
 			<type>1</type>
 			<locationURI>copy_PARENT12/Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal.c</locationURI>
