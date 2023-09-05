@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    USB_Device/CDC_Standalone/Inc/main.h
+  * @file    USB_Device/CDC_Standalone/Inc/usb_main.h
   * @author  MCD Application Team
   * @brief   Header for main.c module
   ******************************************************************************
@@ -17,22 +17,14 @@
   */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __MAIN_H
-#define __MAIN_H
+#ifndef __USB_MAIN_H
+#define __USB_MAIN_H
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32l152c_discovery_cts.h"
-#include "stm32l1xx_hal.h"
-#include "usbd_core.h"
-#include "usbd_desc.h"
-#include "usbd_cdc.h"
-#include "usbd_cdc_interface.h"
-#include "usb_main.h"
-
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-void Error_Handler(void);
+void UsbCDCThread(const void *argument);
 
-#endif /* __MAIN_H */
+#endif /* __USB_MAIN_H */

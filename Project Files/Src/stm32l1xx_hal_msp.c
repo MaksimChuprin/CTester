@@ -17,7 +17,6 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
-#include "stm32l152c_discovery.h"
 #include "main.h"
 
 /** @addtogroup USBD_USER

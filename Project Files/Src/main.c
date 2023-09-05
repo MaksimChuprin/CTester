@@ -1,37 +1,26 @@
 /**
   ******************************************************************************
-  * @file    USB_Device/CDC_Standalone/Src/main.c
-  * @author  MCD Application Team
-  * @brief   USB device CDC application main file
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+  * @file    main.c
+  * @author  Epta
+  * @brief   CTS application main file
+  ****************************************************************************** */
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
 
-TaskHandle_t	USBThreadHandle;
-TaskHandle_t	LedThreadHandle;
+/* Global variables ---------------------------------------------------------*/
+TaskHandle_t				USBThreadHandle;
+TaskHandle_t				LedThreadHandle;
+USBD_HandleTypeDef 			USBD_Device;
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-USBD_HandleTypeDef USBD_Device;
 
 /* Private function prototypes -----------------------------------------------*/
 static void 	SystemClock_Config		(void);
-static void 	UsbCDCThread			(const void *argument);
 static void 	LedBlinkThread			(const void *argument);
 /* Private functions ---------------------------------------------------------*/
 
@@ -62,18 +51,20 @@ int main(void)
   BSP_LED_Init(LED_GREEN);
   BSP_LED_Init(LED_BLUE);
 
-  /* Run Application (Interrupt mode) */
+  /* Create Threads */
+  /* USB CDC Threads */
   osThreadDef( USBThread, UsbCDCThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 2 );
   USBThreadHandle = osThreadCreate( osThread(USBThread), NULL);
 
+  /*    */
   osThreadDef( LedThread, LedBlinkThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE );
   LedThreadHandle = osThreadCreate( osThread(LedThread), NULL);
 
   /* Start scheduler */
   osKernelStart();
 
-  /* We should never get here as control is now taken by the scheduler */
-  for (;;);
+  /*   never be here    */
+  Error_Handler();
 }
 
 /**
@@ -149,46 +140,6 @@ void Error_Handler(void)
 {
   BSP_LED_On(LED_BLUE);
   while (1);
-}
-
-/**
-  * @brief  Message Queue Producer Thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-static void UsbCDCThread(const void *argument)
-{
-	static char message[64];
-
-	/* Init Device Library */
-	USBD_Init(&USBD_Device, &VCP_Desc, 0);
-
-	/* Add Supported Class */
-	USBD_RegisterClass(&USBD_Device, USBD_CDC_CLASS);
-
-	/* Add CDC Interface Class */
-	USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_fops);
-
-	/* Start Device Process */
-	USBD_Start(&USBD_Device);
-
-	// wait for connect
-	for(; sendCDCmessage("CTS version 1.000b\n"); osDelay(1000));
-
-	for(uint32_t i = 0; ;)
-	{
-		// wait message
-		uint32_t event = ulTaskNotifyTake( pdTRUE, pdMS_TO_TICKS(1000) );
-
-		BSP_LED_Toggle(LED_BLUE);
-		if(event)
-		{
-			i++;
-			uint32_t p = sprintf( message, "Got message N%lu ", i );
-			getCDCmessage( &message[p] );
-			sendCDCmessage( message );
-		}
-	}
 }
 
 /**

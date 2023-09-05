@@ -32,8 +32,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define APP_RX_DATA_SIZE  256
-#define APP_TX_DATA_SIZE  256
+
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
@@ -45,9 +44,9 @@ USBD_CDC_LineCodingTypeDef LineCoding =
     0x08    /* nb. of bits 8*/
   };
 
-static uint8_t UserRxBuffer[APP_RX_DATA_SIZE];		/* Received Data over USB are stored in this buffer */
-static uint8_t UserTxBuffer[APP_TX_DATA_SIZE];		/* Data to transmit over USB (CDC interface) are stored in this buffer */
-static char    UserRxBufferCopy[APP_RX_DATA_SIZE];	/* Copy of Received Data over USB are stored in this buffer */
+static uint8_t UserRxBuffer[APP_CDC_DATA_SIZE];		/* Received Data over USB are stored in this buffer */
+static uint8_t UserTxBuffer[APP_CDC_DATA_SIZE];		/* Data to transmit over USB (CDC interface) are stored in this buffer */
+static char    UserRxBufferCopy[APP_CDC_DATA_SIZE];	/* Copy of Received Data over USB are stored in this buffer */
 
 /* USB handler declaration */
 extern USBD_HandleTypeDef  	USBD_Device;

@@ -20,6 +20,8 @@
 #ifndef __USBD_CDC_IF_H
 #define __USBD_CDC_IF_H
 
+#define APP_CDC_DATA_SIZE  256
+
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc.h"
 
