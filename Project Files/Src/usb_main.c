@@ -1,51 +1,47 @@
 /**
   ******************************************************************************
-  * @file    USB_Device/CDC_Standalone/Src/usb_main.c
-  * @author  MCD Application Team
+  * @file    usb_main.c
+  * @author  Epta
   * @brief   USB device CDC application main file
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+  ******************************************************************************/
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
 
-extern USBD_HandleTypeDef  	USBD_Device;
-extern TaskHandle_t			USBThreadHandle;
+extern 	USBD_HandleTypeDef  	USBD_Device;
+extern 	TaskHandle_t			USBThreadHandle;
 
-char * helpStrings[] = {
-		{ "START - start testing process\r\n" },
-		{ "STOP - terminate testing process\r\n" },
-		{ "TEST VOLTAGE=<value> - enter <value> of test voltage in Volts\r\n" },
-		{ "MEASURE VOLTAGE=<value> - enter <value> of measure voltage in Volts\r\n" },
-		{ "TEST TIME=<value> - enter <value> of test time in Hours\r\n" },
-		{ "MEASURE PERIOD=<value> - enter <value> of measure period in Minutes\r\n" },
-		{ "SET TIME=<YYYY:MM:DD:HH:MM> - enter current time\r\n" },
-		{ "READ STATUS - display the current state of the system\r\n" },
-		{ "READ RESULTS - display measurement results\r\n" },
-		{ "READ SETTINGS - display settings values\r\n" },
-		{ "MEASURE - take the measurement immediately and show a result\r\n" },
-		{ "HELP - list available commands\r\n" },
+const 	char * helpStrings[] = {
+
+		"Start - start testing process.\r\n",
+		"Stop - terminate testing process.\r\n",
+		"Test Voltage=<value> - enter <value> of test voltage in Volts.\r\n",
+		"Measure Voltage=<value> - enter <value> of measure voltage in Volts.\r\n",
+		"Test Time=<value> - enter <value> of test time in Hours.\r\n",
+		"Measure Period=<value> - enter <value> of measure period in Minutes.\r\n",
+		"Set Time=<YYYY:MM:DD:HH:MM> - enter current time.\r\n",
+		"Measure - take the measurement immediately and show a result.\r\n",
+		"Read Status - display the current state of the system.\r\n",
+		"Read Results - display measurement results.\r\n",
+		"Read Settings - display settings values.\r\n",
+		"Echo <On>/<Off> - switch echo entered command.\r\n",
+		"Set Ki Ampl=<value> - enter coefficient of current amplifier.\r\n",
+		"Set Kd HV=<value> - enter division coefficient of HV.\r\n",
+		"Help - list available commands.\r\n",
 		0
 };
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
+#define SEND_CDC_MESSAGE(MSG)	{ while( sendCDCmessage( (MSG) ) && isCableConnected() ) osDelay(50); }
 /* Private variables ---------------------------------------------------------*/
 static char 				usb_message[APP_CDC_DATA_SIZE];
 /* Private function prototypes -----------------------------------------------*/
-static bool 				isCableConnected(void);
+static bool 				isCableConnected	( void );
+static void 				messageDecode		( char * ptrmessage );
+static void 				UpperCase			( char * ptrmessage );
 /* Private functions ---------------------------------------------------------*/
 
 /**
@@ -55,7 +51,6 @@ static bool 				isCableConnected(void);
   */
 void UsbCDCThread(const void *argument)
 {
-
 	for(;; osDelay(500))
 	{
 		if( !isCableConnected() ) continue;
@@ -69,7 +64,7 @@ void UsbCDCThread(const void *argument)
 		/* Start Device Process */
 		USBD_Start(&USBD_Device);
 		// wait for connect
-		for(; sendCDCmessage("Capacitor Testing System\r\n SW version: 0.0.1\r\n"); osDelay(1000) );
+		SEND_CDC_MESSAGE( "Capacitor Testing System\r\n SW version: 0.0.1\r\n" );
 		// do connection
 		for(;;)
 		{
@@ -102,13 +97,32 @@ static bool isCableConnected(void)
 }
 
 /**
+  * @brief  convert message to upper case
+  * @param  argument: Not used
+  * @retval
+  */
+static void UpperCase( char * ptrmessage )
+{
+	size_t len = strlen(ptrmessage);
+
+	for( size_t i = 0; i < len; i++ )
+		if( 'a' <= ptrmessage[i] && ptrmessage[i] <= 'z' ) ptrmessage[i] -= 0x20;
+}
+
+
+/**
   * @brief  USB CDC message Decoder
   * @param  argument: pointer to message string
   * @retval
   */
-static void messageDecode( char * ptrmessage)
+static void messageDecode( char * ptrmessage )
 {
+	static bool echoOFF = false;
 	char * ptr;
+
+	if( echoOFF == false ) while( sendCDCmessage(ptrmessage) ) osDelay(50);
+
+	UpperCase(ptrmessage);
 
 	//---------------------------------------------
 	if( strstr( ptrmessage, "START" ) )
@@ -192,15 +206,49 @@ static void messageDecode( char * ptrmessage)
 		return;
 	}
 
+	//---------------------------------------------
+	ptr = strstr( ptrmessage, "SET KI AMPL=" );
+	if( ptr )
+	{
+
+		return;
+	}
+
+	//---------------------------------------------
+	ptr = strstr( ptrmessage, "SET KD HV=" );
+	if( ptr )
+	{
+
+		return;
+	}
+
+	//---------------------------------------------
+	ptr = strstr( ptrmessage, "ECHO " );
+	if( ptr )
+	{
+		if( strstr( ptr, "ON" ) )
+		{
+			sendCDCmessage("Echo switched ON\r\n");
+			echoOFF = false;
+			return;
+		}
+
+		if( strstr( ptr, "OFF" ) )
+		{
+			sendCDCmessage("Echo switched OFF\r\n");
+			echoOFF = true;
+			return;
+		}
+	}
 
 	//---------------------------------------------
 	if( strstr( ptrmessage, "HELP" ) )
 	{
 		for(uint32_t i = 0; ; i++)
 		{
-			if( helpString[i] )
+			if( helpStrings[i] )
 			{
-				strcpy( usb_message, helpString[i] );
+				strcpy( usb_message, helpStrings[i] );
 				while( sendCDCmessage(usb_message) ) osDelay(50);
 			}
 			else
@@ -210,5 +258,5 @@ static void messageDecode( char * ptrmessage)
 	}
 
 	//---------------------------------------------
-	sendCDCmessage( "Unknown command - enter HELP command\r\n" );
+	sendCDCmessage( "Unknown command - enter HELP!\r\n" );
 }

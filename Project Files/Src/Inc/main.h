@@ -31,6 +31,16 @@
 #include "usb_main.h"
 
 /* Exported types ------------------------------------------------------------*/
+typedef struct {
+
+	uint32_t 	sysStatus;
+	float		uTestVol;
+	float		uMeasureVol;
+	float		kiAmplifire;
+	uint32_t 	testingTimeSec;
+	uint32_t 	measuringPeriodSec;
+
+} sysCfg_t;
 /* Exported constants --------------------------------------------------------*/
 /* ## Definition of ADC related resources ################################### */
 /* Definition of ADCx clock resources */
