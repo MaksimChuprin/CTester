@@ -96,8 +96,15 @@ void HAL_MspInit(void)
   */
 static void SystemClock_Config(void)
 {
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef 		RCC_ClkInitStruct 	= {0};
+  RCC_OscInitTypeDef 		RCC_OscInitStruct 	= {0};
+
+  /* Set Voltage scale1 as MCU will run at 32MHz */
+  __HAL_RCC_PWR_CLK_ENABLE();
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+
+  /* Poll VOSF bit of in PWR_CSR. Wait until it is reset to 0 */
+  while (__HAL_PWR_GET_FLAG(PWR_FLAG_VOS) != RESET) {};
 
   /* Enable HSE Oscillator and Activate PLL with HSE as source */
   RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_HSE;
@@ -106,17 +113,11 @@ static void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLSource       = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL          = RCC_PLL_MUL12;
   RCC_OscInitStruct.PLL.PLLDIV          = RCC_PLL_DIV3;
+
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
   }
-
-  /* Set Voltage scale1 as MCU will run at 32MHz */
-  __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-
-  /* Poll VOSF bit of in PWR_CSR. Wait until it is reset to 0 */
-  while (__HAL_PWR_GET_FLAG(PWR_FLAG_VOS) != RESET) {};
 
   /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2
   clocks dividers */
@@ -141,6 +142,7 @@ void Error_Handler(void)
   BSP_LED_On(LED_BLUE);
   while (1);
 }
+
 
 /**
   * @brief  Message Queue Producer Thread.
