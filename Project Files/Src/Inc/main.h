@@ -21,6 +21,7 @@
 #define __MAIN_H
 
 /* Includes ------------------------------------------------------------------*/
+#include "stdbool.h"
 #include "stm32l152c_discovery_cts.h"
 #include "stm32l1xx_hal.h"
 #include "usbd_core.h"

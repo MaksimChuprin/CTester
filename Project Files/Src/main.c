@@ -47,9 +47,8 @@ int main(void)
   /* Configure the system clock to 32 MHz */
   SystemClock_Config();
 
-  /* Initialize LEDs */
-  BSP_LED_Init(LED_GREEN);
-  BSP_LED_Init(LED_BLUE);
+  /* Initialize board */
+  BSP_CTS_Init();
 
   /* Create Threads */
   /* USB CDC Threads */
@@ -67,14 +66,6 @@ int main(void)
   Error_Handler();
 }
 
-/**
-  * @brief  Initialize the MSP.
-  * @retval None
-  */
-void HAL_MspInit(void)
-{
-
-}
 
 /**
   * @brief  System Clock Configuration
@@ -138,7 +129,6 @@ static void SystemClock_Config(void)
   */
 void Error_Handler(void)
 {
-  BSP_LED_On(LED_BLUE);
   while (1);
 }
 
@@ -152,7 +142,6 @@ static void LedBlinkThread(const void *argument)
 	while(1)
 	{
 		osDelay(500);
-		BSP_LED_Toggle(LED_GREEN);
 	}
 }
 

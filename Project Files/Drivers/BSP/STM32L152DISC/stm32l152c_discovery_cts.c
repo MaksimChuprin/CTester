@@ -38,17 +38,7 @@
   * @{
   */ 
   
-/**
-* @brief STM32L152C-Discovery BSP Driver version number
-*/
-#define __STM32L152C_DISCO_BSP_VERSION_MAIN   (0x01) /*!< [31:24] main version */
-#define __STM32L152C_DISCO_BSP_VERSION_SUB1   (0x00) /*!< [23:16] sub1 version */
-#define __STM32L152C_DISCO_BSP_VERSION_SUB2   (0x06) /*!< [15:8]  sub2 version */
-#define __STM32L152C_DISCO_BSP_VERSION_RC     (0x00) /*!< [7:0]  release candidate */ 
-#define __STM32L152C_DISCO_BSP_VERSION         ((__STM32L152C_DISCO_BSP_VERSION_MAIN << 24)\
-                                             |(__STM32L152C_DISCO_BSP_VERSION_SUB1 << 16)\
-                                             |(__STM32L152C_DISCO_BSP_VERSION_SUB2 << 8 )\
-                                             |(__STM32L152C_DISCO_BSP_VERSION_RC))
+
 /**
   * @}
   */ 
@@ -63,10 +53,33 @@ GPIO_TypeDef* GPIO_PORT[LEDn] = {LED3_GPIO_PORT,
 const uint16_t GPIO_PIN[LEDn] = {LED3_PIN,
                                  LED4_PIN};
 
+typedef struct {
 
-GPIO_TypeDef* BUTTON_PORT[BUTTONn] = {USER_BUTTON_GPIO_PORT}; 
-const uint16_t BUTTON_PIN[BUTTONn] = {USER_BUTTON_PIN}; 
-const uint8_t BUTTON_IRQn[BUTTONn] = {USER_BUTTON_EXTI_IRQn};
+	uint16_t			pin;
+	GPIO_TypeDef *		port;
+
+} PinPortAD_t;
+
+const PinPortAD_t Line_AD[ADLINEn] = {
+
+		{ .pin 	= AD0_PIN,	.port	= AD0_GPIO_PORT },
+		{ .pin 	= AD1_PIN,	.port	= AD1_GPIO_PORT },
+		{ .pin 	= AD2_PIN,	.port	= AD2_GPIO_PORT },
+		{ .pin 	= AD3_PIN,	.port	= AD3_GPIO_PORT },
+		{ .pin 	= AD4_PIN,	.port	= AD4_GPIO_PORT },
+		{ .pin 	= AD5_PIN,	.port	= AD5_GPIO_PORT },
+		{ .pin 	= AD6_PIN,	.port	= AD6_GPIO_PORT },
+		{ .pin 	= AD7_PIN,	.port	= AD7_GPIO_PORT },
+		{ .pin 	= AD8_PIN,	.port	= AD8_GPIO_PORT },
+		{ .pin 	= AD9_PIN,	.port	= AD9_GPIO_PORT },
+		{ .pin 	= AD10_PIN,	.port	= AD10_GPIO_PORT },
+		{ .pin 	= AD11_PIN,	.port	= AD11_GPIO_PORT },
+		{ .pin 	= AD12_PIN,	.port	= AD12_GPIO_PORT },
+		{ .pin 	= AD13_PIN,	.port	= AD13_GPIO_PORT },
+		{ .pin 	= AD14_PIN,	.port	= AD14_GPIO_PORT },
+		{ .pin 	= AD15_PIN,	.port	= AD15_GPIO_PORT }
+};
+
 
 /**
   * @}
@@ -76,14 +89,6 @@ const uint8_t BUTTON_IRQn[BUTTONn] = {USER_BUTTON_EXTI_IRQn};
   * @{
   */ 
 
-/**
-  * @brief  This method returns the STM32L152C-Discovery BSP Driver revision
-  * @retval version : 0xXYZR (8bits for each decimal, R for RC)
-  */
-uint32_t BSP_GetVersion(void)
-{
-  return __STM32L152C_DISCO_BSP_VERSION;
-}
 
 /** @defgroup STM32152C_DISCOVERY_LED_Functions LED Functions
   * @{
@@ -155,94 +160,50 @@ void BSP_LED_Toggle(Led_TypeDef Led)
 }
 
 /**
-  * @}
-  */ 
-
-/** @defgroup STM32152C_DISCOVERY_BUTTON_Functions BUTTON Functions
-  * @{
-  */ 
-
-/**
-  * @brief  Configures Button GPIO and EXTI Line.
-  * @param  Button: Specifies the Button to be configured.
-  *   This parameter should be: BUTTON_USER
-  * @param  Mode: Specifies Button mode.
-  *   This parameter can be one of following parameters:   
-  *     @arg BUTTON_MODE_GPIO: Button will be used as simple IO 
-  *     @arg BUTTON_MODE_EXTI: Button will be connected to EXTI line with interrupt
-  *                     generation capability  
-  * @retval None
-  */
-void BSP_PB_Init(Button_TypeDef Button, ButtonMode_TypeDef Mode)
-{
-  GPIO_InitTypeDef gpioinitstruct = {0};
-
-  /* Enable the BUTTON Clock */
-  BUTTONx_GPIO_CLK_ENABLE(Button);
-
-  if (Mode == BUTTON_MODE_GPIO)
-  {
-    /* Configure Button pin as input */
-    gpioinitstruct.Pin   = BUTTON_PIN[Button];
-    gpioinitstruct.Mode  = GPIO_MODE_INPUT;
-    gpioinitstruct.Pull  = GPIO_NOPULL;
-    gpioinitstruct.Speed = GPIO_SPEED_FREQ_HIGH;
-  
-    HAL_GPIO_Init(BUTTON_PORT[Button], &gpioinitstruct);
-  }
- 
-  if (Mode == BUTTON_MODE_EXTI)
-  {
-    /* Configure Button pin as input with External interrupt */
-    gpioinitstruct.Pin   = BUTTON_PIN[Button];
-    gpioinitstruct.Pull  = GPIO_NOPULL;
-    gpioinitstruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    gpioinitstruct.Mode  = GPIO_MODE_IT_RISING; 
-    HAL_GPIO_Init(BUTTON_PORT[Button], &gpioinitstruct);
-
-    /* Enable and set Button EXTI Interrupt to the lowest priority */
-    HAL_NVIC_SetPriority((IRQn_Type)(BUTTON_IRQn[Button]), 0x0F, 0);
-    HAL_NVIC_EnableIRQ((IRQn_Type)(BUTTON_IRQn[Button]));
-  }
-}
-
-/**
-  * @brief  Returns the selected Button state.
-  * @param  Button: Specifies the Button to be checked.
-  *   This parameter should be: BUTTON_USER  
-  * @retval Button state.
-  */
-uint32_t BSP_PB_GetState(Button_TypeDef Button)
-{
-  return HAL_GPIO_ReadPin(BUTTON_PORT[Button], BUTTON_PIN[Button]);
-}
-
-/**
   * @brief  Returns the selected Button state.
   * @retval RAN_PIN state.
   */
 uint32_t BSP_PAN_GetState(void)
 {
-  return HAL_GPIO_ReadPin(RAN_GPIO_PORT, RAN_PIN);
+  return HAL_GPIO_ReadPin( RAN_GPIO_PORT, RAN_PIN );
 }
 
 /**
   * @brief  SET OPTO signal
   * @retval NONE.
   */
-void BSP_SET_OPTO(void)
+void BSP_SET_OPTO( Opto_StateDef Ostate)
 {
-	HAL_GPIO_WritePin( OPTO_GPIO_PORT, OPTO_PIN, GPIO_PIN_SET);
+	HAL_GPIO_WritePin( OPTO_GPIO_PORT, OPTO_PIN, ( Ostate == Opto_Close ) ? GPIO_PIN_RESET : GPIO_PIN_SET );
 }
 
 /**
-  * @brief  SET OPTO signal
+  * @brief  SET 8/16 signal
   * @retval NONE.
   */
-void BSP_RESET_OPTO(void)
+void BSP_SET_RMUX( RMux_StateDef Mstate)
 {
-	HAL_GPIO_WritePin( OPTO_GPIO_PORT, OPTO_PIN, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin( MUX_8_16_GPIO_PORT, MUX_8_16_PIN, ( Mstate == Mux_1_8 ) ? GPIO_PIN_RESET : GPIO_PIN_SET );
 }
+
+
+/**
+  * @brief  SET AD signals
+  * @retval None
+  */
+void BSP_CTS_SetLine( Line_NumDef line, Line_StateDef Lstate, Opto_StateDef Ostate)
+{
+	BSP_SET_OPTO( Ostate );
+
+	if( line != AllLineAD )
+	  HAL_GPIO_WritePin( Line_AD[line].port,  Line_AD[line].pin , ( Lstate == Line_HV ) ? GPIO_PIN_SET : GPIO_PIN_RESET );
+	else
+	{
+		for(uint32_t i = 0; i < ADLINEn; i++ )
+			HAL_GPIO_WritePin( Line_AD[i].port,  Line_AD[i].pin , ( Lstate == Line_HV ) ? GPIO_PIN_SET : GPIO_PIN_RESET );
+	}
+}
+
 
 /**
   * @retval None
@@ -258,7 +219,7 @@ void BSP_CTS_Init(void)
   __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /* Configure the GPIOA pins */
-  gpioinitstruct.Pin   = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4;
+  gpioinitstruct.Pin   = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4; // R4...R7, DAC
   gpioinitstruct.Mode  = GPIO_MODE_ANALOG;
   gpioinitstruct.Speed = GPIO_SPEED_FREQ_LOW;
   gpioinitstruct.Pull  = GPIO_NOPULL;
@@ -274,12 +235,12 @@ void BSP_CTS_Init(void)
   gpioinitstruct.Mode  = GPIO_MODE_OUTPUT_PP;
   HAL_GPIO_Init( GPIOB, &gpioinitstruct);
 
-  gpioinitstruct.Pin   = GPIO_PIN_14;
+  gpioinitstruct.Pin   = GPIO_PIN_14; // VX
   gpioinitstruct.Mode  = GPIO_MODE_ANALOG;
   HAL_GPIO_Init( GPIOB, &gpioinitstruct);
 
   /* Configure the GPIOC pins */
-  gpioinitstruct.Pin   = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3;
+  gpioinitstruct.Pin   = GPIO_PIN_0 | GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3; // R0...R3
   gpioinitstruct.Mode  = GPIO_MODE_ANALOG;
   HAL_GPIO_Init( GPIOC, &gpioinitstruct);
 
@@ -292,6 +253,8 @@ void BSP_CTS_Init(void)
   gpioinitstruct.Mode  = GPIO_MODE_OUTPUT_PP;
   HAL_GPIO_Init( GPIOD, &gpioinitstruct);
 
+  BSP_CTS_SetLine( AllLineAD, Line_ZV, Opto_Open );
+  BSP_SET_RMUX( Mux_1_8 );
 }
 
 /**
