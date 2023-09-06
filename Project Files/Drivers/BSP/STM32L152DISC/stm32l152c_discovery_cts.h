@@ -1,18 +1,10 @@
 /**
   ******************************************************************************
   * @file    stm32l152c_discovery_cts.h
-  * @author  MCD Application Team
-  * @brief   This file contains definitions for STM32L152C-Discovery Leds, push-buttons
+  * @author  Epta
+  * @brief   This file contains definitions for STM32L152C-Discovery & CTS
   ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
+
   ******************************************************************************
   */
   
@@ -41,9 +33,6 @@
 #include "stm32l152c_discovery_cts.h"
 
   
-/** @defgroup STM32L152C_DISCOVERY_Exported_Types Exported Types
-  * @{
-  */
 typedef enum 
 {
   LED3 = 0,
@@ -54,27 +43,51 @@ typedef enum
     
 } Led_TypeDef;
 
-typedef enum 
+typedef enum {
+	LineAD0 = 0,
+	LineAD1,
+	LineAD2,
+	LineAD3,
+	LineAD4,
+	LineAD5,
+	LineAD6,
+	LineAD7,
+	LineAD8,
+	LineAD9,
+	LineAD10,
+	LineAD11,
+	LineAD12,
+	LineAD13,
+	LineAD14,
+	LineAD15,
+	AllLineAD
+
+} Line_NumDef;
+
+
+typedef enum
 {
-  BUTTON_USER = 0,
-} Button_TypeDef;
+  Line_ZV = 0,
+  Line_HV
 
-typedef enum 
-{  
-  BUTTON_MODE_GPIO = 0,
-  BUTTON_MODE_EXTI = 1
-} ButtonMode_TypeDef;
-/**
-  * @}
-  */ 
+} Line_StateDef;
 
-/** @defgroup STM32L152C_DISCOVERY_Exported_Constants Exported Constants
-  * @{
-  */ 
 
-/** 
-  * @brief  Define for STM32L152C-Discovery board
-  */ 
+typedef enum
+{
+  Opto_Close = 0,
+  Opto_Open
+
+} Opto_StateDef;
+
+typedef enum
+{
+  Mux_1_8  = 0,
+  Mux_9_16
+
+} RMux_StateDef;
+
+
 #if !defined (USE_STM32L152C_DISCO)
  #define USE_STM32L152C_DISCO
 #endif
@@ -100,27 +113,12 @@ typedef enum
 /**
   * @}
   */
-  
-/** @addtogroup STM32L152C_DISCOVERY_BUTTON BUTTON Constants
+
+/** CTS signals
   * @{
-  */  
-#define BUTTONn                          1
-/**
- * @brief USER push-button
- */
-#define USER_BUTTON_PIN                   GPIO_PIN_0           /* PA.00 */
-#define USER_BUTTON_GPIO_PORT             GPIOA
-#define USER_BUTTON_GPIO_CLK_ENABLE()     __HAL_RCC_GPIOA_CLK_ENABLE()
-#define USER_BUTTON_GPIO_CLK_DISABLE()    __HAL_RCC_GPIOA_CLK_DISABLE()
-#define USER_BUTTON_EXTI_IRQn             EXTI0_IRQn
-
-#define BUTTONx_GPIO_CLK_ENABLE(__INDEX__)    do { USER_BUTTON_GPIO_CLK_ENABLE();} while(0)
-
-#define BUTTONx_GPIO_CLK_DISABLE(__INDEX__)   (USER_BUTTON_GPIO_CLK_DISABLE())
-
-/**
-  * @}
   */
+#define	ADLINEn							16
+
 #define RAN_PIN                        	GPIO_PIN_13
 #define RAN_GPIO_PORT                  	GPIOC
 #define OPTO_PIN                        GPIO_PIN_13
@@ -190,16 +188,6 @@ typedef enum
 #define AD15_PIN                    	GPIO_PIN_10
 #define AD15_GPIO_PORT              	GPIOB
 
-/**
-  * @}
-  */
-
-
-/** @addtogroup STM32L152C_DISCOVERY_Exported_Functions
-  * @{
-  */ 
-uint32_t  	BSP_GetVersion(void);
-
 /** @addtogroup STM32152C_DISCOVERY_LED_Functions
   * @{
   */ 
@@ -211,18 +199,11 @@ void      	BSP_LED_Toggle(Led_TypeDef Led);
 /**
   * @}
   */
-
-/** @addtogroup STM32152C_DISCOVERY_BUTTON_Functions
-  * @{
-  */
-
-void      	BSP_PB_Init(Button_TypeDef Button, ButtonMode_TypeDef Mode);
-uint32_t  	BSP_PB_GetState(Button_TypeDef Button);
-
-/**
-  * @}
-  */
 uint32_t 	BSP_PAN_GetState(void);
+void 		BSP_SET_OPTO( Opto_StateDef Ostate);
+void 		BSP_SET_RMUX( RMux_StateDef Mstate);
+void 		BSP_CTS_Init(void);
+void		BSP_CTS_SetLine( Line_NumDef line, Line_StateDef Lstate, Opto_StateDef Ostate);
 
 /**
   * @}
@@ -237,12 +218,3 @@ uint32_t 	BSP_PAN_GetState(void);
 #endif
   
 #endif /* __STM32L152C_DISCOVERY_H */
-
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
