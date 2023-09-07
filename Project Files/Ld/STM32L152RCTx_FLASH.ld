@@ -42,7 +42,8 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 MEMORY
 {
 FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 256K
-RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 32K
+EEPROM(r)		: ORIGIN = 0x8080000, LENGTH = 8K
+RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 32K
 }
 
 /* Define output sections */
@@ -81,6 +82,15 @@ SECTIONS
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
     . = ALIGN(4);
   } >FLASH
+  
+  /* Constant data goes into FLASH */
+  .secEEPROM :
+  {
+    . = ALIGN(4);
+    *(.rodata)         /* .rodata sections (constants, strings, etc.) */
+    *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
+    . = ALIGN(4);
+  } >EEPROM  
 
   .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >FLASH
   .ARM : {

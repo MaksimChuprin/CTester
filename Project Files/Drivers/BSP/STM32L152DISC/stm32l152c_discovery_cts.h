@@ -203,7 +203,10 @@ uint32_t 	BSP_PAN_GetState(void);
 void 		BSP_SET_OPTO( Opto_StateDef Ostate);
 void 		BSP_SET_RMUX( RMux_StateDef Mstate);
 void 		BSP_CTS_Init(void);
-void		BSP_CTS_SetLine( Line_NumDef line, Line_StateDef Lstate, Opto_StateDef Ostate);
+void		BSP_CTS_SetAnyLine( Line_NumDef line, Line_StateDef Lstate, Opto_StateDef Ostate);
+void 		BSP_CTS_SetSingleLine( Line_NumDef line );
+void 		LoadSysCnf(void);
+bool 		CheckSysCnf(void);
 
 /**
   * @}

@@ -136,6 +136,11 @@
 			<locationURI>PARENT-1-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/list.c</locationURI>
 		</link>
 		<link>
+			<name>Middlewares/FreeRTOS/queue.c</name>
+			<type>1</type>
+			<location>D:/Projects/CAPTESTER STM32L152/Middlewares/Third_Party/FreeRTOS/Source/queue.c</location>
+		</link>
+		<link>
 			<name>Middlewares/FreeRTOS/tasks.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/tasks.c</locationURI>

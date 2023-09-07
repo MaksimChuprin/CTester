@@ -7,12 +7,13 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
 
 /* Global variables ---------------------------------------------------------*/
 TaskHandle_t				USBThreadHandle;
 TaskHandle_t				LedThreadHandle;
 USBD_HandleTypeDef 			USBD_Device;
+
+const sysCfg_t				systemConfig __attribute__((section(".secEEPROM"))) __attribute__((used));
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -46,6 +47,9 @@ int main(void)
 
   /* Configure the system clock to 32 MHz */
   SystemClock_Config();
+
+  /* system init */
+  LoadSysCnf();
 
   /* Initialize board */
   BSP_CTS_Init();

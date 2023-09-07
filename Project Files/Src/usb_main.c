@@ -11,23 +11,26 @@
 
 extern 	USBD_HandleTypeDef  	USBD_Device;
 extern 	TaskHandle_t			USBThreadHandle;
+extern 	sysCfg_t				systemConfig;
 
 const 	char * helpStrings[] = {
 
 		"Start - start testing process.\r\n",
 		"Stop - terminate testing process.\r\n",
-		"Test Voltage=<value> - enter <value> of test voltage in Volts.\r\n",
-		"Measure Voltage=<value> - enter <value> of measure voltage in Volts.\r\n",
-		"Test Time=<value> - enter <value> of test time in Hours.\r\n",
-		"Measure Period=<value> - enter <value> of measure period in Minutes.\r\n",
-		"Set Time=<YYYY:MM:DD:HH:MM> - enter current time.\r\n",
 		"Measure - take the measurement immediately and show a result.\r\n",
 		"Read Status - display the current state of the system.\r\n",
 		"Read Results - display measurement results.\r\n",
 		"Read Settings - display settings values.\r\n",
-		"Echo <On>/<Off> - switch echo entered command.\r\n",
-		"Set Ki Ampl=<value> - enter coefficient of current amplifier.\r\n",
-		"Set Kd HV=<value> - enter division coefficient of HV.\r\n",
+		"Set Tt=<value> - enter <value> of test time in Hours.\r\n",
+		"Set Mp=<value> - enter <value> of measure period in Minutes.\r\n",
+		"Set Vt=<value> - enter <value> of test voltage in Volts.\r\n",
+		"Set Vm=<value> - enter <value> of measure voltage in Volts.\r\n",
+		"Set Ki=<value> - enter coefficient of current amplifier.\r\n",
+		"Set Kd=<value> - enter division coefficient of HV.\r\n",
+		"Set Td=<value> - enter <value> of discharge time in mSec.\r\n",
+		"Set RTC=<YYYY:MM:DD:HH:MM> - enter current time.\r\n",
+		"Echo On - switch on echo of entered command.\r\n",
+		"Echo Off - switch off echo of entered command.\r\n",
 		"Help - list available commands.\r\n",
 		0
 };
@@ -64,7 +67,22 @@ void UsbCDCThread(const void *argument)
 		/* Start Device Process */
 		USBD_Start(&USBD_Device);
 		// wait for connect
-		SEND_CDC_MESSAGE( "Capacitor Testing System\r\n SW version: 0.0.1\r\n" );
+		SEND_CDC_MESSAGE( "\r\n********************************************\r\n" );
+		SEND_CDC_MESSAGE( "Start Capacitor Testing System\r\n SW version: 0.0.1\r\n" );
+		switch(systemConfig.sysStatus)
+		{
+		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "System status: not configured!" );
+								break;
+		case READY_STATUS:		SEND_CDC_MESSAGE( "System status: ready to test." );
+								break;
+		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "System status: testing in progress..." );
+								break;
+		case FINISH_STATUS:		SEND_CDC_MESSAGE( "System status: testing finished, data available." );
+								break;
+		case ERROR_STATUS:		SEND_CDC_MESSAGE( "System status: fail!" );
+								break;
+		}
+
 		// do connection
 		for(;;)
 		{
@@ -124,98 +142,155 @@ static void messageDecode( char * ptrmessage )
 
 	UpperCase(ptrmessage);
 
-	//---------------------------------------------
+	//--------------------------------------------- START
 	if( strstr( ptrmessage, "START" ) )
 	{
+		switch(systemConfig.sysStatus)
+		{
+		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "System status: not configured! Set configuration first." );
+								break;
+
+		case READY_STATUS:		SEND_CDC_MESSAGE( "Testing process starting:" );
+								sprintf( usb_message, "Testing voltage: %lu Volts, Measure voltage: %lu Volts\r\nTesting time: %lu Hours, Measure period: %lu Minutes\r\n",
+																systemConfig.uTestVol, systemConfig.uMeasureVol, systemConfig.testingTimeSec / 3600, systemConfig.measuringPeriodSec / 60);
+								SEND_CDC_MESSAGE( usb_message );
+								SAVE_SYSTEM_CNF( &systemConfig.sysStatus, ACTIVE_STATUS );
+								break;
+
+		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "System status: testing already in progress!" );
+								break;
+
+		case FINISH_STATUS:		SEND_CDC_MESSAGE( "System status: testing finished, read data first." );
+								break;
+
+		case ERROR_STATUS:		SEND_CDC_MESSAGE( "System status: fail, testing unavailable!" );
+								break;
+		}
 
 		return;
 	}
 
-	//---------------------------------------------
+	//--------------------------------------------- STOP
 	if( strstr( ptrmessage, "STOP" ) )
 	{
+		switch(systemConfig.sysStatus)
+		{
+		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "System status: not configured! Set configuration first." );
+								break;
+
+		case READY_STATUS:		SEND_CDC_MESSAGE( "System status: ready, nothing to stop." );
+								break;
+
+		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "System status: testing terminated!" );
+								if(systemConfig.measureSavedPoints)
+								{
+									sprintf( usb_message, "There are data to read: %lu Point(s)\r\n", systemConfig.measureSavedPoints );
+									SEND_CDC_MESSAGE( usb_message );
+									SAVE_SYSTEM_CNF( &systemConfig.sysStatus, FINISH_STATUS );
+								}
+								else
+								{
+									SEND_CDC_MESSAGE( "There are no data to read." );
+									SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+								}
+								break;
+
+		case FINISH_STATUS:		SEND_CDC_MESSAGE( "System status: testing finished, read data first." );
+								break;
+
+		case ERROR_STATUS:		SEND_CDC_MESSAGE( "System status: fail, testing unavailable!" );
+								break;
+		}
 
 		return;
 	}
 
-	//---------------------------------------------
+	//--------------------------------------------- MEASURE
 	if( strstr( ptrmessage, "MEASURE" ) )
 	{
 
 		return;
 	}
 
-	//---------------------------------------------
-	ptr = strstr( ptrmessage, "TEST VOLTAGE=" );
-	if( ptr )
-	{
-
-		return;
-	}
-
-	//---------------------------------------------
-	ptr = strstr( ptrmessage, "MEASURE VOLTAGE=" );
-	if( ptr )
-	{
-
-		return;
-	}
-
-	//---------------------------------------------
-	ptr = strstr( ptrmessage, "TEST TIME=" );
-	if( ptr )
-	{
-
-		return;
-	}
-
-	//---------------------------------------------
-	ptr = strstr( ptrmessage, "MEASURE PERIOD=" );
-	if( ptr )
-	{
-
-		return;
-	}
-
-	//---------------------------------------------
-	ptr = strstr( ptrmessage, "SET TIME=" );
-	if( ptr )
-	{
-
-		return;
-	}
-
-	//---------------------------------------------
+	//--------------------------------------------- READ STATUS
 	if( strstr( ptrmessage, "READ STATUS" ) )
 	{
 
 		return;
 	}
 
-	//---------------------------------------------
+	//--------------------------------------------- READ RTESULTS
 	if( strstr( ptrmessage, "READ RESULTS" ) )
 	{
 
 		return;
 	}
 
-	//---------------------------------------------
+	//--------------------------------------------- READ SETTINGS
 	if( strstr( ptrmessage, "READ SETTINGS" ) )
 	{
 
 		return;
 	}
 
-	//---------------------------------------------
-	ptr = strstr( ptrmessage, "SET KI AMPL=" );
+	//--------------------------------------------- SET Test Time
+	ptr = strstr( ptrmessage, "Set TT=" );
 	if( ptr )
 	{
 
 		return;
 	}
 
-	//---------------------------------------------
-	ptr = strstr( ptrmessage, "SET KD HV=" );
+	//---------------------------------------------	SET Measure Period
+	ptr = strstr( ptrmessage, "Set MP=" );
+	if( ptr )
+	{
+
+		return;
+	}
+
+	//--------------------------------------------- Set Test Voltage
+	ptr = strstr( ptrmessage, "Set VT=" );
+	if( ptr )
+	{
+
+		return;
+	}
+
+	//---------------------------------------------	Set Measure Voltage
+	ptr = strstr( ptrmessage, "Set VM=" );
+	if( ptr )
+	{
+
+		return;
+	}
+
+	//--------------------------------------------- SET Current Amplifier Ki
+	ptr = strstr( ptrmessage, "SET KI=" );
+	if( ptr )
+	{
+
+		return;
+	}
+
+	//--------------------------------------------- SET High Voltage divider Kd
+	ptr = strstr( ptrmessage, "SET KD=" );
+	if( ptr )
+	{
+
+		return;
+	}
+
+	//--------------------------------------------- SET Time of Discharge Capasitors Td
+	ptr = strstr( ptrmessage, "SET TD=" );
+	if( ptr )
+	{
+
+		return;
+	}
+
+	//--------------------------------------------- SET Real Time Counter
+	ptr = strstr( ptrmessage, "SET RTC=" );
 	if( ptr )
 	{
 

@@ -18,31 +18,9 @@
   ******************************************************************************
   */
 /* Includes ------------------------------------------------------------------*/
-#include "stm32l152c_discovery_cts.h"
+#include "main.h"
 
-/** @addtogroup BSP
-  * @{
-  */ 
-
-/** @defgroup STM32L152C_DISCOVERY STM32L152C-Discovery
-  * @brief This file provides firmware functions to manage Leds and push-buttons
-  *        available on STM32L152C discovery board from STMicroelectronics.
-  * @{
-  */ 
-
-/** @defgroup STM32L152C_Discovery_Common Common
-  * @{
-  */ 
-  
-/** @defgroup STM32L152C_DISCOVERY_Private_Defines Private Defines
-  * @{
-  */ 
-  
-
-/**
-  * @}
-  */ 
-
+extern sysCfg_t			systemConfig;
 
 /** @defgroup STM32L152C_DISCOVERY_Private_Variables Private Variables
   * @{
@@ -80,19 +58,6 @@ const PinPortAD_t Line_AD[ADLINEn] = {
 		{ .pin 	= AD15_PIN,	.port	= AD15_GPIO_PORT }
 };
 
-
-/**
-  * @}
-  */ 
-
-/** @defgroup STM32L152C_DISCOVERY_Exported_Functions Exported Functions
-  * @{
-  */ 
-
-
-/** @defgroup STM32152C_DISCOVERY_LED_Functions LED Functions
-  * @{
-  */ 
 
 /**
   * @brief  Configures LED GPIO.
@@ -188,10 +153,10 @@ void BSP_SET_RMUX( RMux_StateDef Mstate)
 
 
 /**
-  * @brief  SET AD signals
+  * @brief  SET AD, OPTO signals
   * @retval None
   */
-void BSP_CTS_SetLine( Line_NumDef line, Line_StateDef Lstate, Opto_StateDef Ostate)
+void BSP_CTS_SetAnyLine( Line_NumDef line, Line_StateDef Lstate, Opto_StateDef Ostate )
 {
 	BSP_SET_OPTO( Ostate );
 
@@ -204,8 +169,24 @@ void BSP_CTS_SetLine( Line_NumDef line, Line_StateDef Lstate, Opto_StateDef Osta
 	}
 }
 
+/**
+  * @brief  SET line in HV state for measure
+  * @retval None
+  */
+void BSP_CTS_SetSingleLine( Line_NumDef line )
+{
+	BSP_SET_OPTO( Opto_Open );
+
+	for(uint32_t i = 0; i < ADLINEn; i++ )
+			HAL_GPIO_WritePin( Line_AD[i].port,  Line_AD[i].pin , ( line == i ) ? GPIO_PIN_SET : GPIO_PIN_RESET );
+
+	osDelay( systemConfig.dischargePreMeasureTimeMs );
+	BSP_SET_OPTO( Opto_Close );
+}
+
 
 /**
+  ** @brief init ports
   * @retval None
   */
 void BSP_CTS_Init(void)
@@ -253,27 +234,33 @@ void BSP_CTS_Init(void)
   gpioinitstruct.Mode  = GPIO_MODE_OUTPUT_PP;
   HAL_GPIO_Init( GPIOD, &gpioinitstruct);
 
-  BSP_CTS_SetLine( AllLineAD, Line_ZV, Opto_Open );
+  BSP_CTS_SetAnyLine( AllLineAD, Line_ZV, Opto_Open );
   BSP_SET_RMUX( Mux_1_8 );
 }
 
 /**
-  * @}
-  */ 
-
-/**
-  * @}
-  */ 
-
-/**
-  * @}
-  */ 
-
-/**
-  * @}
+  ** @brief load configuration of System
+  * @retval None
   */
+void LoadSysCnf(void)
+{
+	CheckSysCnf();
+}
 
 /**
-  * @}
+  ** @brief check configuration of System
+  * @retval None
   */
+bool CheckSysCnf(void)
+{
+	bool status = (systemConfig.kiAmplifire != 0) && (systemConfig.dischargePreMeasureTimeMs != 0) && (systemConfig.sysStatus != 0) &&
+					(systemConfig.kdDivider != 0) && (systemConfig.measuringPeriodSec != 0) && (systemConfig.testingTimeSec != 0) &&
+						(systemConfig.uMeasureVol != 0) && (systemConfig.uTestVol != 0);
+
+	if(status == false)
+		if(systemConfig.sysStatus != NO_CONFIG_STATUS)
+			SAVE_SYSTEM_CNF( &systemConfig.sysStatus, NO_CONFIG_STATUS );
+
+	return status;
+}
 

@@ -4,23 +4,14 @@
   * @author  MCD Application Team
   * @brief   Header for main.c module
   ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2017 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
+  **/
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __MAIN_H
 #define __MAIN_H
 
 /* Includes ------------------------------------------------------------------*/
+#include "cmsis_os.h"
 #include "stdbool.h"
 #include "stm32l152c_discovery_cts.h"
 #include "stm32l1xx_hal.h"
@@ -34,14 +25,28 @@
 typedef struct {
 
 	uint32_t 	sysStatus;
-	float		uTestVol;
-	float		uMeasureVol;
-	float		kiAmplifire;
+	uint32_t	uTestVol;
+	uint32_t	uMeasureVol;
+	uint32_t	kiAmplifire;
+	uint32_t	kdDivider;
 	uint32_t 	testingTimeSec;
 	uint32_t 	measuringPeriodSec;
+	uint32_t 	dischargePreMeasureTimeMs;
+	uint32_t 	measureSavedPoints;
 
 } sysCfg_t;
+
 /* Exported constants --------------------------------------------------------*/
+
+#define EEPROM_CNF_ADR					(FLASH_EEPROM_BASE + 0x0000)
+
+#define	NO_CONFIG_STATUS				0
+#define	READY_STATUS					1
+#define	ACTIVE_STATUS					2
+#define	FINISH_STATUS					3
+
+#define	ERROR_STATUS					0xffffffff
+
 /* ## Definition of ADC related resources ################################### */
 /* Definition of ADCx clock resources */
 #define ADCx                            ADC1
@@ -94,7 +99,12 @@ typedef struct {
 /* Definition of DACx channels pins */
 #define DACx_CHANNEL_TO_ADCx_CHANNELa_PIN        GPIO_PIN_4
 #define DACx_CHANNEL_TO_ADCx_CHANNELa_GPIO_PORT  GPIOA
+
 /* Exported macro ------------------------------------------------------------*/
+#define SAVE_SYSTEM_CNF_ENTIRE_STRUCT		for( uint32_t i = 0, adr = EEPROM_CNF_ADR, *ptrD = (uint32_t *) &systemConfig; i < (sizeof(systemConfig) + 3) / 4; i++, ptrD++ ) \
+																				HAL_FLASHEx_DATAEEPROM_Program( FLASH_TYPEPROGRAMDATA_WORD, adr, *ptrD );
+
+#define SAVE_SYSTEM_CNF(ADR, DATA)			HAL_FLASHEx_DATAEEPROM_Program( FLASH_TYPEPROGRAMDATA_WORD, (uint32_t)(ADR), (DATA) )
 /* Exported functions ------------------------------------------------------- */
 void Error_Handler(void);
 
