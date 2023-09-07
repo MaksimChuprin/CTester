@@ -13,6 +13,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "cmsis_os.h"
 #include "stdbool.h"
+#include "date_time.h"
 #include "stm32l152c_discovery_cts.h"
 #include "stm32l1xx_hal.h"
 #include "usbd_core.h"
@@ -33,6 +34,7 @@ typedef struct {
 	uint32_t 	measuringPeriodSec;
 	uint32_t 	dischargePreMeasureTimeMs;
 	uint32_t 	measureSavedPoints;
+	uint32_t 	measureMask;
 
 } sysCfg_t;
 
@@ -102,9 +104,14 @@ typedef struct {
 
 /* Exported macro ------------------------------------------------------------*/
 #define SAVE_SYSTEM_CNF_ENTIRE_STRUCT		for( uint32_t i = 0, adr = EEPROM_CNF_ADR, *ptrD = (uint32_t *) &systemConfig; i < (sizeof(systemConfig) + 3) / 4; i++, ptrD++ ) \
-																				HAL_FLASHEx_DATAEEPROM_Program( FLASH_TYPEPROGRAMDATA_WORD, adr, *ptrD );
+														HAL_FLASHEx_DATAEEPROM_Program( FLASH_TYPEPROGRAMDATA_WORD, adr, *ptrD );
 
-#define SAVE_SYSTEM_CNF(ADR, DATA)			HAL_FLASHEx_DATAEEPROM_Program( FLASH_TYPEPROGRAMDATA_WORD, (uint32_t)(ADR), (DATA) )
+#define SAVE_SYSTEM_CNF(ADR, DATA)			{ \
+												HAL_FLASHEx_DATAEEPROM_Unlock(); \
+												HAL_FLASHEx_DATAEEPROM_Erase( FLASH_TYPEERASEDATA_WORD, (uint32_t)(ADR)); \
+												HAL_FLASHEx_DATAEEPROM_Program( FLASH_TYPEPROGRAMDATA_WORD, (uint32_t)(ADR), (DATA) ); \
+												HAL_FLASHEx_DATAEEPROM_Lock(); \
+											}
 /* Exported functions ------------------------------------------------------- */
 void Error_Handler(void);
 

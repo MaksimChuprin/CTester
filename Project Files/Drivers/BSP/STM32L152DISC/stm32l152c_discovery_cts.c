@@ -20,7 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-extern sysCfg_t			systemConfig;
+extern __IO sysCfg_t				systemConfig;
 
 /** @defgroup STM32L152C_DISCOVERY_Private_Variables Private Variables
   * @{
@@ -253,13 +253,19 @@ void LoadSysCnf(void)
   */
 bool CheckSysCnf(void)
 {
-	bool status = (systemConfig.kiAmplifire != 0) && (systemConfig.dischargePreMeasureTimeMs != 0) && (systemConfig.sysStatus != 0) &&
-					(systemConfig.kdDivider != 0) && (systemConfig.measuringPeriodSec != 0) && (systemConfig.testingTimeSec != 0) &&
-						(systemConfig.uMeasureVol != 0) && (systemConfig.uTestVol != 0);
+	bool status = (systemConfig.kiAmplifire != 0) 	 && (systemConfig.dischargePreMeasureTimeMs != 0) &&
+				  (systemConfig.kdDivider != 0) 	 && (systemConfig.measuringPeriodSec != 0) 		  &&
+				  (systemConfig.testingTimeSec != 0) && (systemConfig.uMeasureVol != 0) 			  &&
+				  (systemConfig.uTestVol != 0);
 
 	if(status == false)
-		if(systemConfig.sysStatus != NO_CONFIG_STATUS)
-			SAVE_SYSTEM_CNF( &systemConfig.sysStatus, NO_CONFIG_STATUS );
+	{
+		if(systemConfig.sysStatus != NO_CONFIG_STATUS)	SAVE_SYSTEM_CNF( &systemConfig.sysStatus, NO_CONFIG_STATUS );
+	}
+	else
+	{
+		if(systemConfig.sysStatus == NO_CONFIG_STATUS)  SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+	}
 
 	return status;
 }

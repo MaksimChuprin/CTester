@@ -13,7 +13,7 @@ TaskHandle_t				USBThreadHandle;
 TaskHandle_t				LedThreadHandle;
 USBD_HandleTypeDef 			USBD_Device;
 
-const sysCfg_t				systemConfig __attribute__((section(".secEEPROM"))) __attribute__((used));
+__IO sysCfg_t				systemConfig __attribute__((section(".secEEPROM"))) __attribute__((used));
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
