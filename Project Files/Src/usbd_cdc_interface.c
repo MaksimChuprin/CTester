@@ -175,12 +175,9 @@ static int8_t CDC_Itf_Receive(uint8_t * Buf, uint32_t * Len)
 	for(uint32_t i = 0; i < *Len; i++ )
 		if( Buf[i] == 0x0d )
 		{
-			BaseType_t hPTW = pdFALSE;
-
 			memcpy( UserRxBufferCopy, Buf, i + 1 );
 			UserRxBufferCopy[i + 1] = 0;
-			vTaskNotifyGiveFromISR( USBThreadHandle, &hPTW );
-			portYIELD_FROM_ISR(hPTW);
+			osSignalSet( USBThreadHandle, USB_CDC_THREAD_MESSAGEGOTent );
 			return (USBD_OK);
 		}
 

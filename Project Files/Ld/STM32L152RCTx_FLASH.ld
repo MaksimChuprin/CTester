@@ -41,7 +41,8 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 /* Specify the memory areas */
 MEMORY
 {
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 256K
+FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 64K
+MEASDATA (r)    : ORIGIN = 0x8010000, LENGTH = 192K
 EEPROM(r)		: ORIGIN = 0x8080000, LENGTH = 8K
 RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 32K
 }
@@ -83,14 +84,23 @@ SECTIONS
     . = ALIGN(4);
   } >FLASH
   
-  /* Constant data goes into FLASH */
-  .secEEPROM :
+  /* settings data goes into EEPROM */
+  .settings :
   {
     . = ALIGN(4);
     *(.rodata)         /* .rodata sections (constants, strings, etc.) */
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
     . = ALIGN(4);
   } >EEPROM  
+  
+    /* measures data goes into MEASDATA */
+  .statistic :
+  {
+    . = ALIGN(256);
+    *(.rodata)         /* .rodata sections (constants, strings, etc.) */
+    *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
+    . = ALIGN(4);
+  } >MEASDATA
 
   .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } >FLASH
   .ARM : {

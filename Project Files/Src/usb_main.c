@@ -9,10 +9,13 @@
 #include "main.h"
 #include "cmsis_os.h"
 
-extern 	USBD_HandleTypeDef  	USBD_Device;
-extern 	TaskHandle_t			USBThreadHandle;
-extern 	sysCfg_t				systemConfigEprom;
+extern 	USBD_HandleTypeDef  		USBD_Device;
+extern 	osThreadId					USBThreadHandle;
+extern 	osThreadId					MeasureThreadHandle;
+
 extern 	__IO sysCfg_t				systemConfig;
+extern  __IO dataAttribute_t		dataAttribute[];
+extern 	__IO dataMeasure_t			dataMeasure[];
 
 const 	char * helpStrings[] = {
 
@@ -44,7 +47,7 @@ const 	char * helpStrings[] = {
 static char 				usb_message[APP_CDC_DATA_SIZE];
 /* Private function prototypes -----------------------------------------------*/
 static bool 				isCableConnected	( void );
-static void 				messageDecode		( char * ptrmessage );
+static void 				messageDecode		( void );
 static void 				UpperCase			( char * ptrmessage );
 /* Private functions ---------------------------------------------------------*/
 
@@ -97,12 +100,11 @@ void UsbCDCThread(const void *argument)
 		for(;;)
 		{
 			// wait message
-			uint32_t event = ulTaskNotifyTake( pdTRUE, pdMS_TO_TICKS(500) );
+			osEvent event = osSignalWait( USB_CDC_THREAD_MESSAGEGOTent , 500 );
 
-			if(event)
+			if(event.status == osEventSignal )
 			{
-				getCDCmessage( usb_message );
-				messageDecode( usb_message );
+				messageDecode();
 			}
 			else
 			if( !isCableConnected() )
@@ -143,17 +145,19 @@ static void UpperCase( char * ptrmessage )
   * @param  argument: pointer to message string
   * @retval
   */
-static void messageDecode( char * ptrmessage )
+static void messageDecode( void )
 {
 	static bool echoOFF = false;
 	char * ptr;
 
-	if( echoOFF == false ) while( sendCDCmessage(ptrmessage) ) osDelay(50);
+	getCDCmessage( usb_message );
 
-	UpperCase(ptrmessage);
+	if( echoOFF == false ) while( sendCDCmessage(usb_message) ) osDelay(50);
+
+	UpperCase(usb_message);
 
 	//--------------------------------------------- START
-	if( strstr( ptrmessage, "START" ) )
+	if( strstr( usb_message, "START" ) )
 	{
 		switch(systemConfig.sysStatus)
 		{
@@ -165,6 +169,8 @@ static void messageDecode( char * ptrmessage )
 																systemConfig.uTestVol, systemConfig.uMeasureVol, systemConfig.testingTimeSec / 3600, systemConfig.measuringPeriodSec / 60);
 								SEND_CDC_MESSAGE( usb_message );
 								SAVE_SYSTEM_CNF( &systemConfig.sysStatus, ACTIVE_STATUS );
+
+								if(systemConfig.measureSavedPoints) SAVE_SYSTEM_CNF( &systemConfig.measureSavedPoints, 0 );
 								break;
 
 		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "System status: test already started!\r\n\r\n" );
@@ -181,7 +187,7 @@ static void messageDecode( char * ptrmessage )
 	}
 
 	//--------------------------------------------- STOP
-	if( strstr( ptrmessage, "STOP" ) )
+	if( strstr( usb_message, "STOP" ) )
 	{
 		switch(systemConfig.sysStatus)
 		{
@@ -216,7 +222,7 @@ static void messageDecode( char * ptrmessage )
 	}
 
 	//--------------------------------------------- MEASURE
-	if( strstr( ptrmessage, "MEASURE" ) )
+	if( strstr( usb_message, "MEASURE" ) )
 	{
 		switch(systemConfig.sysStatus)
 		{
@@ -225,16 +231,18 @@ static void messageDecode( char * ptrmessage )
 
 		case ERROR_STATUS:		SEND_CDC_MESSAGE( "System status: fail, testing unavailable!\r\n\r\n" );
 								break;
+
+		case READY_STATUS:
+		case ACTIVE_STATUS:
+		case FINISH_STATUS:		osSignalSet( MeasureThreadHandle, MEASURE_THREAD_MANUAL_START );
+								osEvent event = osSignalWait( USB_CDC_THREAD_MEASURE_READY, osWaitForever );
 		}
 		return;
 	}
 
 	//--------------------------------------------- READ STATUS
-	if( strstr( ptrmessage, "READ STATUS" ) )
+	if( strstr( usb_message, "READ STATUS" ) )
 	{
-		sprintf( usb_message, "Testing voltage: %lu Volts, Measure voltage: %lu Volts\r\nTesting time: %lu Hours, Measure period: %lu Minutes\r\n\r\n",
-								systemConfig.uTestVol, systemConfig.uMeasureVol, systemConfig.testingTimeSec / 3600, systemConfig.measuringPeriodSec / 60);
-
 		switch(systemConfig.sysStatus)
 		{
 		case READY_STATUS:		SEND_CDC_MESSAGE( "System status: ready to test\r\n" );
@@ -253,12 +261,14 @@ static void messageDecode( char * ptrmessage )
 								break;
 		}
 
+		sprintf( usb_message, "Testing voltage: %lu Volts, Measure voltage: %lu Volts\r\nTesting time: %lu Hours, Measure period: %lu Minutes\r\nSaved measured data point(s): %3lu\r\n\r\n",
+										systemConfig.uTestVol, systemConfig.uMeasureVol, systemConfig.testingTimeSec / 3600, systemConfig.measuringPeriodSec / 60, systemConfig.measureSavedPoints );
 		SEND_CDC_MESSAGE( usb_message );
 		return;
 	}
 
 	//--------------------------------------------- READ RTESULTS
-	if( strstr( ptrmessage, "READ DATA" ) )
+	if( strstr( usb_message, "READ DATA" ) )
 	{
 		switch(systemConfig.sysStatus)
 		{
@@ -268,9 +278,38 @@ static void messageDecode( char * ptrmessage )
 		case ACTIVE_STATUS:
 								if(systemConfig.measureSavedPoints)
 								{
-									sprintf( usb_message, "There are %lu Point(s)\r\n", systemConfig.measureSavedPoints );
-									SEND_CDC_MESSAGE( usb_message );
-// TODO
+									SEND_CDC_MESSAGE( "\r\n*********** DATA OF MEASUREMENT BEGIN ************\r\n" );
+
+									for( uint16_t p = 0; p < systemConfig.measureSavedPoints; p++)
+									{
+										DateTime_t  date = {0};
+
+										convertUnixTimeToDate   ( dataAttribute[p].timeMeasure, &date );
+										sprintf( usb_message, "Point: %3hu Time: %04hd-%02hd-%02hd %02hd:%02hd Measure voltage: %3lu Volts\r\n",
+																		p + 1, date.year, date.month, date.day, date.hours, date.minutes, dataAttribute[p].voltageMeasure );
+										SEND_CDC_MESSAGE( usb_message );
+
+										for( uint8_t i = 0; i < MATRIX_LINEn; i++ )
+										{
+											sprintf( usb_message, "\r\nLine %2hhu, Resistance value in MOhm\r\n", i + 1 ); SEND_CDC_MESSAGE( usb_message );
+											SEND_CDC_MESSAGE( "Raw  1     2     3     4     5     6     7     8  \r\n   " );
+
+											for(uint8_t j = 0; j < 8; j++ )
+											{
+												sprintf( usb_message, "%5lu ", dataMeasure[p].resistanceValMOhm[i][j] );
+											}
+
+											sprintf( usb_message, "\r\nLine %2hhu, Resistance value in MOhm\r\n", i + 1 ); SEND_CDC_MESSAGE( usb_message );
+											SEND_CDC_MESSAGE( "Raw  9    10    11    12    13    14    15    16  \r\n   " );
+
+											for(uint8_t j = 8; j < 16; j++ )
+											{
+												sprintf( usb_message, "%5lu ", dataMeasure[p].resistanceValMOhm[i][j] ); SEND_CDC_MESSAGE( usb_message );
+											}
+										}
+									}
+
+									SEND_CDC_MESSAGE( "\r\n************ DATA OF MEASUREMENT END *************\r\n" );
 								}
 								else
 								{
@@ -290,20 +329,20 @@ static void messageDecode( char * ptrmessage )
 	}
 
 	//--------------------------------------------- READ SETTINGS
-	if( strstr( ptrmessage, "READ SETTINGS" ) )
+	if( strstr( usb_message, "READ SETTINGS" ) )
 	{
 		SEND_CDC_MESSAGE( "System settings:\r\n" );
-		sprintf( usb_message, "Testing voltage: %lu Volts, Measure voltage: %lu Volts\r\nTesting time: %lu Hours, Measure period: %lu Minutes\r\n",
+		sprintf( usb_message, "Test voltage: %lu Volts, Measure voltage: %lu Volts\r\nTesting time: %lu Hours, Measure period: %lu Minutes\r\n",
 										systemConfig.uTestVol, systemConfig.uMeasureVol, systemConfig.testingTimeSec / 3600, systemConfig.measuringPeriodSec / 60);
 		SEND_CDC_MESSAGE( usb_message );
 		sprintf( usb_message, "Amplifier factor Ki: %lu, Division factor Kd: %lu, Discharge time: %lu mSec\r\n\r\n",
-							systemConfig.kiAmplifire, systemConfig.kdDivider, systemConfig.dischargePreMeasureTimeMs);
+							systemConfig.kiAmplifire, systemConfig.kdDivider, systemConfig.dischargePreMeasureTimeMs );
 		SEND_CDC_MESSAGE( usb_message );
 		return;
 	}
 
 	//--------------------------------------------- SET Test Time
-	ptr = strstr( ptrmessage, "SET TT=" );
+	ptr = strstr( usb_message, "SET TT=" );
 	if( ptr )
 	{
 		uint32_t 	testTime 	= 0;
@@ -333,7 +372,7 @@ static void messageDecode( char * ptrmessage )
 	}
 
 	//---------------------------------------------	SET Measure Period
-	ptr = strstr( ptrmessage, "SET MP=" );
+	ptr = strstr( usb_message, "SET MP=" );
 	if( ptr )
 	{
 		uint32_t 	measPeriod 	= 0;
@@ -361,7 +400,7 @@ static void messageDecode( char * ptrmessage )
 	}
 
 	//--------------------------------------------- Set Test Voltage
-	ptr = strstr( ptrmessage, "SET VT=" );
+	ptr = strstr( usb_message, "SET VT=" );
 	if( ptr )
 	{
 		uint32_t 	testVol 	= 0;
@@ -389,7 +428,7 @@ static void messageDecode( char * ptrmessage )
 	}
 
 	//---------------------------------------------	Set Measure Voltage
-	ptr = strstr( ptrmessage, "SET VM=" );
+	ptr = strstr( usb_message, "SET VM=" );
 	if( ptr )
 	{
 		uint32_t 	measVol 	= 0;
@@ -417,7 +456,7 @@ static void messageDecode( char * ptrmessage )
 	}
 
 	//--------------------------------------------- SET Current Amplifier Ki
-	ptr = strstr( ptrmessage, "SET KI=" );
+	ptr = strstr( usb_message, "SET KI=" );
 	if( ptr )
 	{
 		uint32_t 	Ki 	= 0;
@@ -445,7 +484,7 @@ static void messageDecode( char * ptrmessage )
 	}
 
 	//--------------------------------------------- SET High Voltage divider Kd
-	ptr = strstr( ptrmessage, "SET KD=" );
+	ptr = strstr( usb_message, "SET KD=" );
 	if( ptr )
 	{
 		uint32_t 	Kd 	= 0;
@@ -473,7 +512,7 @@ static void messageDecode( char * ptrmessage )
 	}
 
 	//--------------------------------------------- SET Time of Discharge Capacitors Td
-	ptr = strstr( ptrmessage, "SET TD=" );
+	ptr = strstr( usb_message, "SET TD=" );
 	if( ptr )
 	{
 		uint32_t 	Td 	= 0;
@@ -501,7 +540,7 @@ static void messageDecode( char * ptrmessage )
 	}
 
 	//--------------------------------------------- SET Real Time Counter
-	ptr = strstr( ptrmessage, "SET RTC=" );
+	ptr = strstr( usb_message, "SET RTC=" );
 	if( ptr )
 	{
 		DateTime_t  date = { 0 };
@@ -512,7 +551,7 @@ static void messageDecode( char * ptrmessage )
 
 			if(CheckSysCnf())
 			{
-					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+				SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 			}
 			SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
 		}
@@ -524,33 +563,33 @@ static void messageDecode( char * ptrmessage )
 	}
 
 	//---------------------------------------------
-	ptr = strstr( ptrmessage, "ECHO " );
+	ptr = strstr( usb_message, "ECHO " );
 	if( ptr )
 	{
 		if( strstr( ptr, "ON" ) )
 		{
-			sendCDCmessage("Echo switched ON\r\n");
+			SEND_CDC_MESSAGE("Echo switched ON\r\n");
 			echoOFF = false;
 			return;
 		}
 
 		if( strstr( ptr, "OFF" ) )
 		{
-			sendCDCmessage("Echo switched OFF\r\n");
+			SEND_CDC_MESSAGE("Echo switched OFF\r\n");
 			echoOFF = true;
 			return;
 		}
 	}
 
 	//---------------------------------------------
-	if( strstr( ptrmessage, "HELP" ) )
+	if( strstr( usb_message, "HELP" ) )
 	{
 		for(uint32_t i = 0; ; i++)
 		{
 			if( helpStrings[i] )
 			{
 				strcpy( usb_message, helpStrings[i] );
-				while( sendCDCmessage(usb_message) ) osDelay(50);
+				SEND_CDC_MESSAGE( usb_message );
 			}
 			else
 				break;

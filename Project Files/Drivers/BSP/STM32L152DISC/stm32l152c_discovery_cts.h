@@ -117,7 +117,7 @@ typedef enum
 /** CTS signals
   * @{
   */
-#define	ADLINEn							16
+#define	ADLINEn							MATRIX_LINEn
 
 #define RAN_PIN                        	GPIO_PIN_13
 #define RAN_GPIO_PORT                  	GPIOC

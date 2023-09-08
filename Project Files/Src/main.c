@@ -9,11 +9,13 @@
 #include "main.h"
 
 /* Global variables ---------------------------------------------------------*/
-TaskHandle_t				USBThreadHandle;
-TaskHandle_t				LedThreadHandle;
+osThreadId					USBThreadHandle;
+osThreadId					MeasureThreadHandle;
 USBD_HandleTypeDef 			USBD_Device;
 
-__IO sysCfg_t				systemConfig __attribute__((section(".secEEPROM"))) __attribute__((used));
+__IO sysCfg_t				systemConfig 					__attribute__((section(".settings")));
+__IO dataAttribute_t		dataAttribute[STAT_ARRAY_SIZE]  __attribute__((section(".settings")));
+__IO dataMeasure_t			dataMeasure[STAT_ARRAY_SIZE] 	__attribute__((section(".statistic")));
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -22,7 +24,6 @@ __IO sysCfg_t				systemConfig __attribute__((section(".secEEPROM"))) __attribute
 
 /* Private function prototypes -----------------------------------------------*/
 static void 	SystemClock_Config		(void);
-static void 	LedBlinkThread			(const void *argument);
 /* Private functions ---------------------------------------------------------*/
 
 
@@ -56,12 +57,12 @@ int main(void)
 
   /* Create Threads */
   /* USB CDC Threads */
-  osThreadDef( USBThread, UsbCDCThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 2 );
-  USBThreadHandle = osThreadCreate( osThread(USBThread), NULL);
+  osThreadDef( USBTask, UsbCDCThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 2 );
+  USBThreadHandle = osThreadCreate( osThread(USBTask), NULL);
 
   /*    */
-  osThreadDef( LedThread, LedBlinkThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE );
-  LedThreadHandle = osThreadCreate( osThread(LedThread), NULL);
+//  osThreadDef( MesTask, MeasureThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE );
+//  MeasureThreadHandle = osThreadCreate( osThread(MesTask), NULL);
 
   /* Start scheduler */
   osKernelStart();
@@ -69,7 +70,6 @@ int main(void)
   /*   never be here    */
   Error_Handler();
 }
-
 
 /**
   * @brief  System Clock Configuration
@@ -135,20 +135,6 @@ static void SystemClock_Config(void)
 void Error_Handler(void)
 {
   while (1);
-}
-
-
-/**
-  * @brief  Message Queue Producer Thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-static void LedBlinkThread(const void *argument)
-{
-	while(1)
-	{
-		osDelay(500);
-	}
 }
 
 #ifdef  USE_FULL_ASSERT
