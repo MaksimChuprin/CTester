@@ -49,7 +49,8 @@ typedef struct
 typedef uint32_t	systime_t;
 
 
-void convertUnixTimeToDate(uint32_t t, DateTime_t *date);
-uint32_t convertDateToUnixTime(const DateTime_t *date);
+void 		convertUnixTimeToDate(uint32_t t, DateTime_t *date);
+uint32_t 	convertDateToUnixTime(const DateTime_t *date);
+uint8_t 	computeDayOfWeek(uint16_t y, uint8_t m, uint8_t d);
 
 #endif

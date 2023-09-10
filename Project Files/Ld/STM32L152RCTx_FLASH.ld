@@ -33,7 +33,7 @@
 ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */
-_estack = 0x20008000;    /* end of RAM */
+_estack = 0x20007FF0;    /* end of RAM */
 /* Generate a link error if heap and stack don't fit into RAM */
 _Min_Heap_Size = 0x200;      /* required amount of heap  */
 _Min_Stack_Size = 0x400; /* required amount of stack */
@@ -88,8 +88,8 @@ SECTIONS
   .settings :
   {
     . = ALIGN(4);
-    *(.rodata)         /* .rodata sections (constants, strings, etc.) */
-    *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
+    *(.settings)         /* .settings sections */
+    *(.settings*)        /* .settings* sections*/
     . = ALIGN(4);
   } >EEPROM  
   
@@ -173,7 +173,8 @@ SECTIONS
     . = ALIGN(8);
   } >RAM
 
-  
+    /* noini memory */
+  .noinit_rtc 0x20007FF0 : {KEEP(*(.noinit_rtc))}
 
   /* Remove information from the standard libraries */
   /DISCARD/ :

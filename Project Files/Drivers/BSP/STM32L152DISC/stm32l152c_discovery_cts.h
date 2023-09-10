@@ -125,6 +125,8 @@ typedef enum
 #define OPTO_GPIO_PORT                  GPIOB
 #define MUX_8_16_PIN                    GPIO_PIN_12
 #define MUX_8_16_GPIO_PORT              GPIOB
+#define CS_PIN                        	GPIO_PIN_11
+#define CS_GPIO_PORT                  	GPIOB
 
 #define R0_PIN                     		GPIO_PIN_0
 #define R0_GPIO_PORT               		GPIOC
@@ -199,7 +201,8 @@ void      	BSP_LED_Toggle(Led_TypeDef Led);
 /**
   * @}
   */
-uint32_t 	BSP_PAN_GetState(void);
+uint32_t 	BSP_PAN_GetState( void );
+void 		BSP_SET_CS( uint8_t cs );
 void 		BSP_SET_OPTO( Opto_StateDef Ostate);
 void 		BSP_SET_RMUX( RMux_StateDef Mstate);
 void 		BSP_CTS_Init(void);

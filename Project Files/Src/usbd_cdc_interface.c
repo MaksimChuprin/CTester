@@ -177,7 +177,7 @@ static int8_t CDC_Itf_Receive(uint8_t * Buf, uint32_t * Len)
 		{
 			memcpy( UserRxBufferCopy, Buf, i + 1 );
 			UserRxBufferCopy[i + 1] = 0;
-			osSignalSet( USBThreadHandle, USB_CDC_THREAD_MESSAGEGOTent );
+			osSignalSet( USBThreadHandle, USB_THREAD_MESSAGEGOT_Evt );
 			return (USBD_OK);
 		}
 

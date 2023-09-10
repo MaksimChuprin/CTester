@@ -137,6 +137,15 @@ uint32_t BSP_PAN_GetState(void)
   * @brief  SET OPTO signal
   * @retval NONE.
   */
+void BSP_SET_CS( uint8_t cs )
+{
+	HAL_GPIO_WritePin( CS_GPIO_PORT, CS_PIN, ( cs ) ? GPIO_PIN_SET : GPIO_PIN_RESET );
+}
+
+/**
+  * @brief  SET OPTO signal
+  * @retval NONE.
+  */
 void BSP_SET_OPTO( Opto_StateDef Ostate)
 {
 	HAL_GPIO_WritePin( OPTO_GPIO_PORT, OPTO_PIN, ( Ostate == Opto_Close ) ? GPIO_PIN_RESET : GPIO_PIN_SET );
@@ -236,6 +245,7 @@ void BSP_CTS_Init(void)
 
   BSP_CTS_SetAnyLine( AllLineAD, Line_ZV, Opto_Open );
   BSP_SET_RMUX( Mux_1_8 );
+  BSP_SET_CS( 1 );
 }
 
 /**

@@ -7,7 +7,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "cmsis_os.h"
 
 extern 	USBD_HandleTypeDef  		USBD_Device;
 extern 	osThreadId					USBThreadHandle;
@@ -17,7 +16,7 @@ extern 	__IO sysCfg_t				systemConfig;
 extern  __IO dataAttribute_t		dataAttribute[];
 extern 	__IO dataMeasure_t			dataMeasure[];
 
-const 	char * helpStrings[] = {
+const char * helpStrings[] = {
 
 		"Start - start testing process\r\n",
 		"Stop - terminate testing process\r\n",
@@ -71,38 +70,55 @@ void UsbCDCThread(const void *argument)
 		/* Start Device Process */
 		USBD_Start(&USBD_Device);
 
-		// wait for connect
+		/* display sys info */
 		SEND_CDC_MESSAGE( "\r\n********************************************\r\n" );
 		SEND_CDC_MESSAGE( "Start Capacitor Testing System\r\nSW version: 0.0.1\r\n" );
+		/*  time */
+		{
+			DateTime_t  date = {0};
 
+			convertUnixTimeToDate( getRTC(), &date );
+			sprintf( usb_message, "System time: %04hd-%02hd-%02hd %02hd:%02hd\r\n", date.year, date.month, date.day, date.hours, date.minutes );
+			SEND_CDC_MESSAGE(usb_message);
+		}
+		/*  temperature */
+		{
+			int16_t t = getTemperature();
+
+			if( t != SENSOR_NOT_CONNECTED )	sprintf( usb_message, "System temperature, oC: %3i\r\n", t);
+			else							sprintf( usb_message, "System temperature: sensor not connected\r\n");
+			SEND_CDC_MESSAGE(usb_message);
+		}
+		/* sys status */
 		switch(systemConfig.sysStatus)
 		{
-		case READY_STATUS:		SEND_CDC_MESSAGE( "System status: ready\r\n\r\n" );
+		case READY_STATUS:		SEND_CDC_MESSAGE( "System status: ready\r\n" );
 								break;
 
-		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "System status: test in progress\r\n\r\n" );
+		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "System status: test started\r\n" );
 								break;
 
-		case FINISH_STATUS:		SEND_CDC_MESSAGE( "System status: test finished\r\n\r\n" );
+		case FINISH_STATUS:		SEND_CDC_MESSAGE( "System status: test finished\r\n" );
 								break;
 
-		case ERROR_STATUS:		SEND_CDC_MESSAGE( "System status: fail!\r\n\r\n" );
+		case ERROR_STATUS:		SEND_CDC_MESSAGE( "System status: fail\r\n" );
 								break;
 
 		default:				SAVE_SYSTEM_CNF( &systemConfig.sysStatus, NO_CONFIG_STATUS );
 
-		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "System status: not configured!\r\n\r\n" );
+		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "System status: not configured\r\n" );
 								break;
-
 		}
+
+		SEND_CDC_MESSAGE( "********************************************\r\n\r\n" );
 
 		// do connection
 		for(;;)
 		{
 			// wait message
-			osEvent event = osSignalWait( USB_CDC_THREAD_MESSAGEGOTent , 500 );
+			osEvent event = osSignalWait( USB_THREAD_MESSAGEGOT_Evt, 100 );
 
-			if(event.status == osEventSignal )
+			if( event.status == osEventSignal )
 			{
 				messageDecode();
 			}
@@ -164,8 +180,13 @@ static void messageDecode( void )
 		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "System status: not configured - set configuration first!\r\n\r\n" );
 								break;
 
-		case READY_STATUS:		SEND_CDC_MESSAGE( "Test process start\r\n" );
-								sprintf( usb_message, "Test voltage: %lu Volts, Measure voltage: %lu Volts\r\nTesting time: %lu Hours, Measure period: %lu Minutes\r\n\r\n",
+		case READY_STATUS:		SEND_CDC_MESSAGE( "Starting..." );
+
+								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTTEST_Evt );
+								osSignalWait( USB_THREAD_TESTSTARTED_Evt, osWaitForever );
+
+								SEND_CDC_MESSAGE( "Test process started\r\n" );
+								sprintf( usb_message, "Test voltage: %lu Volts, Measure voltage: %lu Volts\r\nTest time: %lu Hours, Measure period: %lu Minutes\r\n\r\n",
 																systemConfig.uTestVol, systemConfig.uMeasureVol, systemConfig.testingTimeSec / 3600, systemConfig.measuringPeriodSec / 60);
 								SEND_CDC_MESSAGE( usb_message );
 								SAVE_SYSTEM_CNF( &systemConfig.sysStatus, ACTIVE_STATUS );
@@ -173,13 +194,13 @@ static void messageDecode( void )
 								if(systemConfig.measureSavedPoints) SAVE_SYSTEM_CNF( &systemConfig.measureSavedPoints, 0 );
 								break;
 
-		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "System status: test already started!\r\n\r\n" );
+		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "System status: test already started\r\n\r\n" );
 								break;
 
 		case FINISH_STATUS:		SEND_CDC_MESSAGE( "System status: test finished, read data first\r\n\r\n" );
 								break;
 
-		case ERROR_STATUS:		SEND_CDC_MESSAGE( "System status: fail, test unavailable!\r\n\r\n" );
+		case ERROR_STATUS:		SEND_CDC_MESSAGE( "System status: fail, test unavailable\r\n\r\n" );
 								break;
 		}
 
@@ -197,24 +218,27 @@ static void messageDecode( void )
 		case READY_STATUS:		SEND_CDC_MESSAGE( "System status: ready, nothing to stop\r\n\r\n" );
 								break;
 
-		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "System status: testing terminated!" );
+		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "Terminating..." );
+
+								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_TERMTEST_Evt );
+								osSignalWait( USB_THREAD_TESTSTOPPED_Evt, osWaitForever );
+
+								SEND_CDC_MESSAGE( "Test terminated" );
+
 								if(systemConfig.measureSavedPoints)
 								{
-									sprintf( usb_message, "There are data to read: %lu Point(s)\r\n\r\n", systemConfig.measureSavedPoints );
-									SEND_CDC_MESSAGE( usb_message );
 									SAVE_SYSTEM_CNF( &systemConfig.sysStatus, FINISH_STATUS );
 								}
 								else
 								{
-									SEND_CDC_MESSAGE( "There are no data to read.\r\n\r\n" );
 									SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 								}
 								break;
 
-		case FINISH_STATUS:		SEND_CDC_MESSAGE( "System status: testing finished, read data first\r\n\r\n" );
+		case FINISH_STATUS:		SEND_CDC_MESSAGE( "System status: test finished, read data first\r\n\r\n" );
 								break;
 
-		case ERROR_STATUS:		SEND_CDC_MESSAGE( "System status: fail, testing unavailable!\r\n\r\n" );
+		case ERROR_STATUS:		SEND_CDC_MESSAGE( "System status: fail, test unavailable\r\n\r\n" );
 								break;
 		}
 
@@ -229,13 +253,13 @@ static void messageDecode( void )
 		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "System status: not configured - set configuration first\r\n\r\n" );
 								break;
 
-		case ERROR_STATUS:		SEND_CDC_MESSAGE( "System status: fail, testing unavailable!\r\n\r\n" );
+		case ERROR_STATUS:		SEND_CDC_MESSAGE( "System status: fail, measure unavailable\r\n\r\n" );
 								break;
 
 		case READY_STATUS:
 		case ACTIVE_STATUS:
-		case FINISH_STATUS:		osSignalSet( MeasureThreadHandle, MEASURE_THREAD_MANUAL_START );
-								osEvent event = osSignalWait( USB_CDC_THREAD_MEASURE_READY, osWaitForever );
+		case FINISH_STATUS:		osSignalSet( MeasureThreadHandle, MEASURE_THREAD_MANUALSTART_Evt );
+								osSignalWait( USB_THREAD_MEASUREREADY_Evt, osWaitForever );
 		}
 		return;
 	}
@@ -245,7 +269,7 @@ static void messageDecode( void )
 	{
 		switch(systemConfig.sysStatus)
 		{
-		case READY_STATUS:		SEND_CDC_MESSAGE( "System status: ready to test\r\n" );
+		case READY_STATUS:		SEND_CDC_MESSAGE( "System status: ready\r\n" );
 								break;
 
 		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "System status: test started\r\n" );
@@ -260,6 +284,17 @@ static void messageDecode( void )
 		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "System status: not configured\r\n" );
 								break;
 		}
+
+		DateTime_t  date 	= {0};
+		int16_t 	t 		= getTemperature();
+
+		convertUnixTimeToDate( getRTC(), &date );
+		sprintf( usb_message, "System time: %04hd-%02hd-%02hd %02hd:%02hd\r\n", date.year, date.month, date.day, date.hours, date.minutes );
+		SEND_CDC_MESSAGE(usb_message);
+
+		if( t != SENSOR_NOT_CONNECTED )	sprintf( usb_message, "System temperature, oC: %3i\r\n", t);
+		else							sprintf( usb_message, "System temperature: sensor not connected\r\n");
+		SEND_CDC_MESSAGE(usb_message);
 
 		sprintf( usb_message, "Testing voltage: %lu Volts, Measure voltage: %lu Volts\r\nTesting time: %lu Hours, Measure period: %lu Minutes\r\nSaved measured data point(s): %3lu\r\n\r\n",
 										systemConfig.uTestVol, systemConfig.uMeasureVol, systemConfig.testingTimeSec / 3600, systemConfig.measuringPeriodSec / 60, systemConfig.measureSavedPoints );
@@ -278,15 +313,15 @@ static void messageDecode( void )
 		case ACTIVE_STATUS:
 								if(systemConfig.measureSavedPoints)
 								{
-									SEND_CDC_MESSAGE( "\r\n*********** DATA OF MEASUREMENT BEGIN ************\r\n" );
+									SEND_CDC_MESSAGE( "\r\n*********** BEGIN OF MEASUREMENT DATA ************\r\n" );
 
 									for( uint16_t p = 0; p < systemConfig.measureSavedPoints; p++)
 									{
 										DateTime_t  date = {0};
 
-										convertUnixTimeToDate   ( dataAttribute[p].timeMeasure, &date );
-										sprintf( usb_message, "Point: %3hu Time: %04hd-%02hd-%02hd %02hd:%02hd Measure voltage: %3lu Volts\r\n",
-																		p + 1, date.year, date.month, date.day, date.hours, date.minutes, dataAttribute[p].voltageMeasure );
+										convertUnixTimeToDate ( dataAttribute[p].timeMeasure, &date );
+										sprintf( usb_message, "Point: %3hu, Time: %04hd-%02hd-%02hd %02hd:%02hd, Measure voltage, V: %3lu, Temperature, oC: %3i\r\n",
+																	p + 1, date.year, date.month, date.day, date.hours, date.minutes, dataAttribute[p].voltageMeasure, (int16_t)dataAttribute[p].temperatureMeasure );
 										SEND_CDC_MESSAGE( usb_message );
 
 										for( uint8_t i = 0; i < MATRIX_LINEn; i++ )
@@ -309,14 +344,11 @@ static void messageDecode( void )
 										}
 									}
 
-									SEND_CDC_MESSAGE( "\r\n************ DATA OF MEASUREMENT END *************\r\n" );
+									SEND_CDC_MESSAGE( "\r\n************ END OF MEASUREMENT DATA *************\r\n" );
 								}
 								else
-								{
-									SEND_CDC_MESSAGE( "There are no data to read.\r\n\r\n" );
-								}
+									SEND_CDC_MESSAGE( "No data to read.\r\n\r\n" );
 								break;
-
 
 		case ERROR_STATUS:		SEND_CDC_MESSAGE( "System status: fail\r\n\r\n" );
 								break;
@@ -364,9 +396,7 @@ static void messageDecode( void )
 			}
 		}
 		else
-		{
 			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
-		}
 
 		return;
 	}
@@ -393,9 +423,8 @@ static void messageDecode( void )
 			}
 		}
 		else
-		{
 			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
-		}
+
 		return;
 	}
 
@@ -421,9 +450,8 @@ static void messageDecode( void )
 			}
 		}
 		else
-		{
 			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
-		}
+
 		return;
 	}
 
@@ -449,9 +477,8 @@ static void messageDecode( void )
 			}
 		}
 		else
-		{
 			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
-		}
+
 		return;
 	}
 
@@ -477,9 +504,8 @@ static void messageDecode( void )
 			}
 		}
 		else
-		{
 			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
-		}
+
 		return;
 	}
 
@@ -505,9 +531,8 @@ static void messageDecode( void )
 			}
 		}
 		else
-		{
 			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
-		}
+
 		return;
 	}
 
@@ -533,9 +558,8 @@ static void messageDecode( void )
 			}
 		}
 		else
-		{
 			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
-		}
+
 		return;
 	}
 
@@ -548,17 +572,12 @@ static void messageDecode( void )
 
 		if( res == 5 )
 		{
-
-			if(CheckSysCnf())
-			{
-				SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
-			}
+			setRTC( &date );
 			SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
 		}
 		else
-		{
 			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
-		}
+
 		return;
 	}
 

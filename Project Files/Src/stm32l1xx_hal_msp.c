@@ -36,6 +36,76 @@
 /* Private functions ---------------------------------------------------------*/
 
 /**
+  * @brief SPI MSP Initialization
+  *        This function configures the hardware resources used in this example:
+  *           - Peripheral's clock enable
+  *           - Peripheral's GPIO Configuration
+  * @param hspi: SPI handle pointer
+  * @retval None
+  */
+void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
+{
+	GPIO_InitTypeDef  GPIO_InitStruct;
+
+	if(hspi->Instance == SPIx)
+	{
+		/*##-1- Enable peripherals and GPIO Clocks #################################*/
+		/* Enable GPIO TX/RX clock */
+		SPIx_SCK_GPIO_CLK_ENABLE();
+		SPIx_MISO_GPIO_CLK_ENABLE();
+		SPIx_MOSI_GPIO_CLK_ENABLE();
+		/* Enable SPI clock */
+		SPIx_CLK_ENABLE();
+
+		/*##-2- Configure peripheral GPIO ##########################################*/
+		/* SPI SCK GPIO pin configuration  */
+		GPIO_InitStruct.Pin       	= SPIx_SCK_PIN;
+		GPIO_InitStruct.Mode      	= GPIO_MODE_AF_PP;
+		GPIO_InitStruct.Pull      	= GPIO_PULLDOWN;
+		GPIO_InitStruct.Speed     	= GPIO_SPEED_FREQ_HIGH;
+		GPIO_InitStruct.Alternate 	= SPIx_SCK_AF;
+		HAL_GPIO_Init(SPIx_SCK_GPIO_PORT, &GPIO_InitStruct);
+
+		/* SPI MOSI GPIO pin configuration  */
+		GPIO_InitStruct.Pin 		= SPIx_MOSI_PIN;
+		GPIO_InitStruct.Alternate 	= SPIx_MOSI_AF;
+		HAL_GPIO_Init(SPIx_MOSI_GPIO_PORT, &GPIO_InitStruct);
+
+		/* SPI MISO GPIO pin configuration  */
+		GPIO_InitStruct.Pin 		= SPIx_MISO_PIN;
+		GPIO_InitStruct.Pull      	= GPIO_PULLUP;
+		GPIO_InitStruct.Alternate 	= SPIx_MISO_AF;
+		HAL_GPIO_Init(SPIx_MISO_GPIO_PORT, &GPIO_InitStruct);
+	}
+}
+
+/**
+  * @brief SPI MSP De-Initialization
+  *        This function frees the hardware resources used in this example:
+  *          - Disable the Peripheral's clock
+  *          - Revert GPIO configuration to its default state
+  * @param hspi: SPI handle pointer
+  * @retval None
+  */
+void HAL_SPI_MspDeInit(SPI_HandleTypeDef *hspi)
+{
+  if(hspi->Instance == SPIx)
+  {
+    /*##-1- Reset peripherals ##################################################*/
+    SPIx_FORCE_RESET();
+    SPIx_RELEASE_RESET();
+
+    /*##-2- Disable peripherals and GPIO Clocks ################################*/
+    /* Configure SPI SCK as alternate function  */
+    HAL_GPIO_DeInit(SPIx_SCK_GPIO_PORT, SPIx_SCK_PIN);
+    /* Configure SPI MISO as alternate function  */
+    HAL_GPIO_DeInit(SPIx_MISO_GPIO_PORT, SPIx_MISO_PIN);
+    /* Configure SPI MOSI as alternate function  */
+    HAL_GPIO_DeInit(SPIx_MOSI_GPIO_PORT, SPIx_MOSI_PIN);
+  }
+}
+
+/**
   * @brief RTC MSP Initialization
   *        This function configures the hardware resources used in this example
   * @param hrtc: RTC handle pointer
@@ -132,7 +202,6 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef *hrtc)
   */
 void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc)
 {
-  GPIO_InitTypeDef          GPIO_InitStruct;
   static DMA_HandleTypeDef  DmaHandle;
   RCC_OscInitTypeDef        RCC_OscInitStructure;
 
@@ -158,13 +227,6 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc)
   /* Enable clock of DMA associated to the peripheral */
   ADCx_DMA_CLK_ENABLE();
 
-  /*##-2- Configure peripheral GPIO ##########################################*/
-  /* Configure GPIO pin of the selected ADC channel */
-  GPIO_InitStruct.Pin = ADCx_CHANNELa_PIN;
-  GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(ADCx_CHANNELa_GPIO_PORT, &GPIO_InitStruct);
-
   /*##-3- Configure the DMA streams ##########################################*/
   /* Configure DMA parameters */
   DmaHandle.Instance = ADCx_DMA;
@@ -188,13 +250,13 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc)
 
   /* NVIC configuration for DMA interrupt (transfer completion or error) */
   /* Priority: high-priority */
-  HAL_NVIC_SetPriority(ADCx_DMA_IRQn, 1, 0);
+  HAL_NVIC_SetPriority(ADCx_DMA_IRQn, 15, 0);
   HAL_NVIC_EnableIRQ(ADCx_DMA_IRQn);
 
 
   /* NVIC configuration for ADC interrupt */
   /* Priority: high-priority */
-  HAL_NVIC_SetPriority(ADCx_IRQn, 0, 0);
+  HAL_NVIC_SetPriority(ADCx_IRQn, 14, 0);
   HAL_NVIC_EnableIRQ(ADCx_IRQn);
 }
 
@@ -213,10 +275,6 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *hadc)
   /*##-1- Reset peripherals ##################################################*/
   ADCx_FORCE_RESET();
   ADCx_RELEASE_RESET();
-
-  /*##-2- Disable peripherals and GPIO Clocks ################################*/
-  /* De-initialize GPIO pin of the selected ADC channel */
-  HAL_GPIO_DeInit(ADCx_CHANNELa_GPIO_PORT, ADCx_CHANNELa_PIN);
 
   /*##-3- Disable the DMA streams ############################################*/
   /* De-Initialize the DMA associated to the peripheral */
@@ -281,16 +339,10 @@ void HAL_DAC_MspInit(DAC_HandleTypeDef *hdac)
 
   /*##-2- Configure peripheral GPIO ##########################################*/
   /* Configure GPIO pin of the selected DAC channel */
-  GPIO_InitStruct.Pin = DACx_CHANNEL_TO_ADCx_CHANNELa_PIN;
+  GPIO_InitStruct.Pin  = DACx_CHANNEL_PIN;
   GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(DACx_CHANNEL_TO_ADCx_CHANNELa_GPIO_PORT, &GPIO_InitStruct);
-
-  /*##-3- Configure the NVIC #################################################*/
-  /* NVIC configuration for DAC interrupt */
-  /* Priority: mid-priority */
-  HAL_NVIC_SetPriority(DAC_IRQn, 3, 0);
-  HAL_NVIC_EnableIRQ(DAC_IRQn);
+  HAL_GPIO_Init(DACx_CHANNEL_GPIO_PORT, &GPIO_InitStruct);
 }
 
 /**
@@ -307,13 +359,6 @@ void HAL_DAC_MspDeInit(DAC_HandleTypeDef *hdac)
   /*##-1- Reset peripherals ##################################################*/
   DACx_FORCE_RESET();
   DACx_RELEASE_RESET();
-
-  /*##-2- Disable peripherals and GPIO Clocks ################################*/
-  /* De-initialize GPIO pin of the selected DAC channel */
-  HAL_GPIO_DeInit(DACx_CHANNEL_TO_ADCx_CHANNELa_GPIO_PORT, DACx_CHANNEL_TO_ADCx_CHANNELa_PIN);
-
-  /*##-3- Disable the NVIC for DAC ###########################################*/
-  HAL_NVIC_DisableIRQ(DAC_IRQn);
 }
 
 

@@ -21,6 +21,7 @@
 #include "usbd_cdc.h"
 #include "usbd_cdc_interface.h"
 #include "usb_main.h"
+#include "measure_main.h"
 
 /* Exported constants --------------------------------------------------------*/
 #define EEPROM_CNF_ADR					(FLASH_EEPROM_BASE + 0x0000)
@@ -35,13 +36,34 @@
 #define	MATRIX_LINEn					16
 #define	MATRIX_RAWn						16
 
+#define	SAVE_ARRAY_SIZE					256
+
 #define	STAT_ARRAY_SIZE					STAT_MEM_SIZE / (MATRIX_RAWn * MATRIX_LINEn * sizeof(float))
 
-#define	USB_CDC_THREAD_MESSAGEGOTent	(1<<0)
-#define	USB_CDC_THREAD_MEASURE_READY	(1<<1)
+#define	USB_THREAD_MESSAGEGOT_Evt		(1<<0)
+#define	USB_THREAD_MEASUREREADY_Evt		(1<<1)
+#define	USB_THREAD_TESTSTARTED_Evt		(1<<2)
+#define	USB_THREAD_TESTSTOPPED_Evt		(1<<3)
 
-#define	MEASURE_THREAD_TEST_START		(1<<0)
-#define	MEASURE_THREAD_MANUAL_START		(1<<1)
+#define	MEASURE_THREAD_STARTTEST_Evt	(1<<0)
+#define	MEASURE_THREAD_MANUALSTART_Evt	(1<<1)
+#define	MEASURE_THREAD_TESTFINISH_Evt	(1<<2)
+#define	MEASURE_THREAD_TERMTEST_Evt		(1<<3)
+#define	MEASURE_THREAD_CONVCMPLT_Evt	(1<<4)
+
+#define	VALID_MARK						0xA5E5E5A5
+
+#define	SENSOR_NOT_CONNECTED			666
+
+#ifdef RTC_CLOCK_SOURCE_LSI
+#define RTC_ASYNCH_PREDIV    			0x7F
+#define RTC_SYNCH_PREDIV     			0x0120
+#endif
+
+#ifdef RTC_CLOCK_SOURCE_LSE
+#define RTC_ASYNCH_PREDIV  				0x7F
+#define RTC_SYNCH_PREDIV   				0x00FF
+#endif
 
 /* Exported types ------------------------------------------------------------*/
 typedef struct {
@@ -56,100 +78,51 @@ typedef struct {
 	uint32_t 	dischargePreMeasureTimeMs;
 	uint32_t 	measureSavedPoints;
 	uint32_t 	measureMask;
-
 	uint32_t 	zeroShiftmV[MATRIX_RAWn];
-
 } sysCfg_t;
 
 typedef struct {
 
 	uint32_t	resistanceValMOhm[MATRIX_LINEn][MATRIX_RAWn];
-
 } dataMeasure_t;
 
 typedef struct {
 
 	uint32_t 	timeMeasure;
 	uint32_t	voltageMeasure;
-
+	int32_t		temperatureMeasure;
 } dataAttribute_t;
 
-
-/* ## Definition of ADC related resources ################################### */
-/* Definition of ADCx clock resources */
-#define ADCx                            		ADC1
-#define ADCx_CLK_ENABLE()               		__HAL_RCC_ADC1_CLK_ENABLE()
-
-#define ADCx_FORCE_RESET()              		__HAL_RCC_ADC1_FORCE_RESET()
-#define ADCx_RELEASE_RESET()            		__HAL_RCC_ADC1_RELEASE_RESET()
-
-/* Definition of ADCx channels */
-#define ADCx_CHANNELa                   		ADC_CHANNEL_4
-
-/* Definition of ADCx channels pins */
-#define ADCx_CHANNELa_GPIO_CLK_ENABLE() 		__HAL_RCC_GPIOA_CLK_ENABLE()
-#define ADCx_CHANNELa_GPIO_PORT         		GPIOA
-#define ADCx_CHANNELa_PIN               		GPIO_PIN_4
-
-/* Definition of ADCx DMA resources */
-#define ADCx_DMA_CLK_ENABLE()           		__HAL_RCC_DMA1_CLK_ENABLE()
-#define ADCx_DMA                        		DMA1_Channel1
-
-#define ADCx_DMA_IRQn                   		DMA1_Channel1_IRQn
-#define ADCx_DMA_IRQHandler             		DMA1_Channel1_IRQHandler
-
-/* Definition of ADCx NVIC resources */
-#define ADCx_IRQn                       		ADC1_IRQn
-#define ADCx_IRQHandler                 		ADC1_IRQHandler
-
-/* ## Definition of TIM related resources ################################### */
-/* Definition of TIMx clock resources */
-#define TIMx                            		TIM2
-#define TIMx_CLK_ENABLE()               		__HAL_RCC_TIM2_CLK_ENABLE()
-
-#define TIMx_FORCE_RESET()              		__HAL_RCC_TIM2_FORCE_RESET()
-#define TIMx_RELEASE_RESET()            		__HAL_RCC_TIM2_RELEASE_RESET()
-
-#define ADC_EXTERNALTRIGCONV_Tx_TRGO    		ADC_EXTERNALTRIGCONV_T2_TRGO
-
-/* ## Definition of DAC related resources ################################### */
-/* Definition of DACx clock resources */
-#define DACx                            		DAC
-#define DACx_CLK_ENABLE()               		__HAL_RCC_DAC_CLK_ENABLE()
-#define DACx_CHANNEL_GPIO_CLK_ENABLE()  		__HAL_RCC_GPIOA_CLK_ENABLE()
-
-#define DACx_FORCE_RESET()              		__HAL_RCC_DAC_FORCE_RESET()
-#define DACx_RELEASE_RESET()            		__HAL_RCC_DAC_RELEASE_RESET()
-
-/* Definition of DACx channels */
-#define DACx_CHANNEL_TO_ADCx_CHANNELa            DAC_CHANNEL_1
-
-/* Definition of DACx channels pins */
-#define DACx_CHANNEL_TO_ADCx_CHANNELa_PIN        GPIO_PIN_4
-#define DACx_CHANNEL_TO_ADCx_CHANNELa_GPIO_PORT  GPIOA
-
 /* Exported macro ------------------------------------------------------------*/
-#define SAVE_SYSTEM_CNF(ADR, DATA)			{ \
-												HAL_FLASHEx_DATAEEPROM_Unlock(); \
-												HAL_FLASHEx_DATAEEPROM_Erase( FLASH_TYPEERASEDATA_WORD, (uint32_t)(ADR) ); \
+#define SAVE_SYSTEM_CNF(ADR,DATA)			do { \
+												HAL_FLASHEx_DATAEEPROM_Unlock ( ); \
+												HAL_FLASHEx_DATAEEPROM_Erase  ( FLASH_TYPEERASEDATA_WORD, (uint32_t)(ADR) ); \
 												HAL_FLASHEx_DATAEEPROM_Program( FLASH_TYPEPROGRAMDATA_FASTWORD, (uint32_t)(ADR), (DATA) ); \
-												HAL_FLASHEx_DATAEEPROM_Lock(); \
-											}
+												HAL_FLASHEx_DATAEEPROM_Lock   ( ); \
+											} while(0)
 
-#define SAVE_MESURED_DATA(ADR, pDATA)		{ \
+#define CLEAR_EEPROM(ADR,NUM)			    do { \
+												HAL_FLASHEx_DATAEEPROM_Unlock ( ); \
+												for( uint32_t i = 0; i < (NUM); i++ ) HAL_FLASHEx_DATAEEPROM_Erase( FLASH_TYPEERASEDATA_WORD, (uint32_t)(ADR) + i * 4 ); \
+												HAL_FLASHEx_DATAEEPROM_Lock   ( ); \
+											} while(0)
+
+#define SAVE_MESURED_DATA(ADR,pDATA)		do { \
 												FLASH_EraseInitTypeDef EraseInit = {		\
 												.PageAddress = (ADR),						\
 												.NbPages	 = 1,							\
 												.TypeErase   = FLASH_TYPEERASE_PAGES };		\
 												uint32_t 	PageError;						\
-												HAL_FLASH_Unlock(); 						\
+												HAL_FLASH_Unlock ( ); 						\
 												HAL_FLASHEx_Erase( &EraseInit, &PageError); \
-												for( uint32_t i = 0; i < 64; i++ ) HAL_FLASH_Program( FLASH_TYPEPROGRAM_WORD, (ADR) + i * 4, (pDATA)[i] ); \
-												HAL_FLASH_Lock(); \
-											} \
-											while(0);
+												for( uint32_t i = 0; i < 64; i++ ) HAL_FLASH_Program( FLASH_TYPEPROGRAM_WORD, (uint32_t)(ADR) + i * 4, (pDATA)[i] ); \
+												HAL_FLASH_Lock   ( ); \
+											} while(0)
 
 /* Exported functions ------------------------------------------------------- */
-void Error_Handler(void);
+void 				Error_Handler	( void );
+void 				setRTC			( DateTime_t * date );
+systime_t 			getRTC			( void );
+int16_t 			getTemperature	( void );
 
 #endif /* __MAIN_H */

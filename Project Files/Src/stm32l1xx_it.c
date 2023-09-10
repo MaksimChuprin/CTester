@@ -19,13 +19,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32l1xx_it.h"
-#include "cmsis_os.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-extern PCD_HandleTypeDef hpcd;
+extern PCD_HandleTypeDef 	hpcd;
+extern ADC_HandleTypeDef    AdcHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -125,8 +125,10 @@ __weak void PendSV_Handler(void)
   */
 void SysTick_Handler(void)
 {
-  HAL_IncTick();
-  osSystickHandler();
+	// HAL tick - for correct HAL use
+	HAL_IncTick();
+	// FreeRTOS tick
+	osSystickHandler();
 }
 
 /******************************************************************************/
@@ -155,6 +157,26 @@ void USB_LP_IRQHandler(void)
 void TIMx_IRQHandler(void)
 {
   // HAL_TIM_IRQHandler(&TimHandle);
+}
+
+/**
+  * @brief  This function handles ADC interrupt request.
+  * @param  None
+  * @retval None
+  */
+void ADCx_IRQHandler(void)
+{
+  HAL_ADC_IRQHandler( &AdcHandle );
+}
+
+/**
+* @brief  This function handles DMA interrupt request.
+* @param  None
+* @retval None
+*/
+void ADCx_DMA_IRQHandler(void)
+{
+  HAL_DMA_IRQHandler( AdcHandle.DMA_Handle );
 }
 
 /**

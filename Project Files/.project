@@ -101,6 +101,11 @@
 			<locationURI>PARENT-1-PROJECT_LOC/Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_rcc.c</locationURI>
 		</link>
 		<link>
+			<name>Drivers/STM32L1xx_HAL_Driver/stm32l1xx_hal_rcc_ex.c</name>
+			<type>1</type>
+			<location>D:/Projects/CAPTESTER/Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_rcc_ex.c</location>
+		</link>
+		<link>
 			<name>Drivers/STM32L1xx_HAL_Driver/stm32l1xx_hal_rtc.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_rtc.c</locationURI>
@@ -108,7 +113,12 @@
 		<link>
 			<name>Drivers/STM32L1xx_HAL_Driver/stm32l1xx_hal_rtc_ex.c</name>
 			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_rtc_ex.c</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_rcc_ex.c</locationURI>
+		</link>
+		<link>
+			<name>Drivers/STM32L1xx_HAL_Driver/stm32l1xx_hal_spi.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_spi.c</locationURI>
 		</link>
 		<link>
 			<name>Drivers/STM32L1xx_HAL_Driver/stm32l1xx_hal_tim.c</name>
