@@ -40,16 +40,19 @@
 
 #define	STAT_ARRAY_SIZE					STAT_MEM_SIZE / (MATRIX_RAWn * MATRIX_LINEn * sizeof(float))
 
-#define	USB_THREAD_MESSAGEGOT_Evt		(1<<0)
-#define	USB_THREAD_MEASUREREADY_Evt		(1<<1)
-#define	USB_THREAD_TESTSTARTED_Evt		(1<<2)
-#define	USB_THREAD_TESTSTOPPED_Evt		(1<<3)
+#define	USB_THREAD_MESSAGEGOT_Evt		(int32_t)(1<<0)
+#define	USB_THREAD_MEASUREREADY_Evt		(int32_t)(1<<1)
+#define	USB_THREAD_TESTSTARTED_Evt		(int32_t)(1<<2)
+#define	USB_THREAD_TESTSTOPPED_Evt		(int32_t)(1<<3)
+#define	USB_THREAD_MEASUREERROR_Evt		(int32_t)(1<<4)
 
-#define	MEASURE_THREAD_STARTTEST_Evt	(1<<0)
-#define	MEASURE_THREAD_MANUALSTART_Evt	(1<<1)
-#define	MEASURE_THREAD_TESTFINISH_Evt	(1<<2)
-#define	MEASURE_THREAD_TERMTEST_Evt		(1<<3)
-#define	MEASURE_THREAD_CONVCMPLT_Evt	(1<<4)
+#define	MEASURE_THREAD_STARTTEST_Evt	(int32_t)(1<<0)
+#define	MEASURE_THREAD_TESTFINISH_Evt	(int32_t)(1<<1)
+
+#define	MEASURE_THREAD_STARTMESURE_Evt	(int32_t)(1<<2)
+
+#define	MEASURE_THREAD_CONVCMPLT_Evt	(int32_t)(1<<4)
+#define	MEASURE_THREAD_CONVERROR_Evt	(int32_t)(1<<5)
 
 #define	VALID_MARK						0xA5E5E5A5
 
@@ -78,7 +81,7 @@ typedef struct {
 	uint32_t 	dischargePreMeasureTimeMs;
 	uint32_t 	measureSavedPoints;
 	uint32_t 	measureMask;
-	uint32_t 	zeroShiftmV[MATRIX_RAWn];
+	uint32_t 	MaxErrorHV_mV;
 } sysCfg_t;
 
 typedef struct {

@@ -156,11 +156,6 @@
 			<locationURI>PARENT-1-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/tasks.c</locationURI>
 		</link>
 		<link>
-			<name>Middlewares/FreeRTOS/timers.c</name>
-			<type>1</type>
-			<locationURI>PARENT-1-PROJECT_LOC/Middlewares/Third_Party/FreeRTOS/Source/timers.c</locationURI>
-		</link>
-		<link>
 			<name>Drivers/CMSIS/LIB/libarm_cortexM3l_math.a</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Drivers/CMSIS/Lib/GCC/libarm_cortexM3l_math.a</locationURI>

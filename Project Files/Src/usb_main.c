@@ -183,7 +183,9 @@ static void messageDecode( void )
 		case READY_STATUS:		SEND_CDC_MESSAGE( "Starting..." );
 
 								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTTEST_Evt );
-								osSignalWait( USB_THREAD_TESTSTARTED_Evt, osWaitForever );
+								osSignalWait( USB_THREAD_TESTSTARTED_Evt | USB_THREAD_MEASUREERROR_Evt, osWaitForever );
+
+								// TODO check signals
 
 								SEND_CDC_MESSAGE( "Test process started\r\n" );
 								sprintf( usb_message, "Test voltage: %lu Volts, Measure voltage: %lu Volts\r\nTest time: %lu Hours, Measure period: %lu Minutes\r\n\r\n",
@@ -220,8 +222,10 @@ static void messageDecode( void )
 
 		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "Terminating..." );
 
-								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_TERMTEST_Evt );
-								osSignalWait( USB_THREAD_TESTSTOPPED_Evt, osWaitForever );
+								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_TESTFINISH_Evt );
+								osSignalWait( USB_THREAD_TESTSTOPPED_Evt | USB_THREAD_MEASUREERROR_Evt, osWaitForever );
+
+								// TODO check signals
 
 								SEND_CDC_MESSAGE( "Test terminated" );
 
@@ -258,8 +262,10 @@ static void messageDecode( void )
 
 		case READY_STATUS:
 		case ACTIVE_STATUS:
-		case FINISH_STATUS:		osSignalSet( MeasureThreadHandle, MEASURE_THREAD_MANUALSTART_Evt );
-								osSignalWait( USB_THREAD_MEASUREREADY_Evt, osWaitForever );
+		case FINISH_STATUS:		osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTMESURE_Evt );
+								osSignalWait( USB_THREAD_MEASUREREADY_Evt | USB_THREAD_MEASUREERROR_Evt, osWaitForever );
+
+								// TODO check signals
 		}
 		return;
 	}

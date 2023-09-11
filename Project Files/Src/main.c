@@ -162,8 +162,11 @@ static void OneSecThread(const void *argument)
 		{
 			testTimePass++;
 
+			if( (testTimePass % systemConfig.measuringPeriodSec) == 0 )
+							osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTMESURE_Evt );
+
 			if( testTimePass >= systemConfig.testingTimeSec )
-				osSignalSet( MeasureThreadHandle, MEASURE_THREAD_TESTFINISH_Evt );
+							osSignalSet( MeasureThreadHandle, MEASURE_THREAD_TESTFINISH_Evt );
 
 			// save testTimePass each 5 min
 			if( (testTimePass % 300) == 0)
@@ -284,7 +287,7 @@ void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
 {
 	/* In case of ADC error, call main error handler */
-	osSignalSet( MeasureThreadHandle, MEASURE_THREAD_CONVCMPLT_Evt );
+	osSignalSet( MeasureThreadHandle, MEASURE_THREAD_CONVERROR_Evt );
 }
 
 /* ADC hw ini  */

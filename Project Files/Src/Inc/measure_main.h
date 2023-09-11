@@ -15,7 +15,8 @@
 
 /* Exported constants --------------------------------------------------------*/
 
-/* Exported types ------------------------------------------------------------*/
+#define MEASURE_NOERROR							0x00
+#define MEASURE_HV_ERROR						0x01
 
 /* ## Definition of ADC related resources ################################### */
 /* Definition of ADCx clock resources */
@@ -91,6 +92,8 @@
 #define SPIx_MOSI_PIN                    		GPIO_PIN_5
 #define SPIx_MOSI_GPIO_PORT              		GPIOB
 #define SPIx_MOSI_AF                     		GPIO_AF5_SPI1
+
+/* Exported types ------------------------------------------------------------*/
 
 /* Exported functions ------------------------------------------------------- */
 
