@@ -208,6 +208,7 @@ void 		BSP_SET_RMUX( RMux_StateDef Mstate);
 void 		BSP_CTS_Init(void);
 void		BSP_CTS_SetAnyLine( Line_NumDef line, Line_StateDef Lstate, Opto_StateDef Ostate);
 void 		BSP_CTS_SetSingleLine( Line_NumDef line );
+void 		BSP_CTS_SetAllLineDischarge( void );
 void 		LoadSysCnf(void);
 bool 		CheckSysCnf(void);
 

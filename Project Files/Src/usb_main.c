@@ -183,9 +183,16 @@ static void messageDecode( void )
 		case READY_STATUS:		SEND_CDC_MESSAGE( "Starting..." );
 
 								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTTEST_Evt );
-								osSignalWait( USB_THREAD_TESTSTARTED_Evt | USB_THREAD_MEASUREERROR_Evt, osWaitForever );
+								{
+									osEvent event = osSignalWait( USB_THREAD_TESTSTARTED_Evt | USB_THREAD_MEASUREERROR_Evt, osWaitForever );
 
-								// TODO check signals
+									if( event.value.signals == USB_THREAD_MEASUREERROR_Evt )
+									{
+										SEND_CDC_MESSAGE( "System status: fail to set Test Voltage\r\n\r\n" );
+										SAVE_SYSTEM_CNF( &systemConfig.sysStatus, ERROR_STATUS );
+										break;
+									}
+								}
 
 								SEND_CDC_MESSAGE( "Test process started\r\n" );
 								sprintf( usb_message, "Test voltage: %lu Volts, Measure voltage: %lu Volts\r\nTest time: %lu Hours, Measure period: %lu Minutes\r\n\r\n",
@@ -225,8 +232,6 @@ static void messageDecode( void )
 								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_TESTFINISH_Evt );
 								osSignalWait( USB_THREAD_TESTSTOPPED_Evt | USB_THREAD_MEASUREERROR_Evt, osWaitForever );
 
-								// TODO check signals
-
 								SEND_CDC_MESSAGE( "Test terminated" );
 
 								if(systemConfig.measureSavedPoints)
@@ -263,9 +268,20 @@ static void messageDecode( void )
 		case READY_STATUS:
 		case ACTIVE_STATUS:
 		case FINISH_STATUS:		osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTMESURE_Evt );
-								osSignalWait( USB_THREAD_MEASUREREADY_Evt | USB_THREAD_MEASUREERROR_Evt, osWaitForever );
+								{
+									osEvent event = osSignalWait( USB_THREAD_MEASUREREADY_Evt | USB_THREAD_MEASUREERROR_Evt, osWaitForever );
 
-								// TODO check signals
+									if( event.value.signals == USB_THREAD_MEASUREERROR_Evt )
+									{
+										SEND_CDC_MESSAGE( "System status: fail to set Test Voltage\r\n\r\n" );
+										SAVE_SYSTEM_CNF( &systemConfig.sysStatus, ERROR_STATUS );
+										break;
+									}
+								}
+
+
+
+
 		}
 		return;
 	}
@@ -488,6 +504,33 @@ static void messageDecode( void )
 		return;
 	}
 
+	//---------------------------------------------	Set HV error limit
+	ptr = strstr( usb_message, "SET VE=" );
+	if( ptr )
+	{
+		uint32_t 	errorVol_mV 	= 1000;
+		int 		res			    = sscanf( ptr, "SET VE=%lu", &errorVol_mV );
+
+		if( res )
+		{
+			if( errorVol_mV < 250 ) SEND_CDC_MESSAGE( "Error HV voltage  must be more then 250 mVolts\r\n\r\n" )
+			else
+			{
+				SAVE_SYSTEM_CNF( &systemConfig.MaxErrorHV_mV, errorVol_mV );
+
+				if(CheckSysCnf())
+				{
+					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+				}
+				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+			}
+		}
+		else
+			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+
+		return;
+	}
+
 	//--------------------------------------------- SET Current Amplifier Ki
 	ptr = strstr( usb_message, "SET KI=" );
 	if( ptr )
@@ -565,6 +608,19 @@ static void messageDecode( void )
 		}
 		else
 			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+
+		return;
+	}
+
+	//--------------------------------------------- SET Time of Discharge Capacitors Td
+	ptr = strstr( usb_message, "CLEAR ERROR" );
+	if( ptr )
+	{
+		if( systemConfig.sysStatus == ERROR_STATUS )
+		{
+			SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+		}
+		SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
 
 		return;
 	}

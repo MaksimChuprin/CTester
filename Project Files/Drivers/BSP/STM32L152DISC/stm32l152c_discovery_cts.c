@@ -193,6 +193,15 @@ void BSP_CTS_SetSingleLine( Line_NumDef line )
 	BSP_SET_OPTO( Opto_Close );
 }
 
+/**
+  * @brief  SET All line in zero state for discharge
+  * @retval None
+  */
+void BSP_CTS_SetAllLineDischarge( void )
+{
+	BSP_CTS_SetAnyLine( AllLineAD, Line_ZV, Opto_Open );
+}
+
 
 /**
   ** @brief init ports
