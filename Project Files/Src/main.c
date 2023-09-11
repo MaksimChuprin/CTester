@@ -405,7 +405,7 @@ static void	iniSPIx	( SPI_HandleTypeDef * SpiHandle )
 	/* Set the SPI parameters */
 	SpiHandle->Instance               = SPIx;
 	SpiHandle->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
-	SpiHandle->Init.Direction         = SPI_DIRECTION_2LINES_RXONLY;
+	SpiHandle->Init.Direction         = SPI_DIRECTION_1LINE; // SPI_DIRECTION_2LINES_RXONLY;
 	SpiHandle->Init.CLKPhase          = SPI_PHASE_1EDGE;
 	SpiHandle->Init.CLKPolarity       = SPI_POLARITY_LOW;
 	SpiHandle->Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLE;

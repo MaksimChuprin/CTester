@@ -67,14 +67,15 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
 		HAL_GPIO_Init(SPIx_SCK_GPIO_PORT, &GPIO_InitStruct);
 
 		/* SPI MISO GPIO pin configuration  */
-		GPIO_InitStruct.Pin 		= SPIx_MISO_PIN;
+		/* GPIO_InitStruct.Pin 		= SPIx_MISO_PIN;
 		GPIO_InitStruct.Pull      	= GPIO_PULLUP;
 		GPIO_InitStruct.Alternate 	= SPIx_MISO_AF;
-		HAL_GPIO_Init(SPIx_MISO_GPIO_PORT, &GPIO_InitStruct);
+		HAL_GPIO_Init(SPIx_MISO_GPIO_PORT, &GPIO_InitStruct); */
 
 		/* SPI MOSI GPIO pin configuration  */
 		GPIO_InitStruct.Pin 		= SPIx_MOSI_PIN;
-		GPIO_InitStruct.Mode      	= GPIO_MODE_INPUT;
+		GPIO_InitStruct.Pull      	= GPIO_PULLUP;
+		GPIO_InitStruct.Mode      	= GPIO_MODE_AF_PP; // GPIO_MODE_INPUT;
 		GPIO_InitStruct.Alternate 	= SPIx_MOSI_AF;
 		HAL_GPIO_Init(SPIx_MOSI_GPIO_PORT, &GPIO_InitStruct);
 	}
