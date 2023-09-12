@@ -75,7 +75,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
 		/* SPI MOSI GPIO pin configuration  */
 		GPIO_InitStruct.Pin 		= SPIx_MOSI_PIN;
 		GPIO_InitStruct.Pull      	= GPIO_PULLUP;
-		GPIO_InitStruct.Mode      	= GPIO_MODE_AF_PP; // GPIO_MODE_INPUT;
+		GPIO_InitStruct.Mode      	= GPIO_MODE_AF_PP;
 		GPIO_InitStruct.Alternate 	= SPIx_MOSI_AF;
 		HAL_GPIO_Init(SPIx_MOSI_GPIO_PORT, &GPIO_InitStruct);
 	}
