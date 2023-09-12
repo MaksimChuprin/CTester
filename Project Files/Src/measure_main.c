@@ -56,7 +56,7 @@ extern 	__IO dataMeasure_t			dataMeasure[];
 #define ADC_MEAN_ARRAY_DAC			16
 #define ADC_MEAN_ARRAY_VINTREF		17
 
-#define VREFINT_CAL      			*((uint16_t*)0x1FF800F8)
+#define VREFINT_CAL      			*((int16_t*)0x1FF800F8)
 #define RANGE_12BITS                ((int32_t) 4095)    /* Max digital value with a full range of 12 bits */
 
 #define MEASURE_TICK_TIME_MS		100
@@ -67,17 +67,18 @@ extern 	__IO dataMeasure_t			dataMeasure[];
 /* Private variables ---------------------------------------------------------*/
 static __IO int16_t   				adcDMABuffer[ADC_DMA_ARRAY_LEN];
 static uint32_t						resistanceArrayMOhm[MATRIX_LINEn][MATRIX_RAWn];
+static uint32_t						rawCommoncurrent_nA[MATRIX_RAWn];
 static int32_t						adcMeanMeasure[ADC_MEAN_ARRAY_LEN];
 static int32_t						adcMeanZero[ADC_MEAN_ARRAY_LEN];
 static int32_t						Vref_mV = 3000;
 static int32_t						HighVoltage_mV;
 static int32_t						TaskHighVoltage_mV;
-static uint32_t						hvSettingTimer_mS;
 static int32_t 						dacValue;
+static uint32_t						hvSettingTimer_mS;
 static uint32_t						errorCode = MEASURE_NOERROR;
 
 /* Private function prototypes -----------------------------------------------*/
-static void 						getVrefHV( void );
+static void 						getVrefHVRawCommonCurrent( void );
 static void							getZeroShifts( void );
 static void 						getResistanceOneLine( Line_NumDef LineNum );
 static void 						setHV( int32_t error );
@@ -112,7 +113,7 @@ void MeasureThread(const void *argument)
 	for(;;)
 	{
 		/* measure Vref & HighVoltage */
-		getVrefHV();
+		getVrefHVRawCommonCurrent();
 		/* wait for events or MEASURE_TICK_TIME_MS */
 		osEvent event = osSignalWait( MEASURE_THREAD_STARTTEST_Evt | MEASURE_THREAD_TESTFINISH_Evt | MEASURE_THREAD_STARTMESURE_Evt, MEASURE_TICK_TIME_MS );
 
@@ -246,9 +247,12 @@ static void setHV(int32_t error)
 
 
 /* measure Vref & HighVoltage */
-static void getVrefHV(void)
+static void getVrefHVRawCommonCurrent(void)
 {
-	adcMeanMeasure[ADC_MEAN_ARRAY_DAC] = adcMeanMeasure[ADC_MEAN_ARRAY_VINTREF] = 0;
+	CLEAN_MEAN_MEASURE;
+	/* channels 1..8 */
+	BSP_SET_RMUX(Mux_1_8);
+	osDelay( 10 );
 
 	for( uint32_t i = 0; i < ADC_MEAN_FACTOR; )
 	{
@@ -257,14 +261,44 @@ static void getVrefHV(void)
 
 		if( event.value.signals == MEASURE_THREAD_CONVCMPLT_Evt )
 		{
-			i++;
+			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j] += adcDMABuffer[j];
 			adcMeanMeasure[ADC_MEAN_ARRAY_DAC] 	   += adcDMABuffer[ADC_DMA_ARRAY_DAC];
 			adcMeanMeasure[ADC_MEAN_ARRAY_VINTREF] += adcDMABuffer[ADC_DMA_ARRAY_VINTREF];
+			i++;
 		}
 	}
 
+	/* channels 9..16 */
+	BSP_SET_RMUX(Mux_9_16);
+	osDelay( 10 );
+
+	for( uint32_t i = 0; i < ADC_MEAN_FACTOR; )
+	{
+		HAL_ADC_Start( &AdcHandle );
+		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+
+		if( event.value.signals == MEASURE_THREAD_CONVCMPLT_Evt )
+		{
+			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[ADC_MEAN_ARRAY_R8 + j] += adcDMABuffer[j];
+			i++;
+		}
+	}
+
+	/* calc Vref & HV */
 	Vref_mV 	   += ( 10 * 3000 * adcMeanMeasure[ADC_MEAN_ARRAY_VINTREF] / ADC_MEAN_FACTOR / VREFINT_CAL - 10 * Vref_mV) / 20 ; // dig filter k = 0.5
 	HighVoltage_mV	=  Vref_mV * adcMeanMeasure[ADC_MEAN_ARRAY_DAC] / ADC_MEAN_FACTOR * systemConfig.kdDivider / RANGE_12BITS;
+
+	/* calc raw Common current */
+	float ki_V_nA    = systemConfig.kiAmplifire / 1e9;
+	float adc_V_step = Vref_mV / 1000. / RANGE_12BITS;
+
+	for(uint32_t i = 0; i < MATRIX_RAWn; i++)
+	{
+		if( adcMeanMeasure[i] > adcMeanZero[i] ) 	adcMeanMeasure[i]  = (adcMeanMeasure[i] - adcMeanZero[i]) / ADC_MEAN_FACTOR;
+		else										adcMeanMeasure[i]  = 0;
+
+		rawCommoncurrent_nA[i] = (uint32_t)(adcMeanMeasure[i] * adc_V_step * ki_V_nA + 0.5);
+	}
 }
 
 
