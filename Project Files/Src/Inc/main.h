@@ -29,7 +29,8 @@
 #define	NO_CONFIG_STATUS				0
 #define	READY_STATUS					1
 #define	ACTIVE_STATUS					2
-#define	FINISH_STATUS					3
+#define	PAUSE_STATUS					3
+#define	FINISH_STATUS					4
 
 #define	ERROR_STATUS					0xffffffff
 
@@ -45,12 +46,12 @@
 #define	USB_THREAD_TESTSTARTED_Evt		(int32_t)(1<<2)
 #define	USB_THREAD_TESTSTOPPED_Evt		(int32_t)(1<<3)
 #define	USB_THREAD_MEASUREERROR_Evt		(int32_t)(1<<4)
+#define	USB_THREAD_SYSTEMERROR_Evt		(int32_t)(1<<5)
+#define	USB_THREAD_MEASUREBUSY_Evt		(int32_t)(1<<6)
 
 #define	MEASURE_THREAD_STARTTEST_Evt	(int32_t)(1<<0)
-#define	MEASURE_THREAD_TESTFINISH_Evt	(int32_t)(1<<1)
-
+#define	MEASURE_THREAD_STOPTEST_Evt		(int32_t)(1<<1)
 #define	MEASURE_THREAD_STARTMESURE_Evt	(int32_t)(1<<2)
-
 #define	MEASURE_THREAD_CONVCMPLT_Evt	(int32_t)(1<<4)
 #define	MEASURE_THREAD_CONVERROR_Evt	(int32_t)(1<<5)
 
@@ -97,6 +98,8 @@ typedef struct {
 } dataAttribute_t;
 
 /* Exported macro ------------------------------------------------------------*/
+#define pdTick_to_MS(tick)					(tick) * ( ( TickType_t ) 1000 / configTICK_RATE_HZ )
+
 #define SAVE_SYSTEM_CNF(ADR,DATA)			do { \
 												HAL_FLASHEx_DATAEEPROM_Unlock ( ); \
 												HAL_FLASHEx_DATAEEPROM_Erase  ( FLASH_TYPEERASEDATA_WORD, (uint32_t)(ADR) ); \
@@ -110,15 +113,16 @@ typedef struct {
 												HAL_FLASHEx_DATAEEPROM_Lock   ( ); \
 											} while(0)
 
-#define SAVE_MESURED_DATA(ADR,pDATA)		do { \
+#define SAVE_MESURED_DATA(NUM,pDATA)		do { \
 												FLASH_EraseInitTypeDef EraseInit = {		\
-												.PageAddress = (ADR),						\
-												.NbPages	 = 1,							\
+												.NbPages	 = 4,							\
 												.TypeErase   = FLASH_TYPEERASE_PAGES };		\
 												uint32_t 	PageError;						\
+												uint32_t	adr = (uint32_t)&dataMeasure[(NUM)]; \
+												EraseInit.PageAddress = adr; \
 												HAL_FLASH_Unlock ( ); 						\
 												HAL_FLASHEx_Erase( &EraseInit, &PageError); \
-												for( uint32_t i = 0; i < 64; i++ ) HAL_FLASH_Program( FLASH_TYPEPROGRAM_WORD, (uint32_t)(ADR) + i * 4, (pDATA)[i] ); \
+												for( uint32_t i = 0; i < 64; i++, adr += 4 ) HAL_FLASH_Program( FLASH_TYPEPROGRAM_WORD, adr, (pDATA)[i] ); \
 												HAL_FLASH_Lock   ( ); \
 											} while(0)
 

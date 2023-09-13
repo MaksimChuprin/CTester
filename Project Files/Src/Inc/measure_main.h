@@ -17,6 +17,10 @@
 
 #define MEASURE_NOERROR							0x00
 #define MEASURE_HV_ERROR						0x01
+#define MEASURE_CHANEL_ERROR					0x02
+
+#define MEASURE_GET_ERROR_CODE(ERROR)			((ERROR) >> 0) & 0xFF
+#define MEASURE_GET_ERROR_LINE(ERROR)			((ERROR) >> 8) & 0xFF
 
 /* ## Definition of ADC related resources ################################### */
 /* Definition of ADCx clock resources */
@@ -96,7 +100,10 @@
 /* Exported types ------------------------------------------------------------*/
 
 /* Exported functions ------------------------------------------------------- */
-
+uint32_t * 										getMeasureData	(void);
+int32_t    										getVrefmV		(void);
+int32_t    										getHighVOltagemV(void);
+uint32_t   										getErrorCode	(void);
 /* Exported macro ------------------------------------------------------------*/
 
 /* Exported functions ------------------------------------------------------- */
