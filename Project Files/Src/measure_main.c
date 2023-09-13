@@ -16,9 +16,9 @@ extern 	osThreadId					OneSecThreadHandle;
 extern 	DAC_HandleTypeDef    		DacHandle;
 extern 	ADC_HandleTypeDef    		AdcHandle;
 
-extern 	__IO sysCfg_t				systemConfig;
-extern  __IO dataAttribute_t		dataAttribute[];
-extern 	__IO dataMeasure_t			dataMeasure[];
+extern 	volatile sysCfg_t			systemConfig;
+extern  dataAttribute_t				dataAttribute[];
+extern 	dataMeasure_t				dataMeasure[];
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -84,6 +84,10 @@ static void 						getResistanceOneLine( Line_NumDef LineNum );
 static void 						setHV( int32_t error );
 /* Private functions ---------------------------------------------------------*/
 
+uint32_t * getMeasureData(void) 	{ return  &resistanceArrayMOhm[0][0]; }
+int32_t    getVrefmV(void) 			{ return  Vref_mV; }
+int32_t    getHVmV(void) 			{ return  HighVoltage_mV; }
+uint32_t   getErrorCode(void) 		{ return  errorCode; }
 
 /**
   * @brief  Main program
@@ -110,12 +114,11 @@ void MeasureThread(const void *argument)
 	}
 
 	/* measure circle */
-	for(;;)
+	for( TickType_t ctime = xTaskGetTickCount(), measTickDelayMs = 0; ; ctime -= xTaskGetTickCount() )
 	{
-		/* measure Vref & HighVoltage */
-		getVrefHVRawCommonCurrent();
 		/* wait for events or MEASURE_TICK_TIME_MS */
-		osEvent event = osSignalWait( MEASURE_THREAD_STARTTEST_Evt | MEASURE_THREAD_TESTFINISH_Evt | MEASURE_THREAD_STARTMESURE_Evt, MEASURE_TICK_TIME_MS );
+		measTickDelayMs = (MEASURE_TICK_TIME_MS > pdTick_to_MS(ctime)) ? pdTick_to_MS(ctime) : 0 ;
+		osEvent event = osSignalWait( MEASURE_THREAD_STARTTEST_Evt | MEASURE_THREAD_STOPTEST_Evt | MEASURE_THREAD_STARTMESURE_Evt, measTickDelayMs );
 
 		/* process events */
 		switch( event.value.signals )
@@ -128,7 +131,7 @@ void MeasureThread(const void *argument)
 											BSP_CTS_SetAllLineDischarge(); // discharge All capacitors
 											break;
 
-		case MEASURE_THREAD_TESTFINISH_Evt:	testMode 			= false;
+		case MEASURE_THREAD_STOPTEST_Evt:	testMode 			= false;
 											TaskHighVoltage_mV 	= 0;
 											hvSettingTimer_mS   = 0;
 											lineNumSetOn		= 0;
@@ -148,12 +151,18 @@ void MeasureThread(const void *argument)
 
 		}
 
-		/* get HV error */
-		int32_t errHV_mV = TaskHighVoltage_mV - HighVoltage_mV;
+
 
 		/*  process MEASURE TICK  */
 		if( event.status == osEventTimeout )
 		{
+
+			/* measure Vref & HighVoltage */
+			getVrefHVRawCommonCurrent();
+
+			/* get HV error */
+			int32_t errHV_mV = TaskHighVoltage_mV - HighVoltage_mV;
+
 			/*  measure Mode  */
 			if( measureMode )
 			{
@@ -343,7 +352,7 @@ static void	getZeroShifts( void )
 	}
 }
 
-void getResistanceOneLine( Line_NumDef LineNum )
+static void getResistanceOneLine( Line_NumDef LineNum )
 {
 	if( systemConfig.measureMask & (1 << LineNum) ) return;
 

@@ -275,7 +275,7 @@ bool CheckSysCnf(void)
 	bool status = (systemConfig.kiAmplifire != 0) 	 && (systemConfig.dischargePreMeasureTimeMs != 0) &&
 				  (systemConfig.kdDivider != 0) 	 && (systemConfig.measuringPeriodSec != 0) 		  &&
 				  (systemConfig.testingTimeSec != 0) && (systemConfig.uMeasureVol != 0) 			  &&
-				  (systemConfig.uTestVol != 0);
+				  (systemConfig.uTestVol != 0)       && (systemConfig.MaxErrorHV_mV != 0 );
 
 	if(status == false)
 	{

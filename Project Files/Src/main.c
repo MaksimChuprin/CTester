@@ -16,20 +16,22 @@ USBD_HandleTypeDef 			USBD_Device;
 DAC_HandleTypeDef    		DacHandle;
 ADC_HandleTypeDef    		AdcHandle;
 
-__IO sysCfg_t				systemConfig 						__attribute__((section(".settings")));
-__IO systime_t				rtcSaveArray[SAVE_ARRAY_SIZE]		__attribute__((section(".settings")));
-__IO uint32_t				testTimeSaveArray[SAVE_ARRAY_SIZE]	__attribute__((section(".settings")));
-__IO dataAttribute_t		dataAttribute[STAT_ARRAY_SIZE]  	__attribute__((section(".settings")));
-__IO dataMeasure_t			dataMeasure[STAT_ARRAY_SIZE] 		__attribute__((section(".statistic")));
+volatile sysCfg_t			systemConfig 						__attribute__((section(".settings")));
+systime_t					rtcSaveArray[SAVE_ARRAY_SIZE]		__attribute__((section(".settings")));
+uint32_t					testTimeSaveArray[SAVE_ARRAY_SIZE]	__attribute__((section(".settings")));
+dataAttribute_t				dataAttribute[STAT_ARRAY_SIZE]  	__attribute__((section(".settings")));
+dataMeasure_t				dataMeasure[STAT_ARRAY_SIZE] 		__attribute__((section(".statistic")));
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+#define	ONESEC_TICK_TIME_MS	1000
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static RTC_HandleTypeDef 	RtcHandle;
 static SPI_HandleTypeDef 	SpiHandle;
 
 static uint32_t				testTimePass 	__attribute__((section(".noinit_rtc")));
+static uint32_t				oneSecCounter	__attribute__((section(".noinit_rtc")));
 static uint16_t 			rtcPoint		__attribute__((section(".noinit_rtc")));
 static uint16_t 			timePoint 		__attribute__((section(".noinit_rtc")));
 static uint32_t				validMark 		__attribute__((section(".noinit_rtc")));
@@ -137,16 +139,21 @@ static void OneSecThread(const void *argument)
 			else			testTimePass = 0;
 			break;
 		}
-		// set mark in RAM
+
+		// init  RAM
+		oneSecCounter = testTimePass = 0;
 		validMark = VALID_MARK;
 	}
 
-	for( uint32_t oneSecCounter = 0; ; osDelay(1000) )
+	/* one second circle */
+	for( TickType_t ctime = xTaskGetTickCount(), oneSecTickDelayMs = 0; ; ctime -= xTaskGetTickCount() )
 	{
-		oneSecCounter++;
+		/* calc time delay */
+		oneSecTickDelayMs = (ONESEC_TICK_TIME_MS > pdTick_to_MS(ctime)) ? pdTick_to_MS(ctime) : 0;
+		osDelay(oneSecTickDelayMs);
 
 		// save RTC each 5 min
-		if( (oneSecCounter % 300) == 0)
+		if( (++oneSecCounter % 300) == 0)
 		{
 			if( rtcPoint == SAVE_ARRAY_SIZE )
 			{
@@ -166,10 +173,10 @@ static void OneSecThread(const void *argument)
 							osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTMESURE_Evt );
 
 			if( testTimePass >= systemConfig.testingTimeSec )
-							osSignalSet( MeasureThreadHandle, MEASURE_THREAD_TESTFINISH_Evt );
+							osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STOPTEST_Evt );
 
 			// save testTimePass each 5 min
-			if( (testTimePass % 300) == 0)
+			if( (testTimePass % 300) == 0 )
 			{
 				if( timePoint == SAVE_ARRAY_SIZE )
 				{
@@ -181,7 +188,7 @@ static void OneSecThread(const void *argument)
 			}
 		}
 		else
-			testTimePass = 0;
+			if( systemConfig.sysStatus != PAUSE_STATUS ) testTimePass = 0;
 
 		/* read temperature */
 		temperature = getDataTMP121();
@@ -290,7 +297,9 @@ void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
 	osSignalSet( MeasureThreadHandle, MEASURE_THREAD_CONVERROR_Evt );
 }
 
-/* ADC hw ini  */
+/*
+ * ADC hw ini
+ */
 static void	iniADCx	( ADC_HandleTypeDef * pAdcHandle )
 {
 	ADC_ChannelConfTypeDef   sConfig;
@@ -366,7 +375,9 @@ static void	iniADCx	( ADC_HandleTypeDef * pAdcHandle )
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 }
 
-/* DAC hw ini  */
+/*
+ * DAC hw ini
+ */
 static void	iniDACx	( DAC_HandleTypeDef * pDacHandle )
 {
 	/* Set the DAC parameters */
@@ -399,13 +410,15 @@ static void	iniDACx	( DAC_HandleTypeDef * pDacHandle )
 	}
 }
 
-/* SPI hw ini  */
+/*
+ * SPI hw ini
+ */
 static void	iniSPIx	( SPI_HandleTypeDef * SpiHandle )
 {
 	/* Set the SPI parameters */
 	SpiHandle->Instance               = SPIx;
 	SpiHandle->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
-	SpiHandle->Init.Direction         = SPI_DIRECTION_1LINE; // SPI_DIRECTION_2LINES_RXONLY;
+	SpiHandle->Init.Direction         = SPI_DIRECTION_1LINE;
 	SpiHandle->Init.CLKPhase          = SPI_PHASE_1EDGE;
 	SpiHandle->Init.CLKPolarity       = SPI_POLARITY_LOW;
 	SpiHandle->Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLE;
@@ -423,27 +436,32 @@ static void	iniSPIx	( SPI_HandleTypeDef * SpiHandle )
 	}
 }
 
-/* TMP121 driver */
+
+/*
+ * TMP121 driver
+ */
 static int16_t getDataTMP121(void)
 {
-	uint16_t	rx = 0;
+	uint16_t	spi_rx_data = 0;
 
 	BSP_SET_CS( 0 );
-	HAL_SPI_Receive( &SpiHandle, (uint8_t *)&rx, 1, 2);
+	HAL_SPI_Receive( &SpiHandle, (uint8_t *)&spi_rx_data, 1, 2);
 	BSP_SET_CS( 1 );
 
-	if( rx & (1<<2)    ) return SENSOR_NOT_CONNECTED;	// no sensor on spi
-	if( !(rx & (1<<0)) ) return SENSOR_NOT_CONNECTED;	// MISO grounded
+	if( !(spi_rx_data) ) 		return SENSOR_NOT_CONNECTED;	// data line error
+	if( spi_rx_data & (1<<2) ) 	return SENSOR_NOT_CONNECTED;	// no TMP121 on spi
 
 	/* convert negative values */
-	rx >>= 7;
-	rx  |= ((rx & (1<<8)) ? 0xff00 : 0x0);
+	spi_rx_data >>= 7;
+	spi_rx_data  |= ((spi_rx_data & (1<<8)) ? 0xff00 : 0x0);
 
-	return rx;
+	return spi_rx_data;
 }
 
 
-/* RTC hw ini  */
+/*
+ * RTC hw ini
+ */
 static void iniRTC( RTC_HandleTypeDef * RtcHandle )
 {
 	RtcHandle->Instance 		   = RTC;
@@ -461,17 +479,19 @@ static void iniRTC( RTC_HandleTypeDef * RtcHandle )
 	}
 }
 
-/* set rtc  */
+/*
+ * set rtc
+ */
 void setRTC( DateTime_t * date )
 {
 	RTC_DateTypeDef  sdatestructure;
 	RTC_TimeTypeDef  stimestructure;
 
 	/*##-1- Configure the Date #################################################*/
-	sdatestructure.Year    = date->year - 2000;
-	sdatestructure.Month   = date->month;
-	sdatestructure.Date    = date->day;
-	sdatestructure.WeekDay = date->dayOfWeek;
+	sdatestructure.Year    			= date->year - 2000;
+	sdatestructure.Month   			= date->month;
+	sdatestructure.Date    			= date->day;
+	sdatestructure.WeekDay 			= date->dayOfWeek;
 
 	if(HAL_RTC_SetDate( &RtcHandle, &sdatestructure, RTC_FORMAT_BIN) != HAL_OK)
 	{
@@ -494,7 +514,10 @@ void setRTC( DateTime_t * date )
 	}
 }
 
-/* get rtc  */
+
+/*
+ * 		get rtc UNIX
+ * */
 systime_t getRTC( void )
 {
 	DateTime_t  	 date = {0};
@@ -515,6 +538,9 @@ systime_t getRTC( void )
 	return convertDateToUnixTime( &date );
 }
 
+/*
+ * return Temperature
+ */
 int16_t getTemperature(void)
 {
 	return temperature;
