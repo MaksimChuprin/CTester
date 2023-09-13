@@ -86,8 +86,8 @@ static void 						setHV( int32_t error );
 
 uint32_t * getMeasureData(void) 	{ return  &resistanceArrayMOhm[0][0]; }
 int32_t    getVrefmV(void) 			{ return  Vref_mV; }
-int32_t    getHVmV(void) 			{ return  HighVoltage_mV; }
 uint32_t   getErrorCode(void) 		{ return  errorCode; }
+uint32_t   getHighVoltagemV(void) 	{ return  (uint32_t)HighVoltage_mV; }
 
 /**
   * @brief  Main program
@@ -108,17 +108,18 @@ void MeasureThread(const void *argument)
 	/* continue test if terminated by reset */
 	if(systemConfig.sysStatus == ACTIVE_STATUS)
 	{
-		testMode 			= true;
+		testMode = HVstab	= true;
 		TaskHighVoltage_mV 	= systemConfig.uTestVol * 1000;
 		osDelay(100);
 	}
 
 	/* measure circle */
-	for( TickType_t ctime = xTaskGetTickCount(), measTickDelayMs = 0; ; ctime -= xTaskGetTickCount() )
+	for( TickType_t startTime = 0, measTickDelayMs = 0, passTime = 0; ; passTime = xTaskGetTickCount() - startTime )
 	{
 		/* wait for events or MEASURE_TICK_TIME_MS */
-		measTickDelayMs = (MEASURE_TICK_TIME_MS > pdTick_to_MS(ctime)) ? pdTick_to_MS(ctime) : 0 ;
-		osEvent event = osSignalWait( MEASURE_THREAD_STARTTEST_Evt | MEASURE_THREAD_STOPTEST_Evt | MEASURE_THREAD_STARTMESURE_Evt, measTickDelayMs );
+		measTickDelayMs = (MEASURE_TICK_TIME_MS > pdTick_to_MS(passTime)) ? MEASURE_TICK_TIME_MS - pdTick_to_MS(passTime) : 1;
+		osEvent event   = osSignalWait( MEASURE_THREAD_STARTTEST_Evt | MEASURE_THREAD_STOPTEST_Evt | MEASURE_THREAD_STARTMESURE_Evt, measTickDelayMs );
+		startTime       = xTaskGetTickCount();
 
 		/* process events */
 		switch( event.value.signals )
@@ -127,7 +128,7 @@ void MeasureThread(const void *argument)
 											TaskHighVoltage_mV 	= systemConfig.uTestVol * 1000;
 											hvSettingTimer_mS 	= 0;
 											lineNumSetOn		= 0;
-											HVstab  	 		= true;
+											HVstab  	 		= false;
 											BSP_CTS_SetAllLineDischarge(); // discharge All capacitors
 											break;
 
@@ -135,7 +136,9 @@ void MeasureThread(const void *argument)
 											TaskHighVoltage_mV 	= 0;
 											hvSettingTimer_mS   = 0;
 											lineNumSetOn		= 0;
+											setHV(-300000);
 											BSP_CTS_SetAllLineDischarge(); // discharge All capacitors
+											osDelay(10);
 											osSignalSet( USBThreadHandle, USB_THREAD_TESTSTOPPED_Evt );
 											break;
 
@@ -144,13 +147,12 @@ void MeasureThread(const void *argument)
 											TaskHighVoltage_mV 	= systemConfig.uMeasureVol * 1000;
 											hvSettingTimer_mS   = 0;
 											lineNumSetOn		= 0;
-											HVstab  	 		= true;
+											HVstab  	 		= false;
 
 											getZeroShifts();
 											break;
 
 		}
-
 
 
 		/*  process MEASURE TICK  */
@@ -162,14 +164,14 @@ void MeasureThread(const void *argument)
 
 			/* get HV error */
 			int32_t errHV_mV = TaskHighVoltage_mV - HighVoltage_mV;
+			setHV(errHV_mV);
 
 			/*  measure Mode  */
 			if( measureMode )
 			{
 				/* check HV set	*/
-				if( HVstab && abs(errHV_mV) > systemConfig.MaxErrorHV_mV )
+				if( !HVstab && abs(errHV_mV) > systemConfig.MaxErrorHV_mV )
 				{
-					setHV(errHV_mV);
 					hvSettingTimer_mS += MEASURE_TICK_TIME_MS;
 
 					if( hvSettingTimer_mS > HV_SETTING_TIME_LIMIT_MS )
@@ -183,7 +185,7 @@ void MeasureThread(const void *argument)
 				else
 				{
 					/*	do measure	*/
-					HVstab   = false;
+					HVstab   = true;
 					if( lineNumSetOn != ADLINEn)
 					{
 						getResistanceOneLine( lineNumSetOn );
@@ -209,9 +211,8 @@ void MeasureThread(const void *argument)
 			if( testMode )
 			{
 				/* check HV set	*/
-				if( HVstab && abs(errHV_mV) > systemConfig.MaxErrorHV_mV )
+				if( !HVstab && abs(errHV_mV) > systemConfig.MaxErrorHV_mV )
 				{
-					setHV(errHV_mV);
 					hvSettingTimer_mS += MEASURE_TICK_TIME_MS;
 
 					if( hvSettingTimer_mS > HV_SETTING_TIME_LIMIT_MS )
@@ -225,7 +226,7 @@ void MeasureThread(const void *argument)
 				else
 				{
 					/* do test mode */
-					HVstab   = false;
+					HVstab   = true;
 					if( lineNumSetOn != ADLINEn)
 					{
 						if( !(systemConfig.measureMask & (1<<lineNumSetOn)) ) BSP_CTS_SetAnyLine( lineNumSetOn, Line_HV, Opto_Open );
@@ -235,7 +236,7 @@ void MeasureThread(const void *argument)
 			}
 			else
 			{
-				setHV(-300000);
+
 			}
 		} /*   process MEASURE TICK  */
 

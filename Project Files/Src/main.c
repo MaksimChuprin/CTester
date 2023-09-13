@@ -89,15 +89,15 @@ int main(void)
 
   /* Create Threads */
   /* USB CDC Threads */
-  osThreadDef( USBTask, UsbCDCThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 2 );
+  osThreadDef( USBTask, UsbCDCThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 3 );
   USBThreadHandle = osThreadCreate( osThread(USBTask), NULL);
 
   /*  measure thread  */
-  osThreadDef( MesTask, MeasureThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE );
+  osThreadDef( MesTask, MeasureThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 3 );
   MeasureThreadHandle = osThreadCreate( osThread(MesTask), NULL);
 
   /*  OneSec thread  */
-  osThreadDef( OneSecTask, OneSecThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE );
+  osThreadDef( OneSecTask, OneSecThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 2 );
   OneSecThreadHandle = osThreadCreate( osThread(OneSecTask), NULL);
 
   /* Start scheduler */
@@ -146,11 +146,12 @@ static void OneSecThread(const void *argument)
 	}
 
 	/* one second circle */
-	for( TickType_t ctime = xTaskGetTickCount(), oneSecTickDelayMs = 0; ; ctime -= xTaskGetTickCount() )
+	for( TickType_t startTime = 0, oneSecTickDelayMs = 0, passTime = 0; ; passTime = xTaskGetTickCount() - startTime )
 	{
 		/* calc time delay */
-		oneSecTickDelayMs = (ONESEC_TICK_TIME_MS > pdTick_to_MS(ctime)) ? pdTick_to_MS(ctime) : 0;
+		oneSecTickDelayMs = (ONESEC_TICK_TIME_MS > pdTick_to_MS(passTime)) ? ONESEC_TICK_TIME_MS - pdTick_to_MS(passTime) : 0;
 		osDelay(oneSecTickDelayMs);
+		startTime = xTaskGetTickCount();
 
 		// save RTC each 5 min
 		if( (++oneSecCounter % 300) == 0)

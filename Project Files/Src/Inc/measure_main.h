@@ -102,8 +102,8 @@
 /* Exported functions ------------------------------------------------------- */
 uint32_t * 										getMeasureData	(void);
 int32_t    										getVrefmV		(void);
-int32_t    										getHighVOltagemV(void);
 uint32_t   										getErrorCode	(void);
+uint32_t   										getHighVoltagemV(void);
 /* Exported macro ------------------------------------------------------------*/
 
 /* Exported functions ------------------------------------------------------- */

@@ -101,29 +101,35 @@ typedef struct {
 #define pdTick_to_MS(tick)					(tick) * ( ( TickType_t ) 1000 / configTICK_RATE_HZ )
 
 #define SAVE_SYSTEM_CNF(ADR,DATA)			do { \
+												taskENTER_CRITICAL(); \
 												HAL_FLASHEx_DATAEEPROM_Unlock ( ); \
 												HAL_FLASHEx_DATAEEPROM_Erase  ( FLASH_TYPEERASEDATA_WORD, (uint32_t)(ADR) ); \
 												HAL_FLASHEx_DATAEEPROM_Program( FLASH_TYPEPROGRAMDATA_FASTWORD, (uint32_t)(ADR), (DATA) ); \
 												HAL_FLASHEx_DATAEEPROM_Lock   ( ); \
+												taskEXIT_CRITICAL(); \
 											} while(0)
 
 #define CLEAR_EEPROM(ADR,NUM)			    do { \
+												taskENTER_CRITICAL(); \
 												HAL_FLASHEx_DATAEEPROM_Unlock ( ); \
 												for( uint32_t i = 0; i < (NUM); i++ ) HAL_FLASHEx_DATAEEPROM_Erase( FLASH_TYPEERASEDATA_WORD, (uint32_t)(ADR) + i * 4 ); \
 												HAL_FLASHEx_DATAEEPROM_Lock   ( ); \
+												taskEXIT_CRITICAL(); \
 											} while(0)
 
-#define SAVE_MESURED_DATA(NUM,pDATA)		do { \
+#define SAVE_MESURED_DATA(ADR,pDATA)		do { \
+												taskENTER_CRITICAL(); \
 												FLASH_EraseInitTypeDef EraseInit = {		\
+												.PageAddress = (uint32_t)(ADR),				\
 												.NbPages	 = 4,							\
 												.TypeErase   = FLASH_TYPEERASE_PAGES };		\
 												uint32_t 	PageError;						\
-												uint32_t	adr = (uint32_t)&dataMeasure[(NUM)]; \
-												EraseInit.PageAddress = adr; \
+												uint32_t	adr = (uint32_t)(ADR);			\
 												HAL_FLASH_Unlock ( ); 						\
 												HAL_FLASHEx_Erase( &EraseInit, &PageError); \
 												for( uint32_t i = 0; i < 64; i++, adr += 4 ) HAL_FLASH_Program( FLASH_TYPEPROGRAM_WORD, adr, (pDATA)[i] ); \
 												HAL_FLASH_Lock   ( ); \
+												taskEXIT_CRITICAL(); \
 											} while(0)
 
 /* Exported functions ------------------------------------------------------- */
