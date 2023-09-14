@@ -171,10 +171,14 @@ static void OneSecThread(const void *argument)
 			testTimePass++;
 
 			if( (testTimePass % systemConfig.measuringPeriodSec) == 0 )
-							osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTMESURE_Evt );
+			{
+				osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTMESURE_Evt );
+			}
 
 			if( testTimePass >= systemConfig.testingTimeSec )
-							osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STOPTEST_Evt );
+			{
+				osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STOPTEST_Evt );
+			}
 
 			// save testTimePass each 5 min
 			if( (testTimePass % 300) == 0 )

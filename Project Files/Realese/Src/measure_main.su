@@ -1,0 +1,6 @@
+../Src/measure_main.c:254:13:setHV	0	static
+../Src/measure_main.c:87:12:getMeasureData	0	static
+../Src/measure_main.c:88:12:getVrefmV	0	static
+../Src/measure_main.c:89:12:getErrorCode	0	static
+../Src/measure_main.c:90:12:getHighVoltagemV	0	static
+../Src/measure_main.c:97:6:MeasureThread	96	static

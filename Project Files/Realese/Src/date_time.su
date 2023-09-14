@@ -1,0 +1,3 @@
+../Src/date_time.c:113:11:convertDateToUnixTime	8	static
+../Src/date_time.c:157:9:computeDayOfWeek	12	static
+../Src/date_time.c:54:6:convertUnixTimeToDate	16	static

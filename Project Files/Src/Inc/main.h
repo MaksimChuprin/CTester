@@ -41,19 +41,18 @@
 
 #define	STAT_ARRAY_SIZE					STAT_MEM_SIZE / (MATRIX_RAWn * MATRIX_LINEn * sizeof(float))
 
-#define	USB_THREAD_MESSAGEGOT_Evt		(int32_t)(1<<0)
-#define	USB_THREAD_MEASUREREADY_Evt		(int32_t)(1<<1)
-#define	USB_THREAD_TESTSTARTED_Evt		(int32_t)(1<<2)
-#define	USB_THREAD_TESTSTOPPED_Evt		(int32_t)(1<<3)
-#define	USB_THREAD_MEASUREERROR_Evt		(int32_t)(1<<4)
-#define	USB_THREAD_SYSTEMERROR_Evt		(int32_t)(1<<5)
-#define	USB_THREAD_MEASUREBUSY_Evt		(int32_t)(1<<6)
+#define	USB_THREAD_MESSAGEGOT_Evt		(1<<0)
+#define	USB_THREAD_MEASUREREADY_Evt		(1<<1)
+#define	USB_THREAD_TESTSTARTED_Evt		(1<<2)
+#define	USB_THREAD_TESTSTOPPED_Evt		(1<<3)
+#define	USB_THREAD_MEASUREERROR_Evt		(1<<4)
 
-#define	MEASURE_THREAD_STARTTEST_Evt	(int32_t)(1<<0)
-#define	MEASURE_THREAD_STOPTEST_Evt		(int32_t)(1<<1)
-#define	MEASURE_THREAD_STARTMESURE_Evt	(int32_t)(1<<2)
-#define	MEASURE_THREAD_CONVCMPLT_Evt	(int32_t)(1<<4)
-#define	MEASURE_THREAD_CONVERROR_Evt	(int32_t)(1<<5)
+
+#define	MEASURE_THREAD_STARTTEST_Evt	(1<<0)
+#define	MEASURE_THREAD_STOPTEST_Evt		(1<<1)
+#define	MEASURE_THREAD_STARTMESURE_Evt	(1<<2)
+#define	MEASURE_THREAD_CONVCMPLT_Evt	(1<<4)
+#define	MEASURE_THREAD_CONVERROR_Evt	(1<<5)
 
 #define	VALID_MARK						0xA5E5E5A5
 
@@ -83,6 +82,7 @@ typedef struct {
 	uint32_t 	measureSavedPoints;
 	uint32_t 	measureMask;
 	uint32_t 	MaxErrorHV_mV;
+	int32_t 	intRef_mV;
 } sysCfg_t;
 
 typedef struct {
@@ -98,27 +98,26 @@ typedef struct {
 } dataAttribute_t;
 
 /* Exported macro ------------------------------------------------------------*/
+#define CLEAR_ALL_EVENTS					{ \
+											if( (event.status == osEventTimeout)  &&  (event.value.signals != 0) ) \
+											do { uint32_t x; xTaskNotifyWait( 0xFFFFFFFF, 0, &x, 0 ); } while(0); \
+											}
+
 #define pdTick_to_MS(tick)					(tick) * ( ( TickType_t ) 1000 / configTICK_RATE_HZ )
 
 #define SAVE_SYSTEM_CNF(ADR,DATA)			do { \
-												taskENTER_CRITICAL(); \
 												HAL_FLASHEx_DATAEEPROM_Unlock ( ); \
 												HAL_FLASHEx_DATAEEPROM_Erase  ( FLASH_TYPEERASEDATA_WORD, (uint32_t)(ADR) ); \
 												HAL_FLASHEx_DATAEEPROM_Program( FLASH_TYPEPROGRAMDATA_FASTWORD, (uint32_t)(ADR), (DATA) ); \
-												HAL_FLASHEx_DATAEEPROM_Lock   ( ); \
-												taskEXIT_CRITICAL(); \
 											} while(0)
 
 #define CLEAR_EEPROM(ADR,NUM)			    do { \
-												taskENTER_CRITICAL(); \
 												HAL_FLASHEx_DATAEEPROM_Unlock ( ); \
 												for( uint32_t i = 0; i < (NUM); i++ ) HAL_FLASHEx_DATAEEPROM_Erase( FLASH_TYPEERASEDATA_WORD, (uint32_t)(ADR) + i * 4 ); \
 												HAL_FLASHEx_DATAEEPROM_Lock   ( ); \
-												taskEXIT_CRITICAL(); \
 											} while(0)
 
 #define SAVE_MESURED_DATA(ADR,pDATA)		do { \
-												taskENTER_CRITICAL(); \
 												FLASH_EraseInitTypeDef EraseInit = {		\
 												.PageAddress = (uint32_t)(ADR),				\
 												.NbPages	 = 4,							\
@@ -127,9 +126,8 @@ typedef struct {
 												uint32_t	adr = (uint32_t)(ADR);			\
 												HAL_FLASH_Unlock ( ); 						\
 												HAL_FLASHEx_Erase( &EraseInit, &PageError); \
-												for( uint32_t i = 0; i < 64; i++, adr += 4 ) HAL_FLASH_Program( FLASH_TYPEPROGRAM_WORD, adr, (pDATA)[i] ); \
+												for( uint32_t i = 0; i < 256; i++, adr += 4 ) HAL_FLASH_Program( FLASH_TYPEPROGRAM_WORD, adr, (pDATA)[i] ); \
 												HAL_FLASH_Lock   ( ); \
-												taskEXIT_CRITICAL(); \
 											} while(0)
 
 /* Exported functions ------------------------------------------------------- */

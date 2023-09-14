@@ -43,11 +43,10 @@ const char * helpStrings[] = {
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
-#define SEND_CDC_MESSAGE(MSG)	{ while( sendCDCmessage( (MSG) ) && isCableConnected() ) osDelay(50); }
 /* Private variables ---------------------------------------------------------*/
 static char 				usb_message[APP_CDC_DATA_SIZE];
 /* Private function prototypes -----------------------------------------------*/
-static bool 				isCableConnected	( void );
+//static bool 				isCableConnected	( void );
 static void 				messageDecode		( void );
 static void 				UpperCase			( char * ptrmessage );
 static void					sendSystemTime		( void );
@@ -59,6 +58,7 @@ static void					sendMemoryStatus	( void );
 static void					sendMeasureResult   (uint32_t * data);
 static void					sendMeasureError	(uint8_t line, uint32_t * dataMeasure);
 static void 				sendErrorReaction	( void );
+static void					sendVDDA			( void );
 /* Private functions ---------------------------------------------------------*/
 
 
@@ -98,62 +98,64 @@ void UsbCDCThread(const void *argument)
 			osEvent event = osSignalWait( USB_THREAD_MESSAGEGOT_Evt | USB_THREAD_MEASUREREADY_Evt | USB_THREAD_TESTSTOPPED_Evt |
 											USB_THREAD_TESTSTARTED_Evt | USB_THREAD_MEASUREERROR_Evt, 100 );
 
-			if( event.status == osEventSignal )
+			CLEAR_ALL_EVENTS;
+
+			/*  measure ready event */
+			if ( event.value.signals & USB_THREAD_MEASUREREADY_Evt )
 			{
-				if (event.value.signals == USB_THREAD_MESSAGEGOT_Evt)
+				/* save stat data */
+				if( systemConfig.measureSavedPoints < STAT_ARRAY_SIZE )
 				{
-					messageDecode();
+					SAVE_MESURED_DATA( &dataMeasure[systemConfig.measureSavedPoints], getMeasureData() );
+					SAVE_SYSTEM_CNF( &dataAttribute[systemConfig.measureSavedPoints].timeMeasure, getRTC() );
+					SAVE_SYSTEM_CNF( &dataAttribute[systemConfig.measureSavedPoints].voltageMeasure, systemConfig.uMeasureVol );
+					SAVE_SYSTEM_CNF( &dataAttribute[systemConfig.measureSavedPoints].temperatureMeasure, (uint32_t)getTemperature() );
+					uint32_t newSavePoint = systemConfig.measureSavedPoints + 1;
+					SAVE_SYSTEM_CNF( &systemConfig.measureSavedPoints, newSavePoint );
 				}
 
-				if ( event.value.signals == USB_THREAD_MEASUREREADY_Evt )
-				{
-					/* save stat data */
-					if( systemConfig.measureSavedPoints < STAT_ARRAY_SIZE )
-					{
-						SAVE_MESURED_DATA( &dataMeasure[systemConfig.measureSavedPoints], getMeasureData() );
-						SAVE_SYSTEM_CNF( &dataAttribute[systemConfig.measureSavedPoints].timeMeasure, getRTC() );
-						SAVE_SYSTEM_CNF( &dataAttribute[systemConfig.measureSavedPoints].voltageMeasure, systemConfig.uMeasureVol );
-						SAVE_SYSTEM_CNF( &dataAttribute[systemConfig.measureSavedPoints].temperatureMeasure, (uint32_t)getTemperature() );
-						SAVE_SYSTEM_CNF( &systemConfig.measureSavedPoints, systemConfig.measureSavedPoints + 1 );
-					}
+				SEND_CDC_MESSAGE( "***************** BEGIN OF DATA ******************\r\n" );
+				sendSystemTime();
+				sendSystemTemperature();
+				sendMeasureResult( getMeasureData() );
+				SEND_CDC_MESSAGE( "****************** END OF DATA *******************\r\n\r\n" );
+			}
 
-					SEND_CDC_MESSAGE( "*********** BEGIN OF MEASUREMENT DATA ************\r\n" );
-					sendSystemTime();
-					sendSystemTemperature();
-					sendMeasureResult( getMeasureData() );
-					SEND_CDC_MESSAGE( "************ END OF MEASUREMENT DATA *************\r\n\r\n" );
-				}
+			/*  test stopped event - by timeout or error */
+			if ( event.value.signals & USB_THREAD_TESTSTOPPED_Evt )
+			{
+				if(systemConfig.measureSavedPoints)
+					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, FINISH_STATUS );
+				else
+					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 
-				if ( event.value.signals == USB_THREAD_TESTSTOPPED_Evt )
-				{
-					if(systemConfig.measureSavedPoints)
-						SAVE_SYSTEM_CNF( &systemConfig.sysStatus, FINISH_STATUS );
-					else
-						SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+				SEND_CDC_MESSAGE( "***************** Test finished ******************\r\n" );
+				sendSystemTime();
+				sendSystemStatus();
+				sendMemoryStatus();
+				sendRealHV();
+				SEND_CDC_MESSAGE( "\r\n" );
+			}
 
-					SEND_CDC_MESSAGE( "***************** Test finished ******************\r\n" );
-					sendSystemTime();
-					sendSystemStatus();
-					sendMemoryStatus();
-					sendRealHV();
-					SEND_CDC_MESSAGE( "\r\n" );
-				}
+			if ( event.value.signals & USB_THREAD_TESTSTARTED_Evt )
+			{
+				SEND_CDC_MESSAGE( "******** Test continue after system reset ********\r\n" );
+				sendSystemTime();
+				sendSystemStatus();
+				sendMemoryStatus();
+				sendSystemSettings();
+				sendRealHV();
+				SEND_CDC_MESSAGE( "\r\n" );
+			}
 
-				if ( event.value.signals == USB_THREAD_TESTSTARTED_Evt )
-				{
-					SEND_CDC_MESSAGE( "******** Test continue after system reset ********\r\n" );
-					sendSystemTime();
-					sendSystemStatus();
-					sendMemoryStatus();
-					sendSystemSettings();
-					sendRealHV();
-					SEND_CDC_MESSAGE( "\r\n" );
-				}
+			if ( event.value.signals == USB_THREAD_MEASUREERROR_Evt )
+			{
+				sendErrorReaction();
+			}
 
-				if ( event.value.signals == USB_THREAD_MEASUREERROR_Evt )
-				{
-					sendErrorReaction();
-				}
+			if (event.value.signals & USB_THREAD_MESSAGEGOT_Evt)
+			{
+				messageDecode();
 			}
 
 			/* check cable */
@@ -171,7 +173,7 @@ void UsbCDCThread(const void *argument)
   * @param  argument: Not used
   * @retval
   */
-static bool isCableConnected(void)
+bool isCableConnected(void)
 {
 	return BSP_PAN_GetState();
 }
@@ -221,7 +223,7 @@ static void messageDecode( void )
 								{
 									osEvent event = osSignalWait( USB_THREAD_TESTSTARTED_Evt | USB_THREAD_MEASUREERROR_Evt, osWaitForever );
 
-									if( event.value.signals == USB_THREAD_MEASUREERROR_Evt )
+									if( event.value.signals & USB_THREAD_MEASUREERROR_Evt )
 									{
 										sendErrorReaction();
 										break;
@@ -235,6 +237,7 @@ static void messageDecode( void )
 								sendSystemStatus();
 								sendSystemSettings();
 								sendRealHV();
+								sendVDDA();
 								SEND_CDC_MESSAGE( "\r\n" );
 								break;
 
@@ -247,7 +250,7 @@ static void messageDecode( void )
 								{
 									osEvent event = osSignalWait( USB_THREAD_TESTSTARTED_Evt | USB_THREAD_MEASUREERROR_Evt, osWaitForever );
 
-									if( event.value.signals == USB_THREAD_MEASUREERROR_Evt )
+									if( event.value.signals & USB_THREAD_MEASUREERROR_Evt )
 									{
 										sendErrorReaction();
 										break;
@@ -260,13 +263,13 @@ static void messageDecode( void )
 								sendSystemStatus();
 								sendMemoryStatus();
 								sendRealHV();
+								sendVDDA();
 								SEND_CDC_MESSAGE( "\r\n" );
 								break;
 
 		case FINISH_STATUS:		SEND_CDC_MESSAGE( "Command ignored - data of finished test not read yet\r\n\r\n" );
 								break;
 		}
-
 		return;
 	}
 
@@ -287,7 +290,7 @@ static void messageDecode( void )
 		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "Pausing...\r\n" );
 
 								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STOPTEST_Evt );
-								osSignalWait( USB_THREAD_TESTSTOPPED_Evt | USB_THREAD_MEASUREERROR_Evt, osWaitForever );
+								osSignalWait( USB_THREAD_TESTSTOPPED_Evt, osWaitForever );
 
 								SAVE_SYSTEM_CNF( &systemConfig.sysStatus, PAUSE_STATUS );
 								sendSystemTime();
@@ -298,7 +301,6 @@ static void messageDecode( void )
 								SEND_CDC_MESSAGE( "\r\n" );
 								break;
 		}
-
 		return;
 	}
 
@@ -319,7 +321,7 @@ static void messageDecode( void )
 		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "Terminating...\r\n" );
 
 								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STOPTEST_Evt );
-								osSignalWait( USB_THREAD_TESTSTOPPED_Evt | USB_THREAD_MEASUREERROR_Evt, osWaitForever );
+								osSignalWait( USB_THREAD_TESTSTOPPED_Evt, osWaitForever );
 
 								if(systemConfig.measureSavedPoints)
 								{
@@ -338,7 +340,6 @@ static void messageDecode( void )
 								SEND_CDC_MESSAGE( "\r\n" );
 								break;
 		}
-
 		return;
 	}
 
@@ -358,7 +359,7 @@ static void messageDecode( void )
 								{
 									osEvent event = osSignalWait( USB_THREAD_MEASUREREADY_Evt | USB_THREAD_MEASUREERROR_Evt, osWaitForever );
 
-									if ( event.value.signals == USB_THREAD_MEASUREREADY_Evt )
+									if ( event.value.signals & USB_THREAD_MEASUREREADY_Evt )
 									{
 										SEND_CDC_MESSAGE( "*********** BEGIN OF MEASUREMENT DATA ************\r\n" );
 										sendSystemTime();
@@ -368,7 +369,7 @@ static void messageDecode( void )
 										break;
 									}
 
-									if ( event.value.signals == USB_THREAD_MEASUREERROR_Evt )
+									if ( event.value.signals & USB_THREAD_MEASUREERROR_Evt )
 									{
 										sendErrorReaction();
 										break;
@@ -386,6 +387,7 @@ static void messageDecode( void )
 		sendSystemStatus();
 		sendMemoryStatus();
 		sendRealHV();
+		sendVDDA();
 		SEND_CDC_MESSAGE( "\r\n" );
 		return;
 	}
@@ -413,7 +415,7 @@ static void messageDecode( void )
 		case ACTIVE_STATUS:
 								if(systemConfig.measureSavedPoints)
 								{
-									SEND_CDC_MESSAGE( "*********** BEGIN OF MEASUREMENT DATA ************\r\n" );
+									SEND_CDC_MESSAGE( "*********** BEGIN OF DATA ************\r\n" );
 
 									for( uint16_t p = 0; p < systemConfig.measureSavedPoints; p++)
 									{
@@ -423,11 +425,16 @@ static void messageDecode( void )
 										sprintf( usb_message, "Point: %3hu, Time: %04hd-%02hd-%02hd %02hd:%02hd, Measure voltage, V: %3lu, Temperature, oC: %3i\r\n",
 																	p + 1, date.year, date.month, date.day, date.hours, date.minutes, dataAttribute[p].voltageMeasure, (int16_t)dataAttribute[p].temperatureMeasure );
 										SEND_CDC_MESSAGE( usb_message );
+										if( dataAttribute[p].temperatureMeasure != SENSOR_NOT_CONNECTED )
+											sprintf( usb_message, "Temperature, oC: %i\r\n", (int16_t)dataAttribute[p].temperatureMeasure );
+										else
+											sprintf( usb_message, "Temperature, oC: --- \r\n" );
+										SEND_CDC_MESSAGE( usb_message );
 										sendMeasureResult( &dataMeasure[p].resistanceValMOhm[0][0] );
 										SEND_CDC_MESSAGE( "\r\n" );
 									}
 
-									SEND_CDC_MESSAGE( "\r\n************ END OF MEASUREMENT DATA *************\r\n" );
+									SEND_CDC_MESSAGE( "************ END OF DATA *************\r\n" );
 								}
 								else
 									SEND_CDC_MESSAGE( "No data to read.\r\n\r\n" );
@@ -472,7 +479,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( measPeriod < 30 ) SEND_CDC_MESSAGE( "Measuring period must be more then 30 minutes\r\n\r\n" )
+			if( measPeriod < 1 ) SEND_CDC_MESSAGE( "Measuring period must be more then 30 minutes\r\n\r\n" )
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.measuringPeriodSec, measPeriod * 60 );
@@ -769,6 +776,17 @@ static void	sendRealHV(void)
 /*
  *
  */
+static void	sendVDDA(void)
+{
+	uint32_t vdda = getVrefmV();
+
+	sprintf( usb_message, "VDDA Voltage: %3lu.%03lu V\r\n", vdda / 1000, vdda % 1000);
+	SEND_CDC_MESSAGE(usb_message);
+}
+
+/*
+ *
+ */
 static void	sendSystemStatus(void)
 {
 	switch(systemConfig.sysStatus)
@@ -817,22 +835,18 @@ static void	sendMeasureResult(uint32_t * dataMeasure)
 
 	for( uint8_t i = 0; i < MATRIX_LINEn; i++ )
 	{
-		sprintf( usb_message, "Line %2hhu, Resistance value in MOhm\r\n", i + 1 );
+		sprintf( usb_message, "Line %u, Raw  1 - 8, Resistance value, MOhm\r\n", i + 1 );
 		SEND_CDC_MESSAGE( usb_message );
-		SEND_CDC_MESSAGE( "Raw  1     2     3     4     5     6     7     8  \r\n   " );
 
 		for(uint8_t j = 0; j < 8; j++ )
-			sprintf( usb_message, "%5lu ", dataMeasure[i * MATRIX_RAWn + j] );
-		SEND_CDC_MESSAGE( usb_message );
+			{ sprintf( usb_message, "%*lu  ", 5, dataMeasure[i * MATRIX_RAWn + j] ); SEND_CDC_MESSAGE( usb_message ); }
 		SEND_CDC_MESSAGE( "\r\n" );
 
-		sprintf( usb_message, "Line %2hhu, Resistance value in MOhm\r\n", i + 1 );
+		sprintf( usb_message, "Line %u, Raw  9 - 16, Resistance value, MOhm\r\n", i + 1 );
 		SEND_CDC_MESSAGE( usb_message );
-		SEND_CDC_MESSAGE( "Raw  9    10    11    12    13    14    15    16  \r\n   " );
 
 		for(uint8_t j = 8; j < 16; j++ )
-			sprintf( usb_message, "%5lu ", dataMeasure[i * MATRIX_RAWn + j] );
-		SEND_CDC_MESSAGE( usb_message );
+			{ sprintf( usb_message, "%*lu  ", 5, dataMeasure[i * MATRIX_RAWn + j] ); SEND_CDC_MESSAGE( usb_message ); }
 		SEND_CDC_MESSAGE( "\r\n" );
 	}
 }
@@ -842,12 +856,12 @@ static void	sendMeasureResult(uint32_t * dataMeasure)
  */
 static void	sendMeasureError(uint8_t line, uint32_t * dataMeasure)
 {
-	sprintf( usb_message, "Error Line %2hhu, Raw state: Ok or Er\r\n", line + 1 );
+	sprintf( usb_message, "Error Line %u, Raw state: Ok or Er\r\n", line + 1 );
 	SEND_CDC_MESSAGE( usb_message );
 	SEND_CDC_MESSAGE( "Raw  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16 \r\n    " );
 
-	for(uint8_t j = 0; j < MATRIX_RAWn; j++ ) sprintf( usb_message, "%s ", dataMeasure[j] ? "Ok  " : "Er  " );
-	SEND_CDC_MESSAGE( usb_message );
+	for(uint8_t j = 0; j < MATRIX_RAWn; j++ )
+		{ sprintf( usb_message, "%s ", dataMeasure[j] ? "Ok  " : "Er  " ); SEND_CDC_MESSAGE( usb_message ); }
 	SEND_CDC_MESSAGE( "\r\n" );
 }
 

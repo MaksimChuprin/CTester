@@ -1,0 +1,9 @@
+../Src/main.c:55:5:main	104	static
+../Src/main.c:264:6:Error_Handler	0	static
+../Src/main.c:277:6:HAL_ADC_ConvCpltCallback	0	static
+../Src/main.c:288:6:HAL_ADC_ConvHalfCpltCallback	0	static
+../Src/main.c:299:6:HAL_ADC_ErrorCallback	0	static
+../Src/main.c:490:6:setRTC	32	static
+../Src/main.c:526:11:getRTC	48	static
+../Src/main.c:113:13:OneSecThread	48	static
+../Src/main.c:549:9:getTemperature	0	static
