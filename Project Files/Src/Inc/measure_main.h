@@ -22,6 +22,10 @@
 #define MEASURE_GET_ERROR_CODE(ERROR)			((ERROR) >> 0) & 0xFF
 #define MEASURE_GET_ERROR_LINE(ERROR)			((ERROR) >> 8) & 0xFF
 
+#define MEASURE_SET_ERROR_CODE(ERROR)			( ERROR & 0xFF )
+#define MEASURE_SET_ERROR_LINE(LINE)			(((LINE) << 8)  & 0xFF00 )
+
+
 /* ## Definition of ADC related resources ################################### */
 /* Definition of ADCx clock resources */
 #define ADCx                            		ADC1
