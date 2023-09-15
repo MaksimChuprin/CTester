@@ -189,7 +189,7 @@ void BSP_CTS_SetSingleLine( Line_NumDef line )
 	for(uint32_t i = 0; i < ADLINEn; i++ )
 			HAL_GPIO_WritePin( Line_AD[i].port,  Line_AD[i].pin , ( line == i ) ? GPIO_PIN_SET : GPIO_PIN_RESET );
 
-	osDelay( systemConfig.dischargePreMeasureTimeMs );
+	osDelay( systemConfig.dischargeTimeMs );
 	BSP_SET_OPTO( Opto_Close );
 }
 
@@ -272,10 +272,11 @@ void LoadSysCnf(void)
   */
 bool CheckSysCnf(void)
 {
-	bool status = (systemConfig.kiAmplifire != 0) 	 && (systemConfig.dischargePreMeasureTimeMs != 0) &&
-				  (systemConfig.kdDivider != 0) 	 && (systemConfig.measuringPeriodSec != 0) 		  &&
-				  (systemConfig.testingTimeSec != 0) && (systemConfig.uMeasureVol != 0) 			  &&
-				  (systemConfig.uTestVol != 0)       && (systemConfig.MaxErrorHV_mV != 0 );
+	bool status = (systemConfig.kiAmplifire != 0) 	 && (systemConfig.dischargeTimeMs != 0) 	&&
+				  (systemConfig.kdDivider != 0) 	 && (systemConfig.measuringPeriodSec != 0) 	&&
+				  (systemConfig.testingTimeSec != 0) && (systemConfig.uMeasureVol != 0) 		&&
+				  (systemConfig.uTestVol != 0)       && (systemConfig.MaxErrorHV_mV != 0 )     	&&
+				  (systemConfig.IAmplifierSettleTimeMs != 0) && (systemConfig.HVMaxSettleTimeMs != 0 );
 
 	if(status == false)
 	{

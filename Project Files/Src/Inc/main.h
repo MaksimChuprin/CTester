@@ -46,6 +46,7 @@
 #define	USB_THREAD_TESTSTARTED_Evt		(1<<2)
 #define	USB_THREAD_TESTSTOPPED_Evt		(1<<3)
 #define	USB_THREAD_MEASUREERROR_Evt		(1<<4)
+#define	USB_THREAD_HVERRORDETECT_Evt	(1<<5)
 
 
 #define	MEASURE_THREAD_STARTTEST_Evt	(1<<0)
@@ -78,11 +79,12 @@ typedef struct {
 	uint32_t	kdDivider;
 	uint32_t 	testingTimeSec;
 	uint32_t 	measuringPeriodSec;
-	uint32_t 	dischargePreMeasureTimeMs;
+	uint32_t 	dischargeTimeMs;
 	uint32_t 	measureSavedPoints;
 	uint32_t 	measureMask;
 	uint32_t 	MaxErrorHV_mV;
-	int32_t 	intRef_mV;
+	uint32_t 	IAmplifierSettleTimeMs;
+	uint32_t 	HVMaxSettleTimeMs;
 } sysCfg_t;
 
 typedef struct {
@@ -135,5 +137,6 @@ void 				Error_Handler	( void );
 void 				setRTC			( DateTime_t * date );
 systime_t 			getRTC			( void );
 int16_t 			getTemperature	( void );
+uint32_t 			getTestTimePass	( void );
 
 #endif /* __MAIN_H */

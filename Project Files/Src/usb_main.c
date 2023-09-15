@@ -27,13 +27,16 @@ const char * helpStrings[] = {
 		"Read Settings - display settings values\r\n",
 		"Set Vt=<value> - enter <value> of test voltage in Volts\r\n",
 		"Set Vm=<value> - enter <value> of measure voltage in Volts\r\n",
+		"Set Ve=<value> - enter <value> of acceptable HV error in mVolts\r\n",
 		"Set Tt=<value> - enter <value> of test time in Hours\r\n",
-		"Set Mp=<value> - enter <value> of measure period in Minutes\r\n",
+		"Set Tp=<value> - enter <value> of measure period in Minutes\r\n",
+		"Set Td=<value> - enter <value> of discharge time in mSec\r\n",
+		"Set Ta=<value> - enter <value> of amplifier settle time in mSec\r\n",
+		"Set Th=<value> - enter <value> of max HV settle time in mSec\r\n",
 		"Set Ki=<value> - enter factor of current amplifier\r\n",
 		"Set Kd=<value> - enter division factor of HV\r\n",
-		"Set Td=<value> - enter <value> of discharge time in mSec\r\n",
-		"Set Ve=<value> - enter <value> of acceptable HV error in mVolts\r\n",
 		"Set RTC=<YYYY:MM:DD:HH:MM> - enter current time\r\n",
+		"Set default - system settings to default values\r\n",
 		"Echo On - switch echo on\r\n",
 		"Echo Off - switch echo off\r\n",
 		"Help - list available commands\r\n",
@@ -59,6 +62,7 @@ static void					sendMeasureResult   (uint32_t * data);
 static void					sendMeasureError	(uint8_t line, uint32_t * dataMeasure);
 static void 				sendErrorReaction	( void );
 static void					sendVDDA			( void );
+static void					sendTestTimePass	( void );
 /* Private functions ---------------------------------------------------------*/
 
 
@@ -129,17 +133,18 @@ void UsbCDCThread(const void *argument)
 				else
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 
-				SEND_CDC_MESSAGE( "***************** Test finished ******************\r\n" );
+				SEND_CDC_MESSAGE( "***************** Test finished  ****************\r\n" );
 				sendSystemTime();
 				sendSystemStatus();
 				sendMemoryStatus();
 				sendRealHV();
+				sendTestTimePass();
 				SEND_CDC_MESSAGE( "\r\n" );
 			}
 
 			if ( event.value.signals & USB_THREAD_TESTSTARTED_Evt )
 			{
-				SEND_CDC_MESSAGE( "******** Test continue after system reset ********\r\n" );
+				SEND_CDC_MESSAGE( "***************** Test continue ****************\r\n" );
 				sendSystemTime();
 				sendSystemStatus();
 				sendMemoryStatus();
@@ -264,6 +269,7 @@ static void messageDecode( void )
 								sendMemoryStatus();
 								sendRealHV();
 								sendVDDA();
+								sendTestTimePass();
 								SEND_CDC_MESSAGE( "\r\n" );
 								break;
 
@@ -298,6 +304,7 @@ static void messageDecode( void )
 								sendSystemStatus();
 								sendMemoryStatus();
 								sendRealHV();
+								sendTestTimePass();
 								SEND_CDC_MESSAGE( "\r\n" );
 								break;
 		}
@@ -337,6 +344,7 @@ static void messageDecode( void )
 								sendSystemStatus();
 								sendMemoryStatus();
 								sendRealHV();
+								sendTestTimePass();
 								SEND_CDC_MESSAGE( "\r\n" );
 								break;
 		}
@@ -443,59 +451,7 @@ static void messageDecode( void )
 		return;
 	}
 
-	//--------------------------------------------- SET Test Time
-	ptr = strstr( usb_message, "SET TT=" );
-	if( ptr )
-	{
-		uint32_t 	testTime 	= 0;
-		int 		res			= sscanf( ptr, "SET TT=%lu", &testTime );
 
-		if( res )
-		{
-			if( testTime > 7*24 ) SEND_CDC_MESSAGE( "Testing time must be less then 168 hours\r\n\r\n" )
-			else
-			{
-				SAVE_SYSTEM_CNF( &systemConfig.testingTimeSec, testTime * 3600 );
-
-				if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
-				{
-					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
-				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
-			}
-		}
-		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
-
-		return;
-	}
-
-	//---------------------------------------------	SET Measure Period
-	ptr = strstr( usb_message, "SET MP=" );
-	if( ptr )
-	{
-		uint32_t 	measPeriod 	= 0;
-		int 		res			= sscanf( ptr, "SET MP=%lu", &measPeriod );
-
-		if( res )
-		{
-			if( measPeriod < 1 ) SEND_CDC_MESSAGE( "Measuring period must be more then 30 minutes\r\n\r\n" )
-			else
-			{
-				SAVE_SYSTEM_CNF( &systemConfig.measuringPeriodSec, measPeriod * 60 );
-
-				if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
-				{
-					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
-				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
-			}
-		}
-		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
-
-		return;
-	}
 
 	//--------------------------------------------- Set Test Voltage
 	ptr = strstr( usb_message, "SET VT=" );
@@ -632,19 +588,19 @@ static void messageDecode( void )
 		return;
 	}
 
-	//--------------------------------------------- SET Time of Discharge Capacitors Td
-	ptr = strstr( usb_message, "SET TD=" );
+	//--------------------------------------------- SET Test Time
+	ptr = strstr( usb_message, "SET TT=" );
 	if( ptr )
 	{
-		uint32_t 	Td 	= 0;
-		int 		res			= sscanf( ptr, "SET TD=%lu", &Td );
+		uint32_t 	testTime 	= 0;
+		int 		res			= sscanf( ptr, "SET TT=%lu", &testTime );
 
 		if( res )
 		{
-			if( Td > 10000 || Td < 10 ) SEND_CDC_MESSAGE( "Time of Discharge must be 10...10000 mSec\r\n\r\n" )
+			if( testTime > 7*24 ) SEND_CDC_MESSAGE( "Testing time must be less then 168 hours\r\n\r\n" )
 			else
 			{
-				SAVE_SYSTEM_CNF( &systemConfig.dischargePreMeasureTimeMs, Td );
+				SAVE_SYSTEM_CNF( &systemConfig.testingTimeSec, testTime * 3600 );
 
 				if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
 				{
@@ -659,16 +615,145 @@ static void messageDecode( void )
 		return;
 	}
 
-	//--------------------------------------------- force READY STATUS
-	ptr = strstr( usb_message, "CLEAR ERROR" );
+	//---------------------------------------------	SET Measure Period
+	ptr = strstr( usb_message, "SET TP=" );
 	if( ptr )
 	{
-		if( systemConfig.sysStatus == ERROR_STATUS )
-		{
-			SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
-		}
-		SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+		uint32_t 	measPeriod 	= 0;
+		int 		res			= sscanf( ptr, "SET MP=%lu", &measPeriod );
 
+		if( res )
+		{
+			if( measPeriod < 1 ) SEND_CDC_MESSAGE( "Measuring period must be more then 30 minutes\r\n\r\n" )
+			else
+			{
+				SAVE_SYSTEM_CNF( &systemConfig.measuringPeriodSec, measPeriod * 60 );
+
+				if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
+				{
+					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+				}
+				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+			}
+		}
+		else
+			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+
+		return;
+	}
+
+	//--------------------------------------------- SET Time of Discharge Capacitors Td
+	ptr = strstr( usb_message, "SET TD=" );
+	if( ptr )
+	{
+		uint32_t 	Td 	= 0;
+		int 		res			= sscanf( ptr, "SET TD=%lu", &Td );
+
+		if( res )
+		{
+			if( Td > 10000 || Td < 10 ) SEND_CDC_MESSAGE( "Time of Discharge must be 10...10000 mSec\r\n\r\n" )
+			else
+			{
+				SAVE_SYSTEM_CNF( &systemConfig.dischargeTimeMs, Td );
+
+				if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
+				{
+					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+				}
+				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+			}
+		}
+		else
+			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+
+		return;
+	}
+
+	//--------------------------------------------- SET amplifier settle time Ta
+	ptr = strstr( usb_message, "SET TA=" );
+	if( ptr )
+	{
+		uint32_t 	Ta 	= 0;
+		int 		res			= sscanf( ptr, "SET TA=%lu", &Ta );
+
+		if( res )
+		{
+			if( Ta > 1000 || Ta < 10 ) SEND_CDC_MESSAGE( "Time of amplifier settle time must be 10...1000 mSec\r\n\r\n" )
+			else
+			{
+				SAVE_SYSTEM_CNF( &systemConfig.IAmplifierSettleTimeMs, Ta );
+
+				if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
+				{
+					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+				}
+				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+			}
+		}
+		else
+			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+
+		return;
+	}
+
+	//--------------------------------------------- SET HV max settle time Th
+	ptr = strstr( usb_message, "SET TH=" );
+	if( ptr )
+	{
+		uint32_t 	Th 	= 0;
+		int 		res			= sscanf( ptr, "SET TH=%lu", &Th );
+
+		if( res )
+		{
+			if( Th > 5000 || Th < 300 ) SEND_CDC_MESSAGE( "Time of HV max settle time must be 300...5000 mSec\r\n\r\n" )
+			else
+			{
+				SAVE_SYSTEM_CNF( &systemConfig.HVMaxSettleTimeMs, Th );
+
+				if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
+				{
+					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+				}
+				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+			}
+		}
+		else
+			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+
+		return;
+	}
+
+	//--------------------------------------------- SET default values of system
+	ptr = strstr( usb_message, "SET DEFAULT" );
+	if( ptr )
+	{
+		const uint32_t 	Th 	= 1000;	// msec
+		const uint32_t 	Ta 	= 50;	// msec
+		const uint32_t 	Td 	= 500;	// msec
+		const uint32_t 	Tm 	= 60;	// minutes
+		const uint32_t 	Tt 	= 168;	// hours
+		const uint32_t 	Kd 	= 101;
+		const uint32_t 	Ki 	= 100000;
+		const uint32_t 	Ve 	= 500;	// mV
+		const uint32_t 	Vm 	= 25;	// V
+		const uint32_t 	Vt 	= 50;	// V
+
+
+		SAVE_SYSTEM_CNF( &systemConfig.uTestVol, Vt );
+		SAVE_SYSTEM_CNF( &systemConfig.uMeasureVol, Vm );
+		SAVE_SYSTEM_CNF( &systemConfig.MaxErrorHV_mV, Ve );
+		SAVE_SYSTEM_CNF( &systemConfig.kiAmplifire, Ki );
+		SAVE_SYSTEM_CNF( &systemConfig.kdDivider, Kd );
+		SAVE_SYSTEM_CNF( &systemConfig.testingTimeSec, Tt * 3600 );
+		SAVE_SYSTEM_CNF( &systemConfig.measuringPeriodSec, Tm * 60 );
+		SAVE_SYSTEM_CNF( &systemConfig.dischargeTimeMs, Td );
+		SAVE_SYSTEM_CNF( &systemConfig.IAmplifierSettleTimeMs, Ta );
+		SAVE_SYSTEM_CNF( &systemConfig.HVMaxSettleTimeMs, Th );
+
+		if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
+						SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+
+		SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
 		return;
 	}
 
@@ -690,6 +775,8 @@ static void messageDecode( void )
 		return;
 	}
 
+
+
 	//---------------------------------------------
 	ptr = strstr( usb_message, "ECHO " );
 	if( ptr )
@@ -707,6 +794,19 @@ static void messageDecode( void )
 			echoOFF = true;
 			return;
 		}
+	}
+
+	//--------------------------------------------- force READY STATUS
+	ptr = strstr( usb_message, "CLEAR ERROR" );
+	if( ptr )
+	{
+		if( systemConfig.sysStatus == ERROR_STATUS )
+		{
+			SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+		}
+		SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+
+		return;
 	}
 
 	//---------------------------------------------
@@ -734,7 +834,7 @@ static void messageDecode( void )
  */
 static void	sendMemoryStatus(void)
 {
-	sprintf( usb_message, "Memory contains: %3lu Point(s) of Data\r\n", systemConfig.measureSavedPoints );
+	sprintf( usb_message, "Memory contains: %lu Point(s) of Data\r\n", systemConfig.measureSavedPoints );
 	SEND_CDC_MESSAGE(usb_message);
 }
 
@@ -757,7 +857,7 @@ static void	sendSystemTemperature(void)
 {
 	int16_t t = getTemperature();
 
-	if( t != SENSOR_NOT_CONNECTED )	sprintf( usb_message, "System temperature, oC: %3i\r\n", t);
+	if( t != SENSOR_NOT_CONNECTED )	sprintf( usb_message, "System temperature, oC: %i\r\n", t);
 	else							sprintf( usb_message, "System temperature: sensor not connected\r\n");
 	SEND_CDC_MESSAGE(usb_message);
 }
@@ -782,6 +882,24 @@ static void	sendVDDA(void)
 
 	sprintf( usb_message, "VDDA Voltage: %3lu.%03lu V\r\n", vdda / 1000, vdda % 1000);
 	SEND_CDC_MESSAGE(usb_message);
+}
+
+/*
+ *
+ */
+static void	sendTestTimePass(void)
+{
+	uint32_t pass_time = getTestTimePass();
+
+	if( (systemConfig.sysStatus == ACTIVE_STATUS) || (systemConfig.sysStatus == PAUSE_STATUS) )
+	{
+		uint16_t  days    = pass_time / 86400;
+		uint16_t  hours   = (pass_time - days * 86400) / 3600;
+		uint16_t  minutes = (pass_time - hours * 3600) / 60;
+
+		sprintf( usb_message, "Testing time passed: %02u:%02u:%02u <DD>:<HH>:<MM>\r\n", days, hours, minutes);
+		SEND_CDC_MESSAGE(usb_message);
+	}
 }
 
 /*
@@ -819,12 +937,20 @@ static void	sendSystemStatus(void)
 static void	sendSystemSettings( void )
 {
 	SEND_CDC_MESSAGE( "System settings:\r\n" );
+
 	sprintf( usb_message, "Test voltage: %lu V\r\nMeasure voltage: %lu V\r\nTest time: %lu hours\r\nMeasure period: %lu minutes\r\n",
 							systemConfig.uTestVol, systemConfig.uMeasureVol, systemConfig.testingTimeSec / 3600, systemConfig.measuringPeriodSec / 60);
 	SEND_CDC_MESSAGE( usb_message );
+
 	sprintf( usb_message, "Amplifier factor Ki: %lu\r\nDivision factor Kd: %lu\r\nDischarge time: %lu msec\r\nAcceptable HV error: %lu mV\r\n",
-						systemConfig.kiAmplifire, systemConfig.kdDivider, systemConfig.dischargePreMeasureTimeMs, systemConfig.MaxErrorHV_mV );
+						systemConfig.kiAmplifire, systemConfig.kdDivider, systemConfig.dischargeTimeMs, systemConfig.MaxErrorHV_mV );
 	SEND_CDC_MESSAGE( usb_message );
+
+	sprintf( usb_message, "Amplifier settle time: %lu msec\r\nMax HV settle time: %lu msec\r\n",
+						systemConfig.IAmplifierSettleTimeMs, systemConfig.HVMaxSettleTimeMs );
+	SEND_CDC_MESSAGE( usb_message );
+
+	SEND_CDC_MESSAGE( "\r\n" );
 }
 
 /*
@@ -856,12 +982,11 @@ static void	sendMeasureResult(uint32_t * dataMeasure)
  */
 static void	sendMeasureError(uint8_t line, uint32_t * dataMeasure)
 {
-	sprintf( usb_message, "Error Line %u, Raw state: Ok or Er\r\n", line + 1 );
+	sprintf( usb_message, "Error Line %u, Raw 1 - 16, State: Ok or Er\r\n", line + 1 );
 	SEND_CDC_MESSAGE( usb_message );
-	SEND_CDC_MESSAGE( "Raw  1   2   3   4   5   6   7   8   9  10  11  12  13  14  15  16 \r\n    " );
 
 	for(uint8_t j = 0; j < MATRIX_RAWn; j++ )
-		{ sprintf( usb_message, "%s ", dataMeasure[j] ? "Ok  " : "Er  " ); SEND_CDC_MESSAGE( usb_message ); }
+		{ sprintf( usb_message, "%s  ", dataMeasure[j] ? "Ok" : "Er" ); SEND_CDC_MESSAGE( usb_message ); }
 	SEND_CDC_MESSAGE( "\r\n" );
 }
 
@@ -877,13 +1002,19 @@ static void sendErrorReaction( void )
 								sendSystemTime();
 								sendSystemStatus();
 								sendMemoryStatus();
+								sendVDDA();
+								sendRealHV();
+								sendTestTimePass();
 								break;
 
 	case  MEASURE_CHANEL_ERROR: SAVE_SYSTEM_CNF( &systemConfig.sysStatus, PAUSE_STATUS );
-								SEND_CDC_MESSAGE( "******************** CHANEL fail *******************\r\n" );
+								SEND_CDC_MESSAGE( "******* CHANEL fail - test paused if run **********\r\n" );
 								sendSystemTime();
 								sendSystemStatus();
 								sendMemoryStatus();
+								sendVDDA();
+								sendRealHV();
+								sendTestTimePass();
 								{
 									uint32_t   errline = MEASURE_GET_ERROR_LINE( getErrorCode() );
 									uint32_t * ptrData = getMeasureData();
@@ -891,10 +1022,23 @@ static void sendErrorReaction( void )
 								}
 								break;
 
+	case  MEASURE_HV_UNSTABLE_ERROR:
+								SEND_CDC_MESSAGE( "********* Detected unstable High Voltage **********\r\n" );
+								sendSystemTime();
+								sendSystemTemperature();
+								sendVDDA();
+								sendRealHV();
+								sendTestTimePass();
+								break;
+
 	default:					SEND_CDC_MESSAGE( "******************** UNKNOWN ERROR ******************\r\n" );
 								sendSystemTime();
+								sendSystemTemperature();
 								sendSystemStatus();
 								sendMemoryStatus();
+								sendVDDA();
+								sendRealHV();
+								sendTestTimePass();
 	}
 	SEND_CDC_MESSAGE( "\r\n" );
 }

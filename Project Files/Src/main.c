@@ -46,7 +46,7 @@ static void 				iniRTC				( RTC_HandleTypeDef * RtcHandle );
 static void 				iniSPIx				( SPI_HandleTypeDef * SpiHandle );
 static int16_t 				getDataTMP121		( void );
 /* Private functions ---------------------------------------------------------*/
-
+uint32_t getTestTimePass(void) { return testTimePass; }
 /**
   * @brief  Main program
   * @param  None
