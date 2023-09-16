@@ -1,5 +1,5 @@
 Middlewares/STM32_USBD_Library/Core/usbd_ctlreq.o: \
- D:/Projects/CAPTESTER\ STM32L152/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c \
+ D:/Projects/CAPTESTER/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_ctlreq.c \
  ../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_ctlreq.h \
  ../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_def.h \
  ../Src/Inc/usbd_conf.h \

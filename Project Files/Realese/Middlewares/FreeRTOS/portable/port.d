@@ -1,5 +1,5 @@
 Middlewares/FreeRTOS/portable/port.o: \
- D:/Projects/CAPTESTER\ STM32L152/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.c \
+ D:/Projects/CAPTESTER/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.c \
  ../../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
  ../Src/Inc/FreeRTOSConfig.h \
  ../../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h \

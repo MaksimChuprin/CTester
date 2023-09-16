@@ -121,13 +121,9 @@ static void OneSecThread(const void *argument)
 		{
 			DateTime_t  date = { .year = 2023, .month = 9, .day = 30, .hours = 12 };
 
-			if( rtcPoint )
-			{
-				convertUnixTimeToDate( rtcSaveArray[rtcPoint - 1], &date );
-				setRTC( &date );
-			}
-			else
-				setRTC( &date );
+			if( rtcPoint ) convertUnixTimeToDate( rtcSaveArray[rtcPoint - 1], &date );
+
+			setRTC( &date );
 			break;
 		}
 

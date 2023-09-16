@@ -1,6 +1,7 @@
-../Src/measure_main.c:254:13:setHV	0	static
-../Src/measure_main.c:87:12:getMeasureData	0	static
-../Src/measure_main.c:88:12:getVrefmV	0	static
-../Src/measure_main.c:89:12:getErrorCode	0	static
-../Src/measure_main.c:90:12:getHighVoltagemV	0	static
-../Src/measure_main.c:97:6:MeasureThread	96	static
+../Src/measure_main.c:456:13:getVrefHVRawCommonCurrent	40	static
+../Src/measure_main.c:127:12:getMeasureData	0	static
+../Src/measure_main.c:128:12:getRawAdc	0	static
+../Src/measure_main.c:129:12:getVrefmV	0	static
+../Src/measure_main.c:130:12:getErrorCode	0	static
+../Src/measure_main.c:131:12:getHighVoltagemV	0	static
+../Src/measure_main.c:138:6:MeasureThread	72	static

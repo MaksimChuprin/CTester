@@ -1,5 +1,5 @@
 Drivers/STM32L1xx_HAL_Driver/stm32l1xx_hal_rcc_ex.o: \
- D:/Projects/CAPTESTER\ STM32L152/Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_rcc_ex.c \
+ D:/Projects/CAPTESTER/Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_rcc_ex.c \
  ../../Drivers/STM32L1xx_HAL_Driver/Inc/stm32l1xx_hal.h \
  ../Src/Inc/stm32l1xx_hal_conf.h \
  ../../Drivers/STM32L1xx_HAL_Driver/Inc/stm32l1xx_hal_rcc.h \

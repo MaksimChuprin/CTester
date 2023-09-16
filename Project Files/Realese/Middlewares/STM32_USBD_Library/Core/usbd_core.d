@@ -1,5 +1,5 @@
 Middlewares/STM32_USBD_Library/Core/usbd_core.o: \
- D:/Projects/CAPTESTER\ STM32L152/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c \
+ D:/Projects/CAPTESTER/Middlewares/ST/STM32_USB_Device_Library/Core/Src/usbd_core.c \
  ../../Middlewares/ST/STM32_USB_Device_Library/Core/Inc/usbd_core.h \
  ../Src/Inc/usbd_conf.h \
  ../../Drivers/STM32L1xx_HAL_Driver/Inc/stm32l1xx_hal.h \

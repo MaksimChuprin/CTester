@@ -125,7 +125,7 @@ void UsbCDCThread(const void *argument)
 				SEND_CDC_MESSAGE( "****************** END OF DATA *******************\r\n\r\n" );
 			}
 
-			/*  test stopped event - by timeout or error */
+			/*  test stop event */
 			if ( event.value.signals & USB_THREAD_TESTSTOPPED_Evt )
 			{
 				if(systemConfig.measureSavedPoints)
@@ -142,6 +142,7 @@ void UsbCDCThread(const void *argument)
 				SEND_CDC_MESSAGE( "\r\n" );
 			}
 
+			/*  test start event - after reset */
 			if ( event.value.signals & USB_THREAD_TESTSTARTED_Evt )
 			{
 				SEND_CDC_MESSAGE( "***************** Test continue ****************\r\n" );
@@ -150,14 +151,17 @@ void UsbCDCThread(const void *argument)
 				sendMemoryStatus();
 				sendSystemSettings();
 				sendRealHV();
+				sendTestTimePass();
 				SEND_CDC_MESSAGE( "\r\n" );
 			}
 
+			/*  measure error event */
 			if ( event.value.signals == USB_THREAD_MEASUREERROR_Evt )
 			{
 				sendErrorReaction();
 			}
 
+			/* message got event  */
 			if (event.value.signals & USB_THREAD_MESSAGEGOT_Evt)
 			{
 				messageDecode();
@@ -365,15 +369,16 @@ static void messageDecode( void )
 		case ACTIVE_STATUS:
 		case FINISH_STATUS:		osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTMESURE_Evt );
 								{
+									SEND_CDC_MESSAGE( "Measuring...\r\n" );
 									osEvent event = osSignalWait( USB_THREAD_MEASUREREADY_Evt | USB_THREAD_MEASUREERROR_Evt, osWaitForever );
 
 									if ( event.value.signals & USB_THREAD_MEASUREREADY_Evt )
 									{
-										SEND_CDC_MESSAGE( "*********** BEGIN OF MEASUREMENT DATA ************\r\n" );
+										SEND_CDC_MESSAGE( "****************** BEGIN DATA *********************\r\n" );
 										sendSystemTime();
 										sendSystemTemperature();
 										sendMeasureResult( getMeasureData() );
-										SEND_CDC_MESSAGE( "************ END OF MEASUREMENT DATA *************\r\n\r\n" );
+										SEND_CDC_MESSAGE( "******************* END DATA **********************\r\n\r\n" );
 										break;
 									}
 
@@ -430,13 +435,13 @@ static void messageDecode( void )
 										DateTime_t  date = {0};
 
 										convertUnixTimeToDate ( dataAttribute[p].timeMeasure, &date );
-										sprintf( usb_message, "Point: %3hu, Time: %04hd-%02hd-%02hd %02hd:%02hd, Measure voltage, V: %3lu, Temperature, oC: %3i\r\n",
-																	p + 1, date.year, date.month, date.day, date.hours, date.minutes, dataAttribute[p].voltageMeasure, (int16_t)dataAttribute[p].temperatureMeasure );
+										sprintf( usb_message, "Point: %3hu, Time: %04hd-%02hd-%02hd %02hd:%02hd, Measure voltage, V: %3lu V,",
+																	p + 1, date.year, date.month, date.day, date.hours, date.minutes, dataAttribute[p].voltageMeasure );
 										SEND_CDC_MESSAGE( usb_message );
 										if( dataAttribute[p].temperatureMeasure != SENSOR_NOT_CONNECTED )
-											sprintf( usb_message, "Temperature, oC: %i\r\n", (int16_t)dataAttribute[p].temperatureMeasure );
+											sprintf( usb_message, "Temperature: %i oC\r\n", (int16_t)dataAttribute[p].temperatureMeasure );
 										else
-											sprintf( usb_message, "Temperature, oC: --- \r\n" );
+											sprintf( usb_message, "Temperature: --- oC\r\n" );
 										SEND_CDC_MESSAGE( usb_message );
 										sendMeasureResult( &dataMeasure[p].resistanceValMOhm[0][0] );
 										SEND_CDC_MESSAGE( "\r\n" );
@@ -733,7 +738,7 @@ static void messageDecode( void )
 		const uint32_t 	Tm 	= 60;	// minutes
 		const uint32_t 	Tt 	= 168;	// hours
 		const uint32_t 	Kd 	= 101;
-		const uint32_t 	Ki 	= 100000;
+		const uint32_t 	Ki 	= 1000000;
 		const uint32_t 	Ve 	= 500;	// mV
 		const uint32_t 	Vm 	= 25;	// V
 		const uint32_t 	Vt 	= 50;	// V
@@ -890,16 +895,12 @@ static void	sendVDDA(void)
 static void	sendTestTimePass(void)
 {
 	uint32_t pass_time = getTestTimePass();
+	uint16_t  days    = pass_time / 86400;
+	uint16_t  hours   = (pass_time - days * 86400) / 3600;
+	uint16_t  minutes = (pass_time - hours * 3600) / 60;
 
-	if( (systemConfig.sysStatus == ACTIVE_STATUS) || (systemConfig.sysStatus == PAUSE_STATUS) )
-	{
-		uint16_t  days    = pass_time / 86400;
-		uint16_t  hours   = (pass_time - days * 86400) / 3600;
-		uint16_t  minutes = (pass_time - hours * 3600) / 60;
-
-		sprintf( usb_message, "Testing time passed: %02u:%02u:%02u <DD>:<HH>:<MM>\r\n", days, hours, minutes);
-		SEND_CDC_MESSAGE(usb_message);
-	}
+	sprintf( usb_message, "Testing time passed: %02u:%02u:%02u <DD>:<HH>:<MM>\r\n", days, hours, minutes);
+	SEND_CDC_MESSAGE(usb_message);
 }
 
 /*
@@ -964,15 +965,17 @@ static void	sendMeasureResult(uint32_t * dataMeasure)
 		sprintf( usb_message, "Line %u, Raw  1 - 8, Resistance value, MOhm\r\n", i + 1 );
 		SEND_CDC_MESSAGE( usb_message );
 
-		for(uint8_t j = 0; j < 8; j++ )
-			{ sprintf( usb_message, "%*lu  ", 5, dataMeasure[i * MATRIX_RAWn + j] ); SEND_CDC_MESSAGE( usb_message ); }
+		for( uint8_t j = 0, len = 0; j < 8; j++ )
+			 len += sprintf( &usb_message[len], "%*lu  ", 5, dataMeasure[i * MATRIX_RAWn + j] );
+		SEND_CDC_MESSAGE( usb_message );
 		SEND_CDC_MESSAGE( "\r\n" );
 
 		sprintf( usb_message, "Line %u, Raw  9 - 16, Resistance value, MOhm\r\n", i + 1 );
 		SEND_CDC_MESSAGE( usb_message );
 
-		for(uint8_t j = 8; j < 16; j++ )
-			{ sprintf( usb_message, "%*lu  ", 5, dataMeasure[i * MATRIX_RAWn + j] ); SEND_CDC_MESSAGE( usb_message ); }
+		for( uint8_t j = 8, len = 0; j < 16; j++ )
+					 len += sprintf( &usb_message[len], "%*lu  ", 5, dataMeasure[i * MATRIX_RAWn + j] );
+		SEND_CDC_MESSAGE( usb_message );
 		SEND_CDC_MESSAGE( "\r\n" );
 	}
 }
@@ -985,8 +988,8 @@ static void	sendMeasureError(uint8_t line, uint32_t * dataMeasure)
 	sprintf( usb_message, "Error Line %u, Raw 1 - 16, State: Ok or Er\r\n", line + 1 );
 	SEND_CDC_MESSAGE( usb_message );
 
-	for(uint8_t j = 0; j < MATRIX_RAWn; j++ )
-		{ sprintf( usb_message, "%s  ", dataMeasure[j] ? "Ok" : "Er" ); SEND_CDC_MESSAGE( usb_message ); }
+	for( uint8_t j = 0; j < MATRIX_RAWn; j++ )
+		{ sprintf( usb_message, "%s  ", dataMeasure[j] < 4000 ? "Ok" : "Er" ); SEND_CDC_MESSAGE( usb_message ); }
 	SEND_CDC_MESSAGE( "\r\n" );
 }
 
@@ -1017,8 +1020,7 @@ static void sendErrorReaction( void )
 								sendTestTimePass();
 								{
 									uint32_t   errline = MEASURE_GET_ERROR_LINE( getErrorCode() );
-									uint32_t * ptrData = getMeasureData();
-									sendMeasureError( errline, &ptrData[errline * MATRIX_RAWn] );
+									sendMeasureError( errline, getRawAdc() );
 								}
 								break;
 

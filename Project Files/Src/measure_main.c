@@ -101,7 +101,7 @@ typedef enum {
 /* Private variables ---------------------------------------------------------*/
 static __IO int16_t   				adcDMABuffer[ADC_DMA_ARRAY_LEN];
 static uint32_t						resistanceArrayMOhm[MATRIX_LINEn][MATRIX_RAWn];
-static uint32_t						rawCommoncurrent_nA[MATRIX_RAWn];
+static uint32_t						rawAdcCode[MATRIX_RAWn];
 static int32_t						adcMeanMeasure[ADC_MEAN_ARRAY_LEN];
 static int32_t						adcMeanZero[ADC_MEAN_ARRAY_LEN];
 static int32_t						Vref_mV = 3000;
@@ -114,6 +114,7 @@ static uint32_t						errorCode = MEASURE_NOERROR;
 static bool							HV_PowerGood = false;
 
 /* Private function prototypes -----------------------------------------------*/
+static void 						getRawAdcCode( void );
 static void 						getVrefHVRawCommonCurrent( void );
 static void							getZeroShifts( void );
 static void 						getResistanceOneLine( Line_NumDef LineNum );
@@ -124,6 +125,7 @@ static currentMode_t 				measureModeProcess( bool * firstStep );
 /* Private functions ---------------------------------------------------------*/
 
 uint32_t * getMeasureData(void) 	{ return  &resistanceArrayMOhm[0][0]; }
+uint32_t * getRawAdc(void) 			{ return  rawAdcCode; }
 int32_t    getVrefmV(void) 			{ return  Vref_mV; }
 uint32_t   getErrorCode(void) 		{ return  errorCode; }
 uint32_t   getHighVoltagemV(void) 	{ return  (uint32_t)HighVoltage_mV; }
@@ -135,18 +137,21 @@ uint32_t   getHighVoltagemV(void) 	{ return  (uint32_t)HighVoltage_mV; }
   */
 void MeasureThread(const void *argument)
 {
-	currentMode_t 	currentMode   = stopMode;
-	bool			firstModeStep = false;
+	currentMode_t 	currentMode;
+	bool			firstModeStep;
 
 	/* continue test if terminated by reset */
 	if( systemConfig.sysStatus == ACTIVE_STATUS )
 	{
-		TaskHighVoltage_mV 	 =  systemConfig.uTestVol * 1000;
-		currentMode			 =  testMode;
-		firstModeStep 		 =  true;
-		getVrefHVRawCommonCurrent();
-		DAC_FIRST_APPROACH;
+		currentMode		= testMode;
+		firstModeStep 	= true;
 	}
+	else
+	{
+		currentMode		= stopMode;
+		firstModeStep 	= false;
+	}
+
 
 	/* measure circle */
 	for( TickType_t startTime = 0, measTickDelayMs = 0, passTime = 0; ; passTime = xTaskGetTickCount() - startTime )
@@ -159,16 +164,18 @@ void MeasureThread(const void *argument)
 		CLEAR_ALL_EVENTS;
 
 		/* process events */
-		if( event.value.signals & MEASURE_THREAD_STARTTEST_Evt )
-		{
-			currentMode			=	testMode;
-			firstModeStep 		=  	true;
-		}
-
 		if( event.value.signals & MEASURE_THREAD_STOPTEST_Evt )
 		{
 			currentMode			= 	stopMode;
 			firstModeStep 		= 	true;
+			event.value.signals =	0;
+		}
+
+		if( event.value.signals & MEASURE_THREAD_STARTTEST_Evt )
+		{
+			currentMode			=	testMode;
+			firstModeStep 		=  	true;
+			event.value.signals =	0;
 		}
 
 		if( event.value.signals & MEASURE_THREAD_STARTMESURE_Evt )
@@ -207,7 +214,7 @@ void MeasureThread(const void *argument)
 								break;
 
 				case measureMode:
-								measureModeProcess( &firstModeStep );
+								currentMode = measureModeProcess( &firstModeStep );
 								break;
 
 				case errorMode:	if( firstModeStep )
@@ -293,7 +300,7 @@ static currentMode_t testModeProcess( bool * p_firstStep )
 					}
 
 					/* Raw break detect */
-					getResistanceOneLine(LineNum);
+					getRawAdcCode();
 					// set error code
 					errorCode 			= MEASURE_SET_ERROR_CODE(MEASURE_CHANEL_ERROR) | MEASURE_SET_ERROR_LINE(LineNum);
 					// to error mode
@@ -405,7 +412,7 @@ static currentMode_t measureModeProcess( bool * p_firstStep )
 					errorCode 			= MEASURE_SET_ERROR_CODE(MEASURE_CHANEL_ERROR) | MEASURE_SET_ERROR_LINE(LineNum);
 					// to error mode
 					*p_firstStep 		= true;
-					return stopMode;
+					return errorMode;
 		}
 
 	return measureMode;
@@ -454,9 +461,32 @@ static void setHV(void)
 static void getVrefHVRawCommonCurrent(void)
 {
 	CLEAN_MEAN_MEASURE;
+
+	for( uint32_t i = 0; i < ADC_MEAN_FACTOR; )
+	{
+		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
+		{
+			adcMeanMeasure[ADC_MEAN_ARRAY_DAC] 	   += adcDMABuffer[ADC_DMA_ARRAY_DAC];
+			adcMeanMeasure[ADC_MEAN_ARRAY_VINTREF] += adcDMABuffer[ADC_DMA_ARRAY_VINTREF];
+			i++;
+		}
+	}
+
+	/* calc Vref & HV */
+	Vref_mV 	   += ( 10 * 3000 * VREFINT_CAL * ADC_MEAN_FACTOR / adcMeanMeasure[ADC_MEAN_ARRAY_VINTREF] - 10 * Vref_mV) / 20 ; // dig filter k = 0.5
+	HighVoltage_mV	=  Vref_mV * adcMeanMeasure[ADC_MEAN_ARRAY_DAC] / ADC_MEAN_FACTOR * systemConfig.kdDivider / RANGE_12BITS;
+}
+
+
+/* measure Vref & HighVoltage */
+static void getRawAdcCode(void)
+{
+	CLEAN_MEAN_MEASURE;
 	/* channels 1..8 */
 	BSP_SET_RMUX(Mux_1_8);
-	osDelay( 10 );
+	osDelay( systemConfig.dischargeTimeMs );
 
 	for( uint32_t i = 0; i < ADC_MEAN_FACTOR; )
 	{
@@ -465,15 +495,13 @@ static void getVrefHVRawCommonCurrent(void)
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j] += adcDMABuffer[j];
-			adcMeanMeasure[ADC_MEAN_ARRAY_DAC] 	   += adcDMABuffer[ADC_DMA_ARRAY_DAC];
-			adcMeanMeasure[ADC_MEAN_ARRAY_VINTREF] += adcDMABuffer[ADC_DMA_ARRAY_VINTREF];
 			i++;
 		}
 	}
 
 	/* channels 9..16 */
 	BSP_SET_RMUX(Mux_9_16);
-	osDelay( 10 );
+	osDelay( systemConfig.dischargeTimeMs );
 
 	for( uint32_t i = 0; i < ADC_MEAN_FACTOR; )
 	{
@@ -486,23 +514,11 @@ static void getVrefHVRawCommonCurrent(void)
 		}
 	}
 
-	/* calc Vref & HV */
-	Vref_mV 	   += ( 10 * 3000 * VREFINT_CAL * ADC_MEAN_FACTOR / adcMeanMeasure[ADC_MEAN_ARRAY_VINTREF] - 10 * Vref_mV) / 20 ; // dig filter k = 0.5
-	HighVoltage_mV	=  Vref_mV * adcMeanMeasure[ADC_MEAN_ARRAY_DAC] / ADC_MEAN_FACTOR * systemConfig.kdDivider / RANGE_12BITS;
-
-	/* calc raw Common current */
-	float ki_V_nA    = systemConfig.kiAmplifire / 1e9;
-	float adc_V_step = Vref_mV / 1000. / RANGE_12BITS;
-
 	for(uint32_t i = 0; i < MATRIX_RAWn; i++)
 	{
-		if( adcMeanMeasure[i] > adcMeanZero[i] ) 	adcMeanMeasure[i]  = (adcMeanMeasure[i] - adcMeanZero[i]) / ADC_MEAN_FACTOR;
-		else										adcMeanMeasure[i]  = 0;
-
-		rawCommoncurrent_nA[i] = (uint32_t)(adcMeanMeasure[i] * adc_V_step * ki_V_nA + 0.5);
+		rawAdcCode[i] = adcMeanMeasure[i] / ADC_MEAN_FACTOR;
 	}
 }
-
 
 /* get zero shift */
 static void	getZeroShifts( void )
@@ -581,7 +597,7 @@ static void getResistanceOneLine( Line_NumDef LineNum )
 	}
 
 	/* correct zero shift and calc */
-	float ki_V_nA    = systemConfig.kiAmplifire / 1e9;
+	float ki_V_nA    = 1e9 / systemConfig.kiAmplifire;
 	float adc_V_step = Vref_mV / 1000. / RANGE_12BITS;
 
 	for(uint32_t i = 0; i < MATRIX_RAWn; i++)

@@ -1,5 +1,5 @@
 Middlewares/FreeRTOS/list.o: \
- D:/Projects/CAPTESTER\ STM32L152/Middlewares/Third_Party/FreeRTOS/Source/list.c \
+ D:/Projects/CAPTESTER/Middlewares/Third_Party/FreeRTOS/Source/list.c \
  ../../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h \
  ../Src/Inc/FreeRTOSConfig.h \
  ../../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h \

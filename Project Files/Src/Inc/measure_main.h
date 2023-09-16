@@ -105,6 +105,7 @@
 /* Exported types ------------------------------------------------------------*/
 
 /* Exported functions ------------------------------------------------------- */
+uint32_t * 										getRawAdc		(void);
 uint32_t * 										getMeasureData	(void);
 int32_t    										getVrefmV		(void);
 uint32_t   										getErrorCode	(void);
