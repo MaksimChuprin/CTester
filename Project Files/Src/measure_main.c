@@ -24,6 +24,7 @@ extern 	dataMeasure_t				dataMeasure[];
 typedef enum {
 
 	stopMode = 0,
+	pauseMode,
 	testMode,
 	measureMode,
 	errorMode
@@ -158,7 +159,8 @@ void MeasureThread(const void *argument)
 	{
 		/* wait for events or MEASURE_TICK_TIME_MS */
 		measTickDelayMs = (MEASURE_TICK_TIME_MS > pdTick_to_MS(passTime)) ? MEASURE_TICK_TIME_MS - pdTick_to_MS(passTime) : 1;
-		osEvent event   = osSignalWait( MEASURE_THREAD_STARTTEST_Evt | MEASURE_THREAD_STOPTEST_Evt | MEASURE_THREAD_STARTMESURE_Evt, measTickDelayMs );
+		osEvent event   = osSignalWait( MEASURE_THREAD_STARTTEST_Evt | MEASURE_THREAD_STOPTEST_Evt |
+										MEASURE_THREAD_PAUSETEST_Evt | MEASURE_THREAD_STARTMESURE_Evt, measTickDelayMs );
 		startTime       = xTaskGetTickCount();
 
 		CLEAR_ALL_EVENTS;
@@ -168,6 +170,13 @@ void MeasureThread(const void *argument)
 		{
 			currentMode			= 	stopMode;
 			firstModeStep 		= 	true;
+			event.value.signals =	0;
+		}
+
+		if( event.value.signals & MEASURE_THREAD_PAUSETEST_Evt )
+		{
+			currentMode			=	pauseMode;
+			firstModeStep 		=  	true;
 			event.value.signals =	0;
 		}
 
@@ -205,6 +214,20 @@ void MeasureThread(const void *argument)
 									if( HighVoltage_mV < 5000 )
 									{
 										osSignalSet( USBThreadHandle, USB_THREAD_TESTSTOPPED_Evt );
+										firstModeStep = false;
+									}
+								}
+								break;
+
+				case pauseMode:	if( firstModeStep )
+								{
+									TaskHighVoltage_mV 	= 	0;
+									DAC_FIRST_APPROACH;
+									BSP_CTS_SetAllLineDischarge();
+
+									if( HighVoltage_mV < 5000 )
+									{
+										osSignalSet( USBThreadHandle, USB_THREAD_TESTPAUSED_Evt );
 										firstModeStep = false;
 									}
 								}
@@ -378,11 +401,12 @@ static currentMode_t measureModeProcess( bool * p_firstStep )
 					break;
 
 	case measureResistance:
-					// measure resistance LineNum
-					getResistanceOneLine(LineNum);
 					// check HV Power
 					if( HV_PowerGood )
 					{
+						// measure resistance LineNum
+						getResistanceOneLine(LineNum);
+
 						if( ++LineNum == ADLINEn )
 						{
 							// signal measure end
@@ -408,6 +432,8 @@ static currentMode_t measureModeProcess( bool * p_firstStep )
 						return measureMode;
 					}
 
+					/* Raw break detect */
+					getRawAdcCode();
 					// set error code
 					errorCode 			= MEASURE_SET_ERROR_CODE(MEASURE_CHANEL_ERROR) | MEASURE_SET_ERROR_LINE(LineNum);
 					// to error mode
@@ -598,14 +624,14 @@ static void getResistanceOneLine( Line_NumDef LineNum )
 
 	/* correct zero shift and calc */
 	float ki_V_nA    = 1e9 / systemConfig.kiAmplifire;
-	float adc_V_step = Vref_mV / 1000. / RANGE_12BITS;
+	float adc_code_V = Vref_mV / 1000. / RANGE_12BITS;
 
 	for(uint32_t i = 0; i < MATRIX_RAWn; i++)
 	{
-		if( adcMeanMeasure[i] > adcMeanZero[i] ) 	adcMeanMeasure[i]  = (adcMeanMeasure[i] - adcMeanZero[i]) / ADC_MEAN_FACTOR;
-		else										adcMeanMeasure[i]  = 1;
+		if( adcMeanMeasure[i] > adcMeanZero[i] ) 	adcMeanMeasure[i]  = (adcMeanMeasure[i] - adcMeanZero[i]);
+		else										adcMeanMeasure[i]  = 0;
 
-		float current_nA = adcMeanMeasure[i] * adc_V_step * ki_V_nA;
+		float current_nA = adcMeanMeasure[i] * adc_code_V * ki_V_nA / ADC_MEAN_FACTOR + 0.1;
 		resistanceArrayMOhm[LineNum][i] = HighVoltage_mV / current_nA + 0.5;
 		if(resistanceArrayMOhm[LineNum][i] > 99999) resistanceArrayMOhm[LineNum][i] = 99999;
 	}

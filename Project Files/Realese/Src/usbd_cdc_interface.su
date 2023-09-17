@@ -1,6 +1,0 @@
-../Src/usbd_cdc_interface.c:92:15:CDC_Itf_DeInit	0	static
-../Src/usbd_cdc_interface.c:105:15:CDC_Itf_Control	0	static
-../Src/usbd_cdc_interface.c:173:15:CDC_Itf_Receive	8	static
-../Src/usbd_cdc_interface.c:77:15:CDC_Itf_Init	16	static
-../Src/usbd_cdc_interface.c:196:6:getCDCmessage	16	static
-../Src/usbd_cdc_interface.c:210:9:sendCDCmessage	16	static
