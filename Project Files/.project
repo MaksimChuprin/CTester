@@ -26,6 +26,11 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>Docs</name>
+			<type>2</type>
+			<locationURI>PARENT-1-PROJECT_LOC/Docs</locationURI>
+		</link>
+		<link>
 			<name>Drivers/STM32L1xx_HAL_Driver/stm32l1xx_hal.c</name>
 			<type>1</type>
 			<locationURI>PARENT-1-PROJECT_LOC/Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal.c</locationURI>
