@@ -376,8 +376,12 @@ static currentMode_t measureModeProcess( bool * p_firstStep )
 	switch( measureModeState )
 	{
 	case measureZeroShift:
-					getZeroShifts(); // zero of amplifier
+					if( measureModeCounter < systemConfig.dischargeTimeMs ) break;
 
+					 // zero of amplifier
+					getZeroShifts();
+
+					// set measure Voltage
 					measureModeCounter 	= 	0;
 					TaskHighVoltage_mV 	=	systemConfig.uMeasureVol * 1000;
 					measureModeState	= 	hvStabM;
@@ -405,6 +409,8 @@ static currentMode_t measureModeProcess( bool * p_firstStep )
 					break;
 
 	case measureResistance:
+					if( measureModeCounter < systemConfig.dischargeTimeMs ) break;
+
 					// check HV Power
 					if( HV_PowerGood )
 					{
@@ -431,8 +437,8 @@ static currentMode_t measureModeProcess( bool * p_firstStep )
 						}
 
 						// set HV on next line, discharge others
-						BSP_CTS_SetAllLineDischarge();
-						BSP_CTS_SetAnyLine( LineNum, Line_HV, Opto_Open );
+						measureModeCounter 	= 0;
+						BSP_CTS_SetSingleLine( LineNum );
 						return measureMode;
 					}
 
@@ -561,9 +567,7 @@ static void getRawAdcCode(void)
 static void	getZeroShifts( void )
 {
 	CLEAN_MEAN_ZERO;
-	BSP_CTS_SetAnyLine( ADLINEn, Line_ZV, Opto_Open ); 	// discharge All capacitors
-	osDelay( systemConfig.dischargeTimeMs );
-	BSP_SET_OPTO( Opto_Close );							// disconnect All capacitors from HV driver
+	BSP_SET_OPTO( Opto_Close );	// disconnect All ZV capacitors from HV driver
 
 	/* channels 1..8 */
 	BSP_SET_RMUX(Mux_1_8);
@@ -601,7 +605,7 @@ static void getResistanceOneLine( Line_NumDef LineNum )
 	if( systemConfig.measureMask & (1 << LineNum) ) return;
 
 	CLEAN_MEAN_MEASURE;
-	BSP_CTS_SetSingleLine( LineNum );
+	BSP_SET_OPTO( Opto_Close ); // disconnect All ZV capacitors from HV driver
 
 	/* channels 1..8 */
 	BSP_SET_RMUX(Mux_1_8);

@@ -188,9 +188,6 @@ void BSP_CTS_SetSingleLine( Line_NumDef line )
 
 	for(uint32_t i = 0; i < ADLINEn; i++ )
 			HAL_GPIO_WritePin( Line_AD[i].port,  Line_AD[i].pin , ( line == i ) ? GPIO_PIN_SET : GPIO_PIN_RESET );
-
-	osDelay( systemConfig.dischargeTimeMs );
-	BSP_SET_OPTO( Opto_Close );
 }
 
 /**

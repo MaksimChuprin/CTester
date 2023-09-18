@@ -959,8 +959,8 @@ static void	sendSystemSettings( void )
 						systemConfig.kiAmplifire, systemConfig.kdDivider, systemConfig.dischargeTimeMs, systemConfig.MaxErrorHV_mV );
 	SEND_CDC_MESSAGE( usb_message );
 
-	sprintf( usb_message, "Amplifier settle time: %lu msec\r\nMax HV settle time: %lu msec\r\n",
-						systemConfig.IAmplifierSettleTimeMs, systemConfig.HVMaxSettleTimeMs );
+	sprintf( usb_message, "Amplifier settle time: %lu msec\r\nMax HV settle time: %lu msec\r\nADC mean factor: %lu \r\n",
+						systemConfig.IAmplifierSettleTimeMs, systemConfig.HVMaxSettleTimeMs, systemConfig.adcMeanFactor );
 	SEND_CDC_MESSAGE( usb_message );
 
 	SEND_CDC_MESSAGE( "\r\n" );
