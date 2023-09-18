@@ -35,6 +35,7 @@ const char * helpStrings[] = {
 		"Set Th=<value> - set <value> of max HV settle time in mSec\r\n",
 		"Set Ki=<value> - set factor of current amplifier\r\n",
 		"Set Kd=<value> - set division factor of HV\r\n",
+		"Set Km=<value> - set ADC mean factor\r\n",
 		"Set RTC=<YYYY:MM:DD:HH:MM> - set current time\r\n",
 		"Set default - set system to default\r\n",
 		"Echo On - switch echo on\r\n",
@@ -404,13 +405,11 @@ static void messageDecode( void )
 		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "Command ignored - system not configured\r\n\r\n" );
 								break;
 
-		case ACTIVE_STATUS:	    SEND_CDC_MESSAGE( "Command ignored - stop or pause test\r\n\r\n" );
-								break;
-
 		case FINISH_STATUS:		SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 		case ERROR_STATUS:
 		case READY_STATUS:
 		case PAUSE_STATUS:
+		case ACTIVE_STATUS:
 								if(systemConfig.measureSavedPoints)
 								{
 									SEND_CDC_MESSAGE( "*********** BEGIN OF DATA ************\r\n" );
@@ -712,10 +711,38 @@ static void messageDecode( void )
 		return;
 	}
 
+	//--------------------------------------------- SET HV max settle time Th
+	ptr = strstr( usb_message, "SET KM=" );
+	if( ptr )
+	{
+		uint32_t 	Km 	= 0;
+		int 		res			= sscanf( ptr, "SET KM=%lu", &Km );
+
+		if( res )
+		{
+			if( Km > 16384 || Km < 16 ) SEND_CDC_MESSAGE( "ADC mean factor must be must be 16...16384\r\n\r\n" )
+			else
+			{
+				SAVE_SYSTEM_CNF( &systemConfig.HVMaxSettleTimeMs, Km );
+
+				if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
+				{
+					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+				}
+				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+			}
+		}
+		else
+			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+
+		return;
+	}
+
 	//--------------------------------------------- SET default values of system
 	ptr = strstr( usb_message, "SET DEFAULT" );
 	if( ptr )
 	{
+		const uint32_t 	Km 	= 256;	//
 		const uint32_t 	Th 	= 1000;	// msec
 		const uint32_t 	Ta 	= 50;	// msec
 		const uint32_t 	Td 	= 500;	// msec
@@ -738,6 +765,7 @@ static void messageDecode( void )
 		SAVE_SYSTEM_CNF( &systemConfig.dischargeTimeMs, Td );
 		SAVE_SYSTEM_CNF( &systemConfig.IAmplifierSettleTimeMs, Ta );
 		SAVE_SYSTEM_CNF( &systemConfig.HVMaxSettleTimeMs, Th );
+		SAVE_SYSTEM_CNF( &systemConfig.adcMeanFactor, Km );
 
 		if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
 						SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );

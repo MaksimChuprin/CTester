@@ -272,11 +272,12 @@ void LoadSysCnf(void)
   */
 bool CheckSysCnf(void)
 {
-	bool status = (systemConfig.kiAmplifire != 0) 	 && (systemConfig.dischargeTimeMs != 0) 	&&
-				  (systemConfig.kdDivider != 0) 	 && (systemConfig.measuringPeriodSec != 0) 	&&
-				  (systemConfig.testingTimeSec != 0) && (systemConfig.uMeasureVol != 0) 		&&
-				  (systemConfig.uTestVol != 0)       && (systemConfig.MaxErrorHV_mV != 0 )     	&&
-				  (systemConfig.IAmplifierSettleTimeMs != 0) && (systemConfig.HVMaxSettleTimeMs != 0 );
+	bool status = (systemConfig.kiAmplifire != 0) 	 		 && (systemConfig.dischargeTimeMs != 0) 	&&
+				  (systemConfig.kdDivider != 0) 	 		 && (systemConfig.measuringPeriodSec != 0) 	&&
+				  (systemConfig.testingTimeSec != 0) 		 && (systemConfig.uMeasureVol != 0) 		&&
+				  (systemConfig.uTestVol != 0)       		 && (systemConfig.MaxErrorHV_mV != 0 )     	&&
+				  (systemConfig.IAmplifierSettleTimeMs != 0) && (systemConfig.HVMaxSettleTimeMs != 0 ) 	&&
+				  (systemConfig.adcMeanFactor  != 0);
 
 	if(status == false)
 	{

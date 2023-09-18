@@ -86,6 +86,7 @@ typedef struct {
 	uint32_t 	MaxErrorHV_mV;
 	uint32_t 	IAmplifierSettleTimeMs;
 	uint32_t 	HVMaxSettleTimeMs;
+	uint32_t 	adcMeanFactor;
 } sysCfg_t;
 
 typedef struct {
