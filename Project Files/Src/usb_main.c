@@ -124,6 +124,11 @@ void UsbCDCThread(const void *argument)
 												SAVE_SYSTEM_CNF( &systemConfig.sysStatus, PAUSE_STATUS );
 												event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 											}
+											else
+											{
+												SAVE_SYSTEM_CNF( &systemConfig.sysStatus, ERROR_STATUS );
+												event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
+											}
 											break;
 
 				case  MEASURE_HV_UNSTABLE_ERROR:
