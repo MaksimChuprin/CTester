@@ -126,10 +126,7 @@ void UsbCDCThread(const void *argument)
 												event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 											}
 
-<<<<<<< HEAD
-=======
 											SEND_CDC_MESSAGE( "\r\n" );
->>>>>>> be631a960fdc303891bd28e0328eaf460ee246c7
 											break;
 
 				case  MEASURE_HV_UNSTABLE_ERROR:
@@ -877,7 +874,7 @@ static void messageDecode( void )
  */
 static void	sendMemoryStatus(void)
 {
-	sprintf( usb_message, "Memory contains: %lu Point(s) of Data\r\n", systemConfig.measureSavedPoints );
+	sprintf( usb_message, "Memory contains %lu Point(s) of Data\r\n", systemConfig.measureSavedPoints );
 	SEND_CDC_MESSAGE(usb_message);
 }
 
@@ -889,7 +886,7 @@ static void	sendSystemTime(void)
 	DateTime_t  date = {0};
 
 	convertUnixTimeToDate( getRTC(), &date );
-	sprintf( usb_message, "System time: %04hd-%02hd-%02hd %02hd:%02hd\r\n", date.year, date.month, date.day, date.hours, date.minutes );
+	sprintf( usb_message, "System time %04hd-%02hd-%02hd %02hd:%02hd\r\n", date.year, date.month, date.day, date.hours, date.minutes );
 	SEND_CDC_MESSAGE(usb_message);
 }
 
@@ -901,7 +898,7 @@ static void	sendSystemTemperature(void)
 	int16_t t = getTemperature();
 
 	if( t != SENSOR_NOT_CONNECTED )	sprintf( usb_message, "System temperature, oC: %i\r\n", t);
-	else							sprintf( usb_message, "System temperature: sensor not connected\r\n");
+	else							sprintf( usb_message, "System temperature - sensor not connected\r\n");
 	SEND_CDC_MESSAGE(usb_message);
 }
 
@@ -912,7 +909,7 @@ static void	sendRealHV(void)
 {
 	uint32_t hv = getHighVoltagemV();
 
-	sprintf( usb_message, "Current High Voltage: %3lu.%01lu V\r\n", hv / 1000, ( (hv % 1000) + 50) / 100 );
+	sprintf( usb_message, "Current High Voltage, UR= %3lu.%01lu V\r\n", hv / 1000, ( (hv % 1000) + 50) / 100 );
 	SEND_CDC_MESSAGE(usb_message);
 }
 
@@ -923,7 +920,7 @@ static void	sendVDDA(void)
 {
 	uint32_t vdda = getVrefmV();
 
-	sprintf( usb_message, "VDDA Voltage: %3lu.%03lu V\r\n", vdda / 1000, vdda % 1000);
+	sprintf( usb_message, "System Voltage, VDD= %3lu.%03lu V\r\n", vdda / 1000, vdda % 1000);
 	SEND_CDC_MESSAGE(usb_message);
 }
 
@@ -937,7 +934,7 @@ static void	sendTestTimePass(void)
 	uint16_t  hours   = (pass_time - days * 86400) / 3600;
 	uint16_t  minutes = (pass_time - hours * 3600) / 60;
 
-	sprintf( usb_message, "Testing time passed: %02u:%02u:%02u <DD>:<HH>:<MM>\r\n", days, hours, minutes);
+	sprintf( usb_message, "Testing time passed  %02u:%02u:%02u <DD>:<HH>:<MM>\r\n", days, hours, minutes);
 	SEND_CDC_MESSAGE(usb_message);
 }
 
@@ -977,15 +974,15 @@ static void	sendSystemSettings( void )
 {
 	SEND_CDC_MESSAGE( "System settings:\r\n" );
 
-	sprintf( usb_message, "Test voltage: %lu V\r\nMeasure voltage: %lu V\r\nTest time: %lu hours\r\nMeasure period: %lu minutes\r\n",
+	sprintf( usb_message, "Test voltage, Vt= %lu V\r\nMeasure voltage, Vm= %lu V\r\nTest time, Tt= %lu hours\r\nMeasure period, Tm= %lu minutes\r\n",
 							systemConfig.uTestVol, systemConfig.uMeasureVol, systemConfig.testingTimeSec / 3600, systemConfig.measuringPeriodSec / 60);
 	SEND_CDC_MESSAGE( usb_message );
 
-	sprintf( usb_message, "Amplifier factor Ki: %lu\r\nDivision factor Kd: %lu\r\nDischarge time: %lu msec\r\nAcceptable HV error: %lu mV\r\n",
+	sprintf( usb_message, "Amplifier factor, Ki= %lu\r\nDivision factor, Kd= %lu\r\nDischarge time, Td= %lu msec\r\nAcceptable HV error, Ve= %lu mV\r\n",
 						systemConfig.kiAmplifire, systemConfig.kdDivider, systemConfig.dischargeTimeMs, systemConfig.MaxErrorHV_mV );
 	SEND_CDC_MESSAGE( usb_message );
 
-	sprintf( usb_message, "Amplifier settle time: %lu msec\r\nMax HV settle time: %lu msec\r\nADC mean factor: %lu \r\n",
+	sprintf( usb_message, "Amplifier settle time, Ta= %lu msec\r\nMax HV settle time, Th= %lu msec\r\nADC mean factor, Km= %lu \r\n",
 						systemConfig.IAmplifierSettleTimeMs, systemConfig.HVMaxSettleTimeMs, systemConfig.adcMeanFactor );
 	SEND_CDC_MESSAGE( usb_message );
 
