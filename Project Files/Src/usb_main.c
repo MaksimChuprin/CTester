@@ -119,16 +119,13 @@ void UsbCDCThread(const void *argument)
 												uint32_t   errline = MEASURE_GET_ERROR_LINE( getErrorCode() );
 												sendMeasureError( errline, getRawAdc() );
 											}
+
 											if( systemConfig.sysStatus == ACTIVE_STATUS )
 											{
 												SAVE_SYSTEM_CNF( &systemConfig.sysStatus, PAUSE_STATUS );
 												event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 											}
-											else
-											{
-												SAVE_SYSTEM_CNF( &systemConfig.sysStatus, ERROR_STATUS );
-												event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
-											}
+
 											break;
 
 				case  MEASURE_HV_UNSTABLE_ERROR:
