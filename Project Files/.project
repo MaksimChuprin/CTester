@@ -108,7 +108,7 @@
 		<link>
 			<name>Drivers/STM32L1xx_HAL_Driver/stm32l1xx_hal_rcc_ex.c</name>
 			<type>1</type>
-			<location>D:/Projects/CAPTESTER/Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_rcc_ex.c</location>
+			<locationURI>PARENT-1-PROJECT_LOC/Drivers/STM32L1xx_HAL_Driver/Src/stm32l1xx_hal_rcc_ex.c</locationURI>
 		</link>
 		<link>
 			<name>Drivers/STM32L1xx_HAL_Driver/stm32l1xx_hal_rtc.c</name>
