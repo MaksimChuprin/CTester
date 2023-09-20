@@ -395,6 +395,9 @@ static currentMode_t measureModeProcess( bool * p_firstStep )
 						LineNum 			= LineAD0;
 						measureModeState	= measureResistance;
 						BSP_CTS_SetSingleLine( LineNum );
+						// signal measure started
+						errorCode 		= 	MEASURE_NOERROR;
+						osSignalSet( USBThreadHandle, USB_THREAD_MEASURESTARTED_Evt );
 						return measureMode;
 					}
 

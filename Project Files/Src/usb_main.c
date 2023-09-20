@@ -99,7 +99,7 @@ void UsbCDCThread(const void *argument)
 		for(;;)
 		{
 			// wait message
-			osEvent event = osSignalWait( USB_THREAD_MESSAGEGOT_Evt | USB_THREAD_MEASUREREADY_Evt | USB_THREAD_TESTSTOPPED_Evt |
+			osEvent event = osSignalWait( USB_THREAD_MESSAGEGOT_Evt | USB_THREAD_MEASURESTARTED_Evt | USB_THREAD_MEASUREREADY_Evt | USB_THREAD_TESTSTOPPED_Evt |
 											USB_THREAD_TESTSTARTED_Evt | USB_THREAD_TESTPAUSED_Evt | USB_THREAD_MEASUREERROR_Evt, 100 );
 
 			CLEAR_ALL_EVENTS;
@@ -109,7 +109,7 @@ void UsbCDCThread(const void *argument)
 			{
 				switch( MEASURE_GET_ERROR_CODE( getErrorCode() ) )
 				{
-				case  MEASURE_HV_ERROR:		SEND_CDC_MESSAGE( "************* Fail set High Voltage *****************\r\n" );
+				case  MEASURE_HV_ERROR:		SEND_CDC_MESSAGE( "************* Fail set High Voltage *****************\r\n\r\n" );
 											SAVE_SYSTEM_CNF( &systemConfig.sysStatus, ERROR_STATUS );
 											event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 											break;
@@ -119,23 +119,21 @@ void UsbCDCThread(const void *argument)
 												uint32_t   errline = MEASURE_GET_ERROR_LINE( getErrorCode() );
 												sendMeasureError( errline, getRawAdc() );
 											}
+
 											if( systemConfig.sysStatus == ACTIVE_STATUS )
 											{
 												SAVE_SYSTEM_CNF( &systemConfig.sysStatus, PAUSE_STATUS );
 												event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 											}
-											else
-											{
-												SAVE_SYSTEM_CNF( &systemConfig.sysStatus, ERROR_STATUS );
-												event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
-											}
+
+											SEND_CDC_MESSAGE( "\r\n" );
 											break;
 
 				case  MEASURE_HV_UNSTABLE_ERROR:
-											SEND_CDC_MESSAGE( "********* Detected unstable High Voltage **********\r\n" );
+											SEND_CDC_MESSAGE( "********* Detected unstable High Voltage **********\r\n\r\n" );
 											break;
 
-				default:					SEND_CDC_MESSAGE( "******************* UNKNOWN ERROR *****************\r\n" );
+				default:					SEND_CDC_MESSAGE( "******************* UNKNOWN ERROR *****************\r\n\r\n" );
 				}
 
 				sendSystemTime();
@@ -148,9 +146,26 @@ void UsbCDCThread(const void *argument)
 				SEND_CDC_MESSAGE( "\r\n" );
 			}
 
+			/*  measure started event */
+			if ( event.value.signals & USB_THREAD_MEASURESTARTED_Evt )
+			{
+				SEND_CDC_MESSAGE( "***************** Measure started ******************\r\n" );
+				sendSystemTime();
+				sendSystemTemperature();
+				sendSystemStatus();
+				if( (systemConfig.sysStatus == ACTIVE_STATUS) || (systemConfig.sysStatus == PAUSE_STATUS) )
+				{
+					sendMemoryStatus();
+					sendTestTimePass();
+				}
+				SEND_CDC_MESSAGE( "\r\n" );
+			}
+
 			/*  measure ready event */
 			if ( event.value.signals & USB_THREAD_MEASUREREADY_Evt )
 			{
+				SEND_CDC_MESSAGE( "***************** Measure finished ******************\r\n" );
+
 				/* save data */
 				if( (systemConfig.sysStatus == ACTIVE_STATUS) && systemConfig.measureSavedPoints < STAT_ARRAY_SIZE )
 				{
@@ -160,17 +175,20 @@ void UsbCDCThread(const void *argument)
 					SAVE_SYSTEM_CNF( &dataAttribute[systemConfig.measureSavedPoints].temperatureMeasure, (uint32_t)getTemperature() );
 					uint32_t newSavePoint = systemConfig.measureSavedPoints + 1;
 					SAVE_SYSTEM_CNF( &systemConfig.measureSavedPoints, newSavePoint );
+					SEND_CDC_MESSAGE( "*************** Data saved to Flash ****************\r\n" );
 				}
 
-				SEND_CDC_MESSAGE( "***************** BEGIN OF DATA ******************\r\n" );
 				sendSystemTime();
 				sendSystemTemperature();
 				sendSystemStatus();
+
 				if( (systemConfig.sysStatus == ACTIVE_STATUS) || (systemConfig.sysStatus == PAUSE_STATUS) )
 				{
 					sendMemoryStatus();
 					sendTestTimePass();
 				}
+
+				SEND_CDC_MESSAGE( "***************** BEGIN OF DATA ******************\r\n" );
 				sendMeasureResult( getMeasureData() );
 				SEND_CDC_MESSAGE( "****************** END OF DATA *******************\r\n\r\n" );
 			}
@@ -307,11 +325,11 @@ static void messageDecode( void )
 								break;
 
 		case ERROR_STATUS:
-		case READY_STATUS:		SEND_CDC_MESSAGE( "Starting test...\r\n" );
+		case READY_STATUS:		SEND_CDC_MESSAGE( "Starting test...\r\n\r\n" );
 								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTTEST_Evt );
 								break;
 
-		case PAUSE_STATUS:		SEND_CDC_MESSAGE( "Continuation test...\r\n" );
+		case PAUSE_STATUS:		SEND_CDC_MESSAGE( "Continue test...\r\n\r\n" );
 								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTTEST_Evt );
 								break;
 		}
@@ -332,7 +350,7 @@ static void messageDecode( void )
 		case READY_STATUS:		SEND_CDC_MESSAGE( "Command ignored -  test not run\r\n\r\n" );
 								break;
 
-		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "Pausing test...\r\n" );
+		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "Pausing test...\r\n\r\n" );
 								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_PAUSETEST_Evt );
 								break;
 		}
@@ -353,7 +371,7 @@ static void messageDecode( void )
 								break;
 
 		case PAUSE_STATUS:
-		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "Terminating test...\r\n" );
+		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "Terminating test...\r\n\r\n" );
 								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STOPTEST_Evt );
 								break;
 		}
@@ -373,7 +391,7 @@ static void messageDecode( void )
 		case READY_STATUS:
 		case ACTIVE_STATUS:
 		case FINISH_STATUS:		osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTMESURE_Evt );
-								SEND_CDC_MESSAGE( "Take measure...\r\n" );
+								SEND_CDC_MESSAGE( "Take measure...\r\n\r\n" );
 								break;
 		}
 		return;
@@ -435,7 +453,7 @@ static void messageDecode( void )
 										SEND_CDC_MESSAGE( "\r\n" );
 									}
 
-									SEND_CDC_MESSAGE( "************ END OF DATA *************\r\n" );
+									SEND_CDC_MESSAGE( "************ END OF DATA *************\r\n\r\n" );
 								}
 								else
 									SEND_CDC_MESSAGE( "No data to read.\r\n\r\n" );
@@ -805,14 +823,14 @@ static void messageDecode( void )
 	{
 		if( strstr( ptr, "ON" ) )
 		{
-			SEND_CDC_MESSAGE("Echo switched ON\r\n");
+			SEND_CDC_MESSAGE("Echo switched ON\r\n\r\n");
 			echoOFF = false;
 			return;
 		}
 
 		if( strstr( ptr, "OFF" ) )
 		{
-			SEND_CDC_MESSAGE("Echo switched OFF\r\n");
+			SEND_CDC_MESSAGE("Echo switched OFF\r\n\r\n");
 			echoOFF = true;
 			return;
 		}
@@ -891,7 +909,7 @@ static void	sendRealHV(void)
 {
 	uint32_t hv = getHighVoltagemV();
 
-	sprintf( usb_message, "Current High Voltage: %3lu.%03lu V\r\n", hv / 1000, hv % 1000);
+	sprintf( usb_message, "Current High Voltage: %3lu.%01lu V\r\n", hv / 1000, ( (hv % 1000) + 50) / 100 );
 	SEND_CDC_MESSAGE(usb_message);
 }
 
@@ -1000,10 +1018,13 @@ static void	sendMeasureResult(uint32_t * dataMeasure)
  */
 static void	sendMeasureError(uint8_t line, uint32_t * dataMeasure)
 {
-	sprintf( usb_message, "Error Line %u, Raw 1 - 16, State: Ok or Er\r\n", line + 1 );
+	uint16_t len = 0;
+
+	len = sprintf( usb_message, "Error Line %u, Raw 1 - 16, State: Ok or Er\r\n", line + 1 );
 	SEND_CDC_MESSAGE( usb_message );
 
 	for( uint8_t j = 0; j < MATRIX_RAWn; j++ )
-		{ sprintf( usb_message, "%s  ", dataMeasure[j] < 4000 ? "Ok" : "Er" ); SEND_CDC_MESSAGE( usb_message ); }
+		{ len += sprintf( &usb_message[len], "%s  ", dataMeasure[j] < 4000 ? "Ok" : "Er" );  }
+	SEND_CDC_MESSAGE( usb_message );
 	SEND_CDC_MESSAGE( "\r\n" );
 }
