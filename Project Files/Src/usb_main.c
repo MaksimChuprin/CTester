@@ -107,33 +107,35 @@ void UsbCDCThread(const void *argument)
 			/*  measure error event */
 			if ( event.value.signals == USB_THREAD_MEASUREERROR_Evt )
 			{
-				switch( MEASURE_GET_ERROR_CODE( getErrorCode() ) )
+				if( MEASURE_GET_ERROR_CODE( getErrorCode() ) & MEASURE_HV_ERROR )
 				{
-				case  MEASURE_HV_ERROR:		SEND_CDC_MESSAGE( "************* Fail set High Voltage *****************\r\n\r\n" );
-											SAVE_SYSTEM_CNF( &systemConfig.sysStatus, ERROR_STATUS );
-											event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
-											break;
+					SEND_CDC_MESSAGE( "************* Fail set High Voltage *****************\r\n\r\n" );
+					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, ERROR_STATUS );
+					event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
+				}
 
-				case  MEASURE_CHANEL_ERROR: SEND_CDC_MESSAGE( "****************** CHANEL fail **********************\r\n" );
-											{
-												uint32_t   errline = MEASURE_GET_ERROR_LINE( getErrorCode() );
-												sendMeasureError( errline, getRawAdc() );
-											}
+				if( MEASURE_GET_ERROR_CODE( getErrorCode() ) & MEASURE_CHANEL_ERROR )
+				{
+					SEND_CDC_MESSAGE( "****************** CHANEL fail **********************\r\n" );
+					uint32_t   errline = MEASURE_GET_ERROR_LINE( getErrorCode() );
+					sendMeasureError( errline, getRawAdc() );
 
-											if( systemConfig.sysStatus == ACTIVE_STATUS )
-											{
-												SAVE_SYSTEM_CNF( &systemConfig.sysStatus, PAUSE_STATUS );
-												event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
-											}
+					if( systemConfig.sysStatus == ACTIVE_STATUS )
+					{
+						SAVE_SYSTEM_CNF( &systemConfig.sysStatus, PAUSE_STATUS );
+						event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
+					}
+					SEND_CDC_MESSAGE( "\r\n" );
+				}
 
-											SEND_CDC_MESSAGE( "\r\n" );
-											break;
+				if( MEASURE_GET_ERROR_CODE( getErrorCode() ) & MEASURE_HV_UNSTABLE_ERROR )
+				{
+					SEND_CDC_MESSAGE( "********* Detected unstable High Voltage **********\r\n\r\n" );
+				}
 
-				case  MEASURE_HV_UNSTABLE_ERROR:
-											SEND_CDC_MESSAGE( "********* Detected unstable High Voltage **********\r\n\r\n" );
-											break;
-
-				default:					SEND_CDC_MESSAGE( "******************* UNKNOWN ERROR *****************\r\n\r\n" );
+				if( MEASURE_GET_ERROR_CODE( getErrorCode() ) & MEASURE_HV_ZERO_ERROR )
+				{
+					SEND_CDC_MESSAGE( "!!!!   ALARM! Unable switch off High Voltage   !!!!\r\n\r\n" );
 				}
 
 				sendSystemTime();

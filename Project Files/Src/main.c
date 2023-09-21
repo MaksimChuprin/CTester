@@ -144,6 +144,9 @@ static void OneSecThread(const void *argument)
 	/* one second circle */
 	for( TickType_t startTime = 0, oneSecTickDelayMs = 0, passTime = 0; ; passTime = xTaskGetTickCount() - startTime )
 	{
+		/* read temperature */
+		temperature = getDataTMP121();
+
 		/* calc time delay */
 		oneSecTickDelayMs = (ONESEC_TICK_TIME_MS > pdTick_to_MS(passTime)) ? ONESEC_TICK_TIME_MS - pdTick_to_MS(passTime) : 0;
 		osDelay(oneSecTickDelayMs);
@@ -191,8 +194,6 @@ static void OneSecThread(const void *argument)
 		else
 			if( systemConfig.sysStatus != PAUSE_STATUS ) testTimePass = 0;
 
-		/* read temperature */
-		temperature = getDataTMP121();
 	}
 }
 

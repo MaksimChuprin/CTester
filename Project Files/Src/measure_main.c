@@ -86,7 +86,7 @@ typedef enum {
 #define RANGE_12BITS                ((int32_t) 4095)    /* Max digital value with a full range of 12 bits */
 
 #define MEASURE_TICK_TIME_MS		100
-#define HV_SETTING_TIME_LIMIT_MS	10 * MEASURE_TICK_TIME_MS
+#define HV_ZERO_MAX_TIME_MS			10 * MEASURE_TICK_TIME_MS
 
 /* Private macro -------------------------------------------------------------*/
 #define CLEAN_MEAN_MEASURE			memset( adcMeanMeasure, 0, ADC_MEAN_ARRAY_LEN * sizeof(adcMeanMeasure[0]) )
@@ -138,8 +138,9 @@ uint32_t   getHighVoltagemV(void) 	{ return  (uint32_t)HighVoltage_mV; }
   */
 void MeasureThread(const void *argument)
 {
-	currentMode_t 	currentMode;
-	bool			firstModeStep;
+	currentMode_t 			currentMode;
+	bool					firstModeStep;
+	static uint32_t 		MeasureThreadCounter;
 
 	/* continue test if terminated by reset */
 	if( systemConfig.sysStatus == ACTIVE_STATUS )
@@ -168,92 +169,117 @@ void MeasureThread(const void *argument)
 		/* process events */
 		if( event.value.signals & MEASURE_THREAD_STOPTEST_Evt )
 		{
-			event.value.signals =	0;
-			firstModeStep 		= 	true;
-			currentMode			= 	stopMode;
+			event.value.signals 	=	0;
+			MeasureThreadCounter	=	0;
+			firstModeStep 			= 	true;
+			currentMode				= 	stopMode;
 		}
 
 		if( event.value.signals & MEASURE_THREAD_PAUSETEST_Evt )
 		{
-			event.value.signals =	0;
-			firstModeStep 		=  	true;
-			currentMode			=	pauseMode;
+			event.value.signals 	=	0;
+			MeasureThreadCounter	=	0;
+			firstModeStep 			=  	true;
+			currentMode				=	pauseMode;
 		}
 
 		if( event.value.signals & MEASURE_THREAD_STARTTEST_Evt )
 		{
-			event.value.signals =	0;
-			firstModeStep 		=  	true;
-			currentMode			=	testMode;
+			event.value.signals 	=	0;
+			MeasureThreadCounter	=	0;
+			firstModeStep 			=  	true;
+			currentMode				=	testMode;
 		}
 
 		if( event.value.signals & MEASURE_THREAD_STARTMESURE_Evt )
 		{
-			event.value.signals =	0;
+			event.value.signals 	=	0;
+			MeasureThreadCounter	=	0;
+
 			if( currentMode	!=	measureMode) // if already measuring
 			{
-				firstModeStep 	= 	true;
-				currentMode		=	measureMode;
+				firstModeStep 		= 	true;
+				currentMode			=	measureMode;
 			}
 		}
 
 		/*  process MEASURE TICK  */
 		if( event.status == osEventTimeout )
 		{
+			MeasureThreadCounter   +=	MEASURE_TICK_TIME_MS;
+
 			/* measure Vref & HighVoltage */
 			getVrefHVRaw();
 
 			/* stab HV error */
 			setHV();
 
+			currentMode_t 	newMode;
+
 			/*   process modes */
 			switch(currentMode)
 			{
 				case stopMode:	if( firstModeStep )
 								{
-									TaskHighVoltage_mV 	= 	0;
+									firstModeStep 			= 	false;
+									TaskHighVoltage_mV 		= 	0;
 									DAC_FIRST_APPROACH;
 									BSP_CTS_SetAllLineDischarge();
+									osSignalSet( USBThreadHandle, USB_THREAD_TESTSTOPPED_Evt );
+								}
 
-									if( HighVoltage_mV < 5000 )
-									{
-										osSignalSet( USBThreadHandle, USB_THREAD_TESTSTOPPED_Evt );
-										firstModeStep = false;
-									}
+								if( (MeasureThreadCounter == HV_ZERO_MAX_TIME_MS ) && (HighVoltage_mV > 5000) )
+								{
+									errorCode     =  MEASURE_HV_ZERO_ERROR;
+									osSignalSet( USBThreadHandle, USB_THREAD_MEASUREERROR_Evt );
 								}
 								break;
 
 				case pauseMode:	if( firstModeStep )
 								{
-									TaskHighVoltage_mV 	= 	0;
+									firstModeStep 			= 	false;
+									TaskHighVoltage_mV 		= 	0;
 									DAC_FIRST_APPROACH;
 									BSP_CTS_SetAllLineDischarge();
+									osSignalSet( USBThreadHandle, USB_THREAD_TESTPAUSED_Evt );
+								}
 
-									if( HighVoltage_mV < 5000 )
-									{
-										osSignalSet( USBThreadHandle, USB_THREAD_TESTPAUSED_Evt );
-										firstModeStep = false;
-									}
+								if( (MeasureThreadCounter == HV_ZERO_MAX_TIME_MS ) && (HighVoltage_mV > 5000) )
+								{
+									errorCode     =  MEASURE_HV_ZERO_ERROR;
+									osSignalSet( USBThreadHandle, USB_THREAD_MEASUREERROR_Evt );
 								}
 								break;
 
-				case testMode:	currentMode = testModeProcess( &firstModeStep );
+				case testMode:	newMode = testModeProcess( &firstModeStep );
+								if( currentMode != newMode )
+								{
+									MeasureThreadCounter	=	0;
+									currentMode 			= 	newMode;
+								}
 								break;
 
 				case measureMode:
-								currentMode = measureModeProcess( &firstModeStep );
+								newMode = measureModeProcess( &firstModeStep );
+								if( currentMode != newMode )
+								{
+									MeasureThreadCounter	=	0;
+									currentMode 			= 	newMode;
+								}
 								break;
 
 				case errorMode:	if( firstModeStep )
 								{
-									TaskHighVoltage_mV 	= 0;
+									firstModeStep 			=	false;
+									TaskHighVoltage_mV 		=	0;
 									DAC_FIRST_APPROACH;
-									if( HighVoltage_mV < 5000 )
-									{
-										firstModeStep = false;
-										// signal error
-										osSignalSet( USBThreadHandle, USB_THREAD_MEASUREERROR_Evt );
-									}
+									osSignalSet( USBThreadHandle, USB_THREAD_MEASUREERROR_Evt );
+								}
+
+								if( (MeasureThreadCounter == HV_ZERO_MAX_TIME_MS ) && (HighVoltage_mV > 5000) )
+								{
+									errorCode  =  MEASURE_HV_ZERO_ERROR;
+									osSignalSet( USBThreadHandle, USB_THREAD_MEASUREERROR_Evt );
 								}
 								break;
 			}
@@ -484,7 +510,7 @@ static void setHV(void)
 	}
 
 	/* HV stab procedure */
-	if( abs( TaskHighVoltage_mV - HighVoltage_mV ) >  systemConfig.MaxErrorHV_mV / 2 )
+	if( abs( TaskHighVoltage_mV - HighVoltage_mV ) > systemConfig.MaxErrorHV_mV / 2 )
 	{
 		int32_t		err_dac = ( TaskHighVoltage_mV - HighVoltage_mV ) * RANGE_12BITS / (int32_t)systemConfig.kdDivider / Vref_mV;
 

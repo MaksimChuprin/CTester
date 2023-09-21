@@ -15,10 +15,11 @@
 
 /* Exported constants --------------------------------------------------------*/
 
-#define MEASURE_NOERROR							0x00
-#define MEASURE_HV_ERROR						0x01
-#define MEASURE_CHANEL_ERROR					0x02
-#define MEASURE_HV_UNSTABLE_ERROR				0x03
+#define MEASURE_NOERROR							0
+#define MEASURE_HV_ERROR						(1 << 0)
+#define MEASURE_CHANEL_ERROR					(1 << 1)
+#define MEASURE_HV_UNSTABLE_ERROR				(1 << 2)
+#define MEASURE_HV_ZERO_ERROR					(1 << 3)
 
 #define MEASURE_GET_ERROR_CODE(ERROR)			((ERROR) >> 0) & 0xFF
 #define MEASURE_GET_ERROR_LINE(ERROR)			((ERROR) >> 8) & 0xFF
