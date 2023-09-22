@@ -936,7 +936,7 @@ static void	sendTestTimePass(void)
 	uint16_t  hours   = (pass_time - days * 86400) / 3600;
 	uint16_t  minutes = (pass_time - hours * 3600) / 60;
 
-	sprintf( usb_message, "Testing time passed  %02u:%02u:%02u <DD>:<HH>:<MM>\r\n", days, hours, minutes);
+	sprintf( usb_message, "Testing time passed  %02u:%02u:%02u (DD:HH:MM)\r\n", days, hours, minutes);
 	SEND_CDC_MESSAGE(usb_message);
 }
 
