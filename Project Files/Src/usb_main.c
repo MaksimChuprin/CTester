@@ -36,7 +36,7 @@ const char * helpStrings[] = {
 		"Set Ki=<value> - set factor of current amplifier\r\n",
 		"Set Kd=<value> - set division factor of HV\r\n",
 		"Set Km=<value> - set ADC mean factor\r\n",
-		"Set RTC=<YYYY:MM:DD:HH:MM> - set current time\r\n",
+		"Set RTC=<YYYY-MM-DD HH:MM> - set current time\r\n",
 		"Set default - set system to default\r\n",
 		"Echo On - switch echo on\r\n",
 		"Echo Off - switch echo off\r\n",
@@ -804,7 +804,7 @@ static void messageDecode( void )
 	if( ptr )
 	{
 		DateTime_t  date = { 0 };
-		int 		res	 = sscanf( ptr, "SET RTC=%4hu:%2hu:%2hu:%2hu:%2hu", &date.year, &date.month, &date.day, &date.hours, &date.minutes );
+		int 		res	 = sscanf( ptr, "SET RTC=%4hu-%2hu-%2hu %2hu:%2hu", &date.year, &date.month, &date.day, &date.hours, &date.minutes );
 
 		if( res == 5 )
 		{
@@ -936,7 +936,7 @@ static void	sendTestTimePass(void)
 	uint16_t  hours   = (pass_time - days * 86400) / 3600;
 	uint16_t  minutes = (pass_time - hours * 3600) / 60;
 
-	sprintf( usb_message, "Testing time passed  %02u:%02u:%02u (DD:HH:MM)\r\n", days, hours, minutes);
+	sprintf( usb_message, "Testing time passed  %u day(s), %u hour(s), %u minute(s)\r\n", days, hours, minutes);
 	SEND_CDC_MESSAGE(usb_message);
 }
 
