@@ -75,7 +75,7 @@ void UsbCDCThread(const void *argument)
 {
 	for(;; osDelay(500))
 	{
-		if( !isCableConnected() ) continue;
+		 if( !isCableConnected() ) continue;
 
 		/* Init Device Library */
 		USBD_Init(&USBD_Device, &VCP_Desc, 0);
@@ -279,7 +279,8 @@ void UsbCDCThread(const void *argument)
   */
 bool isCableConnected(void)
 {
-	return BSP_PAN_GetState();
+	return true;
+	// return BSP_PAN_GetState();
 }
 
 /**
@@ -748,7 +749,7 @@ static void messageDecode( void )
 			if( Km > 16384 || Km < 16 ) SEND_CDC_MESSAGE( "ADC mean factor must be must be 16...16384\r\n\r\n" )
 			else
 			{
-				SAVE_SYSTEM_CNF( &systemConfig.HVMaxSettleTimeMs, Km );
+				SAVE_SYSTEM_CNF( &systemConfig.adcMeanFactor, Km );
 
 				if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
 				{
@@ -999,13 +1000,15 @@ static void	sendMeasureResult(uint32_t * dataMeasure)
 
 	for( uint16_t i = 0, len = 0; i < MATRIX_LINEn; i++, len = 0 )
 	{
-		len += sprintf( &usb_message[len], "Line %u, Raw  1 - 8, Resistance value, MOhm\r\n", i + 1 );
+		// len += sprintf( &usb_message[len], "Line %u, Raw  1 - 8, Resistance value, MOhm\r\n", i + 1 );
+		len += sprintf( &usb_message[len], "Line %u, Raw  1 - 8, Current value, nA\r\n", i + 1 );
 
 		for( uint8_t j = 0; j < 8; j++ )
 			 len += sprintf( &usb_message[len], "%*lu  ", 5, dataMeasure[i * MATRIX_RAWn + j] );
 		len += sprintf( &usb_message[len], "\r\n" );
 
-		len += sprintf( &usb_message[len], "Line %u, Raw  9 - 16, Resistance value, MOhm\r\n", i + 1 );
+		// len += sprintf( &usb_message[len], "Line %u, Raw  9 - 16, Resistance value, MOhm\r\n", i + 1 );
+		len += sprintf( &usb_message[len], "Line %u, Raw  9 - 16, Current value, nA\r\n", i + 1 );
 
 		for( uint8_t j = 8; j < 16; j++ )
 					 len += sprintf( &usb_message[len], "%*lu  ", 5, dataMeasure[i * MATRIX_RAWn + j] );
@@ -1023,8 +1026,6 @@ static void	sendMeasureError(uint8_t line, uint32_t * dataMeasure)
 	uint16_t len = 0;
 
 	len = sprintf( usb_message, "Error Line %u, Raw 1 - 16, State: Ok or Er\r\n", line + 1 );
-	SEND_CDC_MESSAGE( usb_message );
-
 	for( uint8_t j = 0; j < MATRIX_RAWn; j++ )
 		{ len += sprintf( &usb_message[len], "%s  ", dataMeasure[j] < 4000 ? "Ok" : "Er" );  }
 	SEND_CDC_MESSAGE( usb_message );

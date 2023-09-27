@@ -566,7 +566,7 @@ static void getRawAdcCode(void)
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
-			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j] += adcDMABuffer[j];
+			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2] += adcDMABuffer[j];
 			i++;
 		}
 	}
@@ -581,10 +581,12 @@ static void getRawAdcCode(void)
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
-			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[ADC_MEAN_ARRAY_R8 + j] += adcDMABuffer[j];
+			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2 + 1] += adcDMABuffer[j];
 			i++;
 		}
 	}
+
+	BSP_SET_RMUX(Mux_1_8);
 
 	for(uint32_t i = 0; i < MATRIX_RAWn; i++)
 	{
@@ -608,7 +610,7 @@ static void	getZeroShifts( void )
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
-			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanZero[j] += adcDMABuffer[j];
+			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanZero[j * 2] += adcDMABuffer[j];
 			i++;
 		}
 	}
@@ -623,10 +625,12 @@ static void	getZeroShifts( void )
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
-			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanZero[ADC_MEAN_ARRAY_R8 + j] += adcDMABuffer[j];
+			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanZero[j * 2 + 1] += adcDMABuffer[j];
 			i++;
 		}
 	}
+
+	BSP_SET_RMUX(Mux_1_8);
 }
 
 static void getResistanceOneLine( Line_NumDef LineNum )
@@ -646,7 +650,7 @@ static void getResistanceOneLine( Line_NumDef LineNum )
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
-			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j] += adcDMABuffer[j];
+			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2] += adcDMABuffer[j];
 			i++;
 		}
 	}
@@ -661,11 +665,12 @@ static void getResistanceOneLine( Line_NumDef LineNum )
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
-			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[ADC_MEAN_ARRAY_R8 + j] += adcDMABuffer[j];
+			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2 + 1] += adcDMABuffer[j];
 			i++;
 		}
 	}
 
+	BSP_SET_RMUX(Mux_1_8);
 	/* correct zero shift and calc */
 	float ki_V_nA    = 1e9 / systemConfig.kiAmplifire;
 	float adc_code_V = Vref_mV / 1000. / RANGE_12BITS;
@@ -676,7 +681,8 @@ static void getResistanceOneLine( Line_NumDef LineNum )
 		else										adcMeanMeasure[i]  = 0;
 
 		float current_nA = adcMeanMeasure[i] * adc_code_V * ki_V_nA / systemConfig.adcMeanFactor + 0.1;
-		resistanceArrayMOhm[LineNum][i] = HighVoltage_mV / current_nA + 0.5;
+		// resistanceArrayMOhm[LineNum][i] = HighVoltage_mV / current_nA + 0.5;
+		resistanceArrayMOhm[LineNum][i] = current_nA + 0.5;
 		if(resistanceArrayMOhm[LineNum][i] > 99999) resistanceArrayMOhm[LineNum][i] = 99999;
 	}
 }

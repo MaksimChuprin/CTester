@@ -334,46 +334,51 @@ static void	iniADCx	( ADC_HandleTypeDef * pAdcHandle )
 	sConfig.Channel      = ADC_CHANNEL_10;
 	sConfig.Rank         = ADC_REGULAR_RANK_1;
 	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
-	/* R1 */
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
+	/* R1 */
 	sConfig.Channel      = ADC_CHANNEL_11;
 	sConfig.Rank         = ADC_REGULAR_RANK_2;
+	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 	/* R2 */
 	sConfig.Channel      = ADC_CHANNEL_12;
 	sConfig.Rank         = ADC_REGULAR_RANK_3;
 	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
-	/* R3 */
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
+	/* R3 */
 	sConfig.Channel      = ADC_CHANNEL_13;
 	sConfig.Rank         = ADC_REGULAR_RANK_4;
+	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 	/* R4 */
 	sConfig.Channel      = ADC_CHANNEL_0;
 	sConfig.Rank         = ADC_REGULAR_RANK_5;
 	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
-	/* R5 */
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
+	/* R5 */
 	sConfig.Channel      = ADC_CHANNEL_1;
 	sConfig.Rank         = ADC_REGULAR_RANK_6;
+	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 	/* R6 */
 	sConfig.Channel      = ADC_CHANNEL_2;
 	sConfig.Rank         = ADC_REGULAR_RANK_7;
 	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
-	/* R7 */
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
+	/* R7 */
 	sConfig.Channel      = ADC_CHANNEL_3;
 	sConfig.Rank         = ADC_REGULAR_RANK_8;
+	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 	/* VX -> DAC*/
 	sConfig.Channel      = ADC_CHANNEL_20;
 	sConfig.Rank         = ADC_REGULAR_RANK_9;
 	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
-	/* VINTREF */
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
+	/* VINTREF */
 	sConfig.Channel      = ADC_CHANNEL_VREFINT;
 	sConfig.Rank         = ADC_REGULAR_RANK_10;
+	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 }
 
