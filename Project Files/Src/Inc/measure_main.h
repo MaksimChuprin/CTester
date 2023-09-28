@@ -57,13 +57,13 @@
 
 /* ## Definition of TIM related resources ################################### */
 /* Definition of TIMx clock resources */
-#define TIMx                            		TIM2
-#define TIMx_CLK_ENABLE()               		__HAL_RCC_TIM2_CLK_ENABLE()
+#define TIMx                            		TIM6
+#define TIMx_CLK_ENABLE()               		__HAL_RCC_TIM6_CLK_ENABLE()
 
-#define TIMx_FORCE_RESET()              		__HAL_RCC_TIM2_FORCE_RESET()
-#define TIMx_RELEASE_RESET()            		__HAL_RCC_TIM2_RELEASE_RESET()
+#define TIMx_FORCE_RESET()              		__HAL_RCC_TIM6_FORCE_RESET()
+#define TIMx_RELEASE_RESET()            		__HAL_RCC_TIM6_RELEASE_RESET()
 
-#define ADC_EXTERNALTRIGCONV_Tx_TRGO    		ADC_EXTERNALTRIGCONV_T2_TRGO
+#define DAC_EXTERNALTRIGCONV_Tx_TRGO    		DAC_TRIGGER_T6_TRGO
 
 /* ## Definition of DAC related resources ################################### */
 /* Definition of DACx clock resources */

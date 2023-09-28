@@ -13,7 +13,6 @@ osThreadId					USBThreadHandle;
 osThreadId					MeasureThreadHandle;
 osThreadId					OneSecThreadHandle;
 USBD_HandleTypeDef 			USBD_Device;
-DAC_HandleTypeDef    		DacHandle;
 ADC_HandleTypeDef    		AdcHandle;
 
 volatile sysCfg_t			systemConfig 						__attribute__((section(".settings")));
@@ -29,6 +28,8 @@ dataMeasure_t				dataMeasure[STAT_ARRAY_SIZE] 		__attribute__((section(".statist
 /* Private variables ---------------------------------------------------------*/
 static RTC_HandleTypeDef 	RtcHandle;
 static SPI_HandleTypeDef 	SpiHandle;
+static DAC_HandleTypeDef	DacHandle;
+static TIM_HandleTypeDef 	htimHandle;
 
 static uint32_t				testTimePass 	__attribute__((section(".noinit_rtc")));
 static uint32_t				oneSecCounter	__attribute__((section(".noinit_rtc")));
@@ -41,9 +42,9 @@ static int16_t				temperature = 25;
 static void 				SystemClock_Config 	( void );
 static void 				OneSecThread		( const void *argument );
 static void					iniADCx				( ADC_HandleTypeDef * pAdcHandle );
-static void					iniDACx				( DAC_HandleTypeDef * pDacHandle );
-static void 				iniRTC				( RTC_HandleTypeDef * RtcHandle );
-static void 				iniSPIx				( SPI_HandleTypeDef * SpiHandle );
+static void 				iniRTC				( void );
+static void 				iniSPIx				( void );
+static void 				iniTIMx				( void );
 static int16_t 				getDataTMP121		( void );
 /* Private functions ---------------------------------------------------------*/
 uint32_t getTestTimePass(void) { return testTimePass; }
@@ -72,14 +73,17 @@ int main(void)
   /* Initialize board */
   BSP_CTS_Init();
 
+  /* TIM2 */
+  iniTIMx();
+
   /* Initialize the RTC */
-  iniRTC( &RtcHandle );
+  iniRTC();
 
   /* Initialize the SPIx */
-  iniSPIx( &SpiHandle );
+  iniSPIx();
 
   /* Initialize the DACx */
-  iniDACx( &DacHandle );
+  configDACxStatMode( 0 );
 
   /* Initialize the DACx */
   iniADCx( &AdcHandle );
@@ -93,7 +97,7 @@ int main(void)
   USBThreadHandle = osThreadCreate( osThread(USBTask), NULL);
 
   /*  measure thread  */
-  osThreadDef( MesTask, MeasureThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 3 );
+  osThreadDef( MesTask, MeasureThread, osPriorityAboveNormal, 0, configMINIMAL_STACK_SIZE * 3 );
   MeasureThreadHandle = osThreadCreate( osThread(MesTask), NULL);
 
   /*  OneSec thread  */
@@ -196,6 +200,7 @@ static void OneSecThread(const void *argument)
 
 	}
 }
+
 
 /**
   * @brief  System Clock Configuration
@@ -333,47 +338,47 @@ static void	iniADCx	( ADC_HandleTypeDef * pAdcHandle )
 	/* R0 */
 	sConfig.Channel      = ADC_CHANNEL_10;
 	sConfig.Rank         = ADC_REGULAR_RANK_1;
-	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
+	sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES;
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 	/* R1 */
 	sConfig.Channel      = ADC_CHANNEL_11;
 	sConfig.Rank         = ADC_REGULAR_RANK_2;
-	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
+	sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES;
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 	/* R2 */
 	sConfig.Channel      = ADC_CHANNEL_12;
 	sConfig.Rank         = ADC_REGULAR_RANK_3;
-	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
+	sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES;
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 	/* R3 */
 	sConfig.Channel      = ADC_CHANNEL_13;
 	sConfig.Rank         = ADC_REGULAR_RANK_4;
-	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
+	sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES;
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 	/* R4 */
 	sConfig.Channel      = ADC_CHANNEL_0;
 	sConfig.Rank         = ADC_REGULAR_RANK_5;
-	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
+	sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES;
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 	/* R5 */
 	sConfig.Channel      = ADC_CHANNEL_1;
 	sConfig.Rank         = ADC_REGULAR_RANK_6;
-	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
+	sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES;
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 	/* R6 */
 	sConfig.Channel      = ADC_CHANNEL_2;
 	sConfig.Rank         = ADC_REGULAR_RANK_7;
-	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
+	sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES;
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 	/* R7 */
 	sConfig.Channel      = ADC_CHANNEL_3;
 	sConfig.Rank         = ADC_REGULAR_RANK_8;
-	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
+	sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES;
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 	/* VX -> DAC*/
 	sConfig.Channel      = ADC_CHANNEL_20;
 	sConfig.Rank         = ADC_REGULAR_RANK_9;
-	sConfig.SamplingTime = ADC_SAMPLETIME_96CYCLES;
+	sConfig.SamplingTime = ADC_SAMPLETIME_24CYCLES;
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 	/* VINTREF */
 	sConfig.Channel      = ADC_CHANNEL_VREFINT;
@@ -382,15 +387,24 @@ static void	iniADCx	( ADC_HandleTypeDef * pAdcHandle )
 	HAL_ADC_ConfigChannel( pAdcHandle, &sConfig);
 }
 
-/*
- * DAC hw ini
- */
-static void	iniDACx	( DAC_HandleTypeDef * pDacHandle )
-{
-	/* Set the DAC parameters */
-	pDacHandle->Instance = DACx;
 
-	if (HAL_DAC_Init( pDacHandle ) != HAL_OK)
+/**
+  * @brief  DAC Static Configuration
+  * @param  dacVal
+  * @retval None
+  */
+void configDACxStatMode	( uint32_t dacVal )
+{
+	/* clear previously settings  */
+	HAL_DAC_DeInit( &DacHandle );
+
+	/* stop TIMx */
+	if( htimHandle.Instance != NULL ) HAL_TIM_Base_Stop( &htimHandle );
+
+	/* Set the DAC parameters */
+	DacHandle.Instance = DACx;
+
+	if (HAL_DAC_Init( &DacHandle ) != HAL_OK)
 	{
 		/* Initialization Error */
 		Error_Handler();
@@ -398,49 +412,148 @@ static void	iniDACx	( DAC_HandleTypeDef * pDacHandle )
 
 	DAC_ChannelConfTypeDef sConfig = { .DAC_Trigger = DAC_TRIGGER_NONE, .DAC_OutputBuffer = DAC_OUTPUTBUFFER_DISABLE };
 
-	if (HAL_DAC_ConfigChannel( pDacHandle, &sConfig, DACx_CHANNEL) != HAL_OK)
+	if (HAL_DAC_ConfigChannel( &DacHandle, &sConfig, DACx_CHANNEL) != HAL_OK)
 	{
 	    /* Channel configuration Error */
 	    Error_Handler();
 	}
 
-	if (HAL_DAC_SetValue( pDacHandle, DACx_CHANNEL, DAC_ALIGN_12B_R, 0) != HAL_OK)
+	if (HAL_DAC_SetValue( &DacHandle, DACx_CHANNEL, DAC_ALIGN_12B_R, dacVal ) != HAL_OK)
 	{
 		/* Setting value Error */
 	    Error_Handler();
 	}
 
-	if (HAL_DAC_Start( pDacHandle, DACx_CHANNEL) != HAL_OK)
+	if (HAL_DAC_Start( &DacHandle, DACx_CHANNEL) != HAL_OK)
 	{
 	    /* Start Error */
 	    Error_Handler();
 	}
 }
 
+/**
+  * @brief  DACx Set Value
+  * @param  dacVal
+  * @retval None
+  */
+uint32_t setValDACx ( uint32_t dacVal )
+{
+	if ( DacHandle.Instance == NULL )
+	{
+		return 0xffffffff;
+	}
+
+	if (HAL_DAC_SetValue( &DacHandle, DACx_CHANNEL, DAC_ALIGN_12B_R, dacVal ) != HAL_OK)
+	{
+		/* Setting value Error */
+	    Error_Handler();
+	}
+
+	return HAL_DAC_GetValue ( &DacHandle, DACx_CHANNEL );
+}
+
+/**
+  * @brief  DAC Triangle Configuration
+  * @param  dacVal, triangleAmpl
+  * @retval None
+  */
+void configDACxTriangleMode	( uint32_t dacVal, uint32_t triangleAmpl )
+{
+	/* clear previously settings  */
+	HAL_DAC_DeInit( &DacHandle );
+
+	/* stop TIMx */
+	if( htimHandle.Instance != NULL ) HAL_TIM_Base_Stop( &htimHandle );
+
+	/* Set the DAC parameters */
+	DacHandle.Instance = DACx;
+
+	/*##-1- Initialize the DAC peripheral ######################################*/
+	if (HAL_DAC_Init( &DacHandle ) != HAL_OK)
+	{
+		/* DAC initialization Error */
+		Error_Handler();
+	}
+
+	/*##-2- DAC Configuration #########################################*/
+	DAC_ChannelConfTypeDef sConfig = { .DAC_Trigger = DAC_EXTERNALTRIGCONV_Tx_TRGO, .DAC_OutputBuffer = DAC_OUTPUTBUFFER_DISABLE };
+
+	if (HAL_DAC_ConfigChannel( &DacHandle, &sConfig, DACx_CHANNEL) != HAL_OK)
+	{
+		/* Channel configuration Error */
+		Error_Handler();
+	}
+
+	/*##-3- DAC channel2 Triangle Wave generation configuration ################*/
+	if (HAL_DACEx_TriangleWaveGenerate( &DacHandle, DACx_CHANNEL, triangleAmpl) != HAL_OK)
+	{
+		/* Triangle wave generation Error */
+		Error_Handler();
+	}
+
+	/*##-4- Set DAC RD register ################################################*/
+	if (HAL_DAC_SetValue( &DacHandle, DACx_CHANNEL, DAC_ALIGN_12B_R, dacVal) != HAL_OK)
+	{
+		/* Setting value Error */
+		Error_Handler();
+	}
+
+	/*##-5- Enable DAC  ################################################*/
+	if (HAL_DAC_Start( &DacHandle, DACx_CHANNEL) != HAL_OK)
+	{
+		/* Start Error */
+		Error_Handler();
+	}
+
+	/*## 6- start TIMx for trig */
+	 HAL_TIM_Base_Start( &htimHandle );
+}
+
 /*
  * SPI hw ini
  */
-static void	iniSPIx	( SPI_HandleTypeDef * SpiHandle )
+static void	iniSPIx	( void )
 {
 	/* Set the SPI parameters */
-	SpiHandle->Instance               = SPIx;
-	SpiHandle->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
-	SpiHandle->Init.Direction         = SPI_DIRECTION_1LINE;
-	SpiHandle->Init.CLKPhase          = SPI_PHASE_1EDGE;
-	SpiHandle->Init.CLKPolarity       = SPI_POLARITY_LOW;
-	SpiHandle->Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLE;
-	SpiHandle->Init.CRCPolynomial     = 7;
-	SpiHandle->Init.DataSize          = SPI_DATASIZE_16BIT;
-	SpiHandle->Init.FirstBit          = SPI_FIRSTBIT_MSB;
-	SpiHandle->Init.NSS               = SPI_NSS_SOFT;
-	SpiHandle->Init.TIMode            = SPI_TIMODE_DISABLE;
-	SpiHandle->Init.Mode 			  = SPI_MODE_MASTER;
+	SpiHandle.Instance               = SPIx;
+	SpiHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+	SpiHandle.Init.Direction         = SPI_DIRECTION_1LINE;
+	SpiHandle.Init.CLKPhase          = SPI_PHASE_1EDGE;
+	SpiHandle.Init.CLKPolarity       = SPI_POLARITY_LOW;
+	SpiHandle.Init.CRCCalculation    = SPI_CRCCALCULATION_DISABLE;
+	SpiHandle.Init.CRCPolynomial     = 7;
+	SpiHandle.Init.DataSize          = SPI_DATASIZE_16BIT;
+	SpiHandle.Init.FirstBit          = SPI_FIRSTBIT_MSB;
+	SpiHandle.Init.NSS               = SPI_NSS_SOFT;
+	SpiHandle.Init.TIMode            = SPI_TIMODE_DISABLE;
+	SpiHandle.Init.Mode 			 = SPI_MODE_MASTER;
 
-	if(HAL_SPI_Init( SpiHandle ) != HAL_OK)
+	if(HAL_SPI_Init( &SpiHandle ) != HAL_OK)
 	{
 	   /* Initialization Error */
 	   Error_Handler();
 	}
+}
+
+/*
+ * TIMx hw ini
+ */
+static void iniTIMx( void )
+{
+  /*##-1- Configure the TIM peripheral #######################################*/
+  /* Time base configuration */
+  htimHandle.Instance 						= TIMx;
+  htimHandle.Init.Period            		= configCPU_CLOCK_HZ * 2 / 1000 - 1;
+  htimHandle.Init.Prescaler         		= 0;
+  htimHandle.Init.ClockDivision     		= 0;
+  htimHandle.Init.CounterMode       		= TIM_COUNTERMODE_UP;
+  HAL_TIM_Base_Init( &htimHandle );
+
+  /* TIMx TRGO selection */
+  TIM_MasterConfigTypeDef sMasterConfig = { .MasterOutputTrigger = TIM_TRGO_UPDATE, .MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE };
+
+  /*  Config */
+  HAL_TIMEx_MasterConfigSynchronization( &htimHandle, &sMasterConfig);
 }
 
 
@@ -469,17 +582,17 @@ static int16_t getDataTMP121(void)
 /*
  * RTC hw ini
  */
-static void iniRTC( RTC_HandleTypeDef * RtcHandle )
+static void iniRTC( void )
 {
-	RtcHandle->Instance 		   = RTC;
-	RtcHandle->Init.HourFormat     = RTC_HOURFORMAT_24;
-	RtcHandle->Init.AsynchPrediv   = RTC_ASYNCH_PREDIV;
-	RtcHandle->Init.SynchPrediv    = RTC_SYNCH_PREDIV;
-	RtcHandle->Init.OutPut         = RTC_OUTPUT_DISABLE;
-	RtcHandle->Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
-	RtcHandle->Init.OutPutType     = RTC_OUTPUT_TYPE_OPENDRAIN;
+	RtcHandle.Instance 		  	  = RTC;
+	RtcHandle.Init.HourFormat     = RTC_HOURFORMAT_24;
+	RtcHandle.Init.AsynchPrediv   = RTC_ASYNCH_PREDIV;
+	RtcHandle.Init.SynchPrediv    = RTC_SYNCH_PREDIV;
+	RtcHandle.Init.OutPut         = RTC_OUTPUT_DISABLE;
+	RtcHandle.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
+	RtcHandle.Init.OutPutType     = RTC_OUTPUT_TYPE_OPENDRAIN;
 
-	if (HAL_RTC_Init( RtcHandle ) != HAL_OK)
+	if (HAL_RTC_Init( &RtcHandle ) != HAL_OK)
 	{
 		/* Initialization Error */
 		Error_Handler();
@@ -531,8 +644,8 @@ systime_t getRTC( void )
 	RTC_DateTypeDef  sdatestructure;
 	RTC_TimeTypeDef  stimestructure;
 
-	HAL_RTC_GetTime(&RtcHandle,&stimestructure,RTC_FORMAT_BIN);
-	HAL_RTC_GetDate(&RtcHandle,&sdatestructure,RTC_FORMAT_BIN);
+	HAL_RTC_GetTime( &RtcHandle, &stimestructure, RTC_FORMAT_BIN );
+	HAL_RTC_GetDate( &RtcHandle, &sdatestructure, RTC_FORMAT_BIN );
 
 	date.year    = 2000 + sdatestructure.Year;
 	date.month   = sdatestructure.Month;

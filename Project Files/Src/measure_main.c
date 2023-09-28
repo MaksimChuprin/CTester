@@ -9,11 +9,10 @@
 #include "main.h"
 
 /* Global variables ---------------------------------------------------------*/
-extern 	USBD_HandleTypeDef  		USBD_Device;
 extern 	osThreadId					USBThreadHandle;
 extern 	osThreadId					MeasureThreadHandle;
 extern 	osThreadId					OneSecThreadHandle;
-extern 	DAC_HandleTypeDef    		DacHandle;
+extern 	USBD_HandleTypeDef  		USBD_Device;
 extern 	ADC_HandleTypeDef    		AdcHandle;
 
 extern 	volatile sysCfg_t			systemConfig;
@@ -96,7 +95,7 @@ typedef enum {
 										dacMinValue  = (dacValue *  90 ) / 100; \
 										dacMaxValue  = (dacValue * 110 ) / 100; \
 										HV_PowerGood = false; \
-										HAL_DAC_SetValue( &DacHandle, DACx_CHANNEL, DAC_ALIGN_12B_R, dacValue ); \
+										setValDACx( dacValue ); \
 									}
 
 /* Private variables ---------------------------------------------------------*/
@@ -518,7 +517,7 @@ static void setHV(void)
 		else if( (dacValue + err_dac) < dacMinValue ) 	dacValue  = dacMinValue;
 		else											dacValue += err_dac;
 
-		HAL_DAC_SetValue( &DacHandle, DACx_CHANNEL, DAC_ALIGN_12B_R, dacValue );
+		setValDACx( dacValue );
 	}
 }
 

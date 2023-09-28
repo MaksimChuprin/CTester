@@ -136,10 +136,13 @@ typedef struct {
 											} while(0)
 
 /* Exported functions ------------------------------------------------------- */
-void 				Error_Handler	( void );
-void 				setRTC			( DateTime_t * date );
-systime_t 			getRTC			( void );
-int16_t 			getTemperature	( void );
-uint32_t 			getTestTimePass	( void );
+void 				Error_Handler			( void );
+void 				configDACxStatMode		( uint32_t dacVal );
+void 				configDACxTriangleMode	( uint32_t dacVal, uint32_t triangleAmpl );
+uint32_t			setValDACx 				( uint32_t dacVal );
+void 				setRTC					( DateTime_t * date );
+systime_t 			getRTC					( void );
+int16_t 			getTemperature			( void );
+uint32_t 			getTestTimePass			( void );
 
 #endif /* __MAIN_H */
