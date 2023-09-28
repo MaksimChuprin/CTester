@@ -26,6 +26,7 @@ typedef enum {
 	pauseMode,
 	testMode,
 	measureMode,
+	testConnectionMode,
 	errorMode
 
 } currentMode_t;
@@ -45,6 +46,15 @@ typedef enum {
 	measureResistance
 
 } measureModeState_t;
+
+
+typedef enum {
+
+	zeroHV = 0,
+	testConnection
+
+} testConnectionModeState_t;
+
 
 /* Private define ------------------------------------------------------------*/
 #define ADC_DMA_ARRAY_LEN			10
@@ -121,6 +131,7 @@ static void 						getResistanceOneLine( Line_NumDef LineNum );
 static void 						setHV( void );
 static currentMode_t 				testModeProcess( bool * p_firstStep );
 static currentMode_t 				measureModeProcess( bool * firstStep );
+static currentMode_t 				testConnectionModeProcess( bool * p_firstStep );
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -160,7 +171,9 @@ void MeasureThread(const void *argument)
 		/* wait for events or MEASURE_TICK_TIME_MS */
 		measTickDelayMs = (MEASURE_TICK_TIME_MS > pdTick_to_MS(passTime)) ? MEASURE_TICK_TIME_MS - pdTick_to_MS(passTime) : 1;
 		osEvent event   = osSignalWait( MEASURE_THREAD_STARTTEST_Evt | MEASURE_THREAD_STOPTEST_Evt |
-										MEASURE_THREAD_PAUSETEST_Evt | MEASURE_THREAD_STARTMESURE_Evt, measTickDelayMs );
+										MEASURE_THREAD_PAUSETEST_Evt | MEASURE_THREAD_STARTMESURE_Evt |
+										MEASURE_THREAD_TESTCAP_Evt , measTickDelayMs );
+
 		startTime       = xTaskGetTickCount();
 
 		CLEAR_ALL_EVENTS;
@@ -202,6 +215,18 @@ void MeasureThread(const void *argument)
 			}
 		}
 
+		if( event.value.signals & MEASURE_THREAD_TESTCAP_Evt )
+		{
+			event.value.signals 	=	0;
+			MeasureThreadCounter	=	0;
+
+			if( currentMode	!=	testConnectionMode) // if already measuring
+			{
+				firstModeStep 		= 	true;
+				currentMode			=	testConnectionMode;
+			}
+		}
+
 		/*  process MEASURE TICK  */
 		if( event.status == osEventTimeout )
 		{
@@ -211,7 +236,7 @@ void MeasureThread(const void *argument)
 			getVrefHVRaw();
 
 			/* stab HV error */
-			setHV();
+			if( currentMode	!=	testConnectionMode ) setHV();
 
 			currentMode_t 	newMode;
 
@@ -260,6 +285,15 @@ void MeasureThread(const void *argument)
 
 				case measureMode:
 								newMode = measureModeProcess( &firstModeStep );
+								if( currentMode != newMode )
+								{
+									MeasureThreadCounter	=	0;
+									currentMode 			= 	newMode;
+								}
+								break;
+
+				case testConnectionMode:
+								newMode = testConnectionModeProcess( &firstModeStep );
 								if( currentMode != newMode )
 								{
 									MeasureThreadCounter	=	0;
@@ -480,6 +514,57 @@ static currentMode_t measureModeProcess( bool * p_firstStep )
 		}
 
 	return measureMode;
+}
+
+
+/*
+ *
+ */
+static currentMode_t testConnectionModeProcess( bool * p_firstStep )
+{
+	static testConnectionModeState_t 	testConnectionModeState;
+	static uint32_t 					testConnectionModeCounter;
+	static Line_NumDef					LineNum;
+
+	/* test mode timer */
+	testConnectionModeCounter +=	MEASURE_TICK_TIME_MS;
+
+	/* test mode ini */
+	if( *p_firstStep )
+	{
+		*p_firstStep 				= false;
+
+		testConnectionModeState		= zeroHV;
+		testConnectionModeCounter	= 0;
+		TaskHighVoltage_mV			= 0;
+		BSP_CTS_SetAllLineDischarge();
+		DAC_FIRST_APPROACH;
+	}
+
+	/* test mode process */
+	switch( testConnectionModeState )
+	{
+	case zeroHV:	if( testConnectionModeCounter < systemConfig.dischargeTimeMs ) break;
+
+					testConnectionModeCounter 	= 0;
+					LineNum 					= LineAD0;
+					testConnectionModeState		= testConnection;
+					BSP_CTS_SetSingleLine( LineNum );
+					configDACxTriangleMode	( 0 , DAC_TRIANGLEAMPLITUDE_255 );
+					break;
+
+	case testConnection:
+					if( testConnectionModeCounter < systemConfig.dischargeTimeMs ) break;
+
+					configDACxStatMode	( 0 );
+					// set error code
+					errorCode 			= MEASURE_HV_ERROR;
+					// to error mode
+					*p_firstStep 		= true;
+					return errorMode;
+	}
+
+	return testConnectionMode;
 }
 
 /* HV control */

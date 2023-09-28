@@ -543,8 +543,8 @@ static void iniTIMx( void )
   /*##-1- Configure the TIM peripheral #######################################*/
   /* Time base configuration */
   htimHandle.Instance 						= TIMx;
-  htimHandle.Init.Period            		= configCPU_CLOCK_HZ * 2 / 1000 - 1;
-  htimHandle.Init.Prescaler         		= 0;
+  htimHandle.Init.Period            		= 1000000 / 255 - 1;
+  htimHandle.Init.Prescaler         		= 32-1;	// 1 MHz
   htimHandle.Init.ClockDivision     		= 0;
   htimHandle.Init.CounterMode       		= TIM_COUNTERMODE_UP;
   HAL_TIM_Base_Init( &htimHandle );

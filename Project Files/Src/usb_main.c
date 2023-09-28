@@ -466,6 +466,26 @@ static void messageDecode( void )
 	}
 
 
+	//--------------------------------------------- READ RTESULTS
+	if( strstr( usb_message, "TEST CONNECTION" ) )
+	{
+		switch(systemConfig.sysStatus)
+		{
+
+		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "Command ignored - system not configured\r\n\r\n" );
+								break;
+
+		case FINISH_STATUS:
+		case ERROR_STATUS:
+		case READY_STATUS:
+		case PAUSE_STATUS:
+								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_TESTCAP_Evt );
+								SEND_CDC_MESSAGE( "Test connection...\r\n\r\n" );
+								break;
+		}
+		return;
+	}
+
 
 	//--------------------------------------------- Set Test Voltage
 	ptr = strstr( usb_message, "SET VT=" );
