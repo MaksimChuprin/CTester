@@ -98,10 +98,11 @@ typedef enum {
 #define HV_ZERO_MAX_TIME_MS			10 * MEASURE_TICK_TIME_MS
 
 /* Private macro -------------------------------------------------------------*/
+#define mVOLTS_TO_DAC_CODE(mV)		(mV) * RANGE_12BITS / (int32_t)systemConfig.kdDivider / Vref_mV
 #define CLEAN_MEAN_MEASURE			memset( adcMeanMeasure, 0, ADC_MEAN_ARRAY_LEN * sizeof(adcMeanMeasure[0]) )
 #define CLEAN_MEAN_ZERO				memset( adcMeanZero, 0, ADC_MEAN_ARRAY_LEN * sizeof(adcMeanZero[0]) )
 #define DAC_FIRST_APPROACH			{ \
-										dacValue     = TaskHighVoltage_mV * RANGE_12BITS / (int32_t)systemConfig.kdDivider / Vref_mV; \
+										dacValue     = mVOLTS_TO_DAC_CODE(TaskHighVoltage_mV); \
 										dacMinValue  = (dacValue *  90 ) / 100; \
 										dacMaxValue  = (dacValue * 110 ) / 100; \
 										HV_PowerGood = false; \
@@ -614,6 +615,7 @@ static void getVrefHVRaw(void)
 	for( uint32_t i = 0; i < VREF_MEAN_FACTOR; )
 	{
 		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+		HAL_GPIO_WritePin( GPIOA, GPIO_PIN_15, GPIO_PIN_SET );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{

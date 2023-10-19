@@ -89,6 +89,8 @@ typedef struct {
 	uint32_t 	IAmplifierSettleTimeMs;
 	uint32_t 	HVMaxSettleTimeMs;
 	uint32_t 	adcMeanFactor;
+	uint32_t 	dacTrianglePeriodUs;
+	uint32_t 	dacTriangleAmplitude;
 } sysCfg_t;
 
 typedef struct {

@@ -123,7 +123,7 @@ static void OneSecThread(const void *argument)
 		for( rtcPoint = 0; rtcPoint < SAVE_ARRAY_SIZE; rtcPoint++ )
 		if( rtcSaveArray[rtcPoint] == 0 )
 		{
-			DateTime_t  date = { .year = 2023, .month = 9, .day = 30, .hours = 12 };
+			DateTime_t  date = { .year = 2023, .month = 10, .day = 31, .hours = 12 };
 
 			if( rtcPoint ) convertUnixTimeToDate( rtcSaveArray[rtcPoint - 1], &date );
 
@@ -157,7 +157,7 @@ static void OneSecThread(const void *argument)
 		startTime = xTaskGetTickCount();
 
 		// save RTC each 5 min
-		if( (++oneSecCounter % 300) == 0)
+		if( (++oneSecCounter % 300) == 0 )
 		{
 			if( rtcPoint == SAVE_ARRAY_SIZE )
 			{
@@ -230,7 +230,7 @@ static void SystemClock_Config(void)
   __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
 
   /* Poll VOSF bit of in PWR_CSR. Wait until it is reset to 0 */
-  while (__HAL_PWR_GET_FLAG(PWR_FLAG_VOS) != RESET) {};
+  while ( __HAL_PWR_GET_FLAG(PWR_FLAG_VOS) != RESET ) {};
 
   /* Enable HSE Oscillator and Activate PLL with HSE as source */
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
@@ -240,7 +240,7 @@ static void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLMUL     = RCC_PLL_MUL12;
   RCC_OscInitStruct.PLL.PLLDIV     = RCC_PLL_DIV3;
 
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK )
   {
     Error_Handler();
   }
@@ -280,6 +280,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle)
 {
 	/* Report to main program that ADC sequencer has reached its end */
 	osSignalSet( MeasureThreadHandle, MEASURE_THREAD_CONVCMPLT_Evt );
+	HAL_GPIO_WritePin( GPIOA, GPIO_PIN_15, GPIO_PIN_RESET );
 }
 
 /**
@@ -329,7 +330,7 @@ static void	iniADCx	( ADC_HandleTypeDef * pAdcHandle )
 	pAdcHandle->Init.ExternalTrigConvEdge  = ADC_EXTERNALTRIGCONVEDGE_NONE;
 	pAdcHandle->Init.DMAContinuousRequests = ENABLE;                        /* ADC-DMA continuous requests to match with DMA configured in circular mode */
 
-	if (HAL_ADC_Init( pAdcHandle ) != HAL_OK)
+	if (HAL_ADC_Init( pAdcHandle ) != HAL_OK )
 	{
 	    /* ADC initialization error */
 	    Error_Handler();
@@ -543,8 +544,8 @@ static void iniTIMx( void )
   /*##-1- Configure the TIM peripheral #######################################*/
   /* Time base configuration */
   htimHandle.Instance 						= TIMx;
-  htimHandle.Init.Period            		= 1000000 / 255 - 1;
-  htimHandle.Init.Prescaler         		= 32-1;	// 1 MHz
+  htimHandle.Init.Period            		= systemConfig.dacTrianglePeriodUs - 1;
+  htimHandle.Init.Prescaler         		= ( SystemCoreClock / 1000000 ) - 1;	// 1 MHz
   htimHandle.Init.ClockDivision     		= 0;
   htimHandle.Init.CounterMode       		= TIM_COUNTERMODE_UP;
   HAL_TIM_Base_Init( &htimHandle );

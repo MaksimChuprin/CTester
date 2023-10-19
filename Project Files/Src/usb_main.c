@@ -35,12 +35,15 @@ const char * helpStrings[] = {
 		"Set Th=<value> - set <value> of max HV settle time in mSec\r\n",
 		"Set Ki=<value> - set factor of current amplifier\r\n",
 		"Set Kd=<value> - set division factor of HV\r\n",
-		"Set Km=<value> - set ADC mean factor\r\n",
 		"Set RTC=<YYYY-MM-DD HH:MM> - set current time\r\n",
 		"Set default - set system to default\r\n",
 		"Echo On - switch echo on\r\n",
 		"Echo Off - switch echo off\r\n",
 		"Help - list available commands\r\n",
+		"******** fine tuning commands ********",
+		"Set Km=<value> - set ADC mean factor, 1 - 138 us \r\n",
+		"Set DAC_P1=<value> - time step of DAC in triangle mode, uSec\r\n",
+		"Set DAC_P2=<value> - DAC-code triangle amplitude: 31, 63, 127, 255, 511, 1023, 2047, 4095\r\n",
 		0
 };
 
@@ -757,7 +760,7 @@ static void messageDecode( void )
 		return;
 	}
 
-	//--------------------------------------------- SET HV max settle time Th
+	//--------------------------------------------- SET mean factor
 	ptr = strstr( usb_message, "SET KM=" );
 	if( ptr )
 	{
@@ -766,10 +769,64 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( Km > 16384 || Km < 16 ) SEND_CDC_MESSAGE( "ADC mean factor must be must be 16...16384\r\n\r\n" )
+			if( Km > 16384 || Km < 16 ) SEND_CDC_MESSAGE( "ADC mean factor must be 16...16384\r\n\r\n" )
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.adcMeanFactor, Km );
+
+				if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
+				{
+					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+				}
+				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+			}
+		}
+		else
+			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+
+		return;
+	}
+
+	//--------------------------------------------- SET DAC_P1 in uSec
+	ptr = strstr( usb_message, "SET DAC_P1=" );
+	if( ptr )
+	{
+		uint32_t 	DAC_P1 	= 0;
+		int 		res		= sscanf( ptr, "SET DAC_P1=%lu", &DAC_P1 );
+
+		if( res )
+		{
+			if( DAC_P1 > 65535 || DAC_P1 < 16 ) SEND_CDC_MESSAGE( "time step of DAC must be 16...65535\r\n\r\n" )
+			else
+			{
+				SAVE_SYSTEM_CNF( &systemConfig.dacTrianglePeriodUs, DAC_P1 );
+
+				if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
+				{
+					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+				}
+				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+			}
+		}
+		else
+			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+
+		return;
+	}
+
+	//--------------------------------------------- SET DAC_P2 in DAC-code
+	ptr = strstr( usb_message, "SET DAC_P2=" );
+	if( ptr )
+	{
+		uint32_t 	DAC_P2 	= 0;
+		int 		res		= sscanf( ptr, "SET DAC_P2=%lu", &DAC_P2 );
+
+		if( res )
+		{
+			if( DAC_P2 > 4095 || DAC_P2 < 31 ) SEND_CDC_MESSAGE( "Triangle amplitude of DAC must be 31, 63, 127, 255, 511, 1023, 2047, 4095\r\n\r\n" )
+			else
+			{
+				SAVE_SYSTEM_CNF( &systemConfig.dacTriangleAmplitude, DAC_P2 );
 
 				if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
 				{
@@ -788,7 +845,9 @@ static void messageDecode( void )
 	ptr = strstr( usb_message, "SET DEFAULT" );
 	if( ptr )
 	{
-		const uint32_t 	Km 	= 256;	//
+		const uint32_t 	DAC_P2 	= 255;	// DAC-code triangle amplitude
+		const uint32_t 	DAC_P1 	= 78;	// 78 us DAC period Triangle Mode
+		const uint32_t 	Km 	= 145;	// 138 uS one ADC scan, 145 ~ 20 ms (50 Hz)
 		const uint32_t 	Th 	= 1000;	// msec
 		const uint32_t 	Ta 	= 50;	// msec
 		const uint32_t 	Td 	= 500;	// msec
@@ -800,7 +859,7 @@ static void messageDecode( void )
 		const uint32_t 	Vm 	= 25;	// V
 		const uint32_t 	Vt 	= 50;	// V
 
-
+		SAVE_SYSTEM_CNF( &systemConfig.measureSavedPoints, 0 );
 		SAVE_SYSTEM_CNF( &systemConfig.uTestVol, Vt );
 		SAVE_SYSTEM_CNF( &systemConfig.uMeasureVol, Vm );
 		SAVE_SYSTEM_CNF( &systemConfig.MaxErrorHV_mV, Ve );
@@ -812,6 +871,8 @@ static void messageDecode( void )
 		SAVE_SYSTEM_CNF( &systemConfig.IAmplifierSettleTimeMs, Ta );
 		SAVE_SYSTEM_CNF( &systemConfig.HVMaxSettleTimeMs, Th );
 		SAVE_SYSTEM_CNF( &systemConfig.adcMeanFactor, Km );
+		SAVE_SYSTEM_CNF( &systemConfig.dacTrianglePeriodUs, DAC_P1 );
+		SAVE_SYSTEM_CNF( &systemConfig.dacTriangleAmplitude, DAC_P2 );
 
 		if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
 						SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );

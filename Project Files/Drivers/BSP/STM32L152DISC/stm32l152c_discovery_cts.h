@@ -40,7 +40,6 @@ typedef enum
   
   LED_GREEN = LED3,
   LED_BLUE = LED4
-    
 } Led_TypeDef;
 
 typedef enum {
@@ -61,7 +60,6 @@ typedef enum {
 	LineAD14,
 	LineAD15,
 	AllLineAD
-
 } Line_NumDef;
 
 
@@ -69,7 +67,6 @@ typedef enum
 {
   Line_ZV = 0,
   Line_HV
-
 } Line_StateDef;
 
 
@@ -77,14 +74,12 @@ typedef enum
 {
   Opto_Close = 0,
   Opto_Open
-
 } Opto_StateDef;
 
 typedef enum
 {
   Mux_1_8  = 0,
   Mux_9_16
-
 } RMux_StateDef;
 
 
