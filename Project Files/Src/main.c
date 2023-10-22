@@ -486,6 +486,20 @@ void configDACxTriangleMode	( uint32_t dacVal, uint32_t triangleAmpl )
 	}
 
 	/*##-3- DAC channel2 Triangle Wave generation configuration ################*/
+	switch(triangleAmpl)
+	{
+	case 31:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_31; 	break;
+	case 63:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_63; 	break;
+	case 127:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_127; 	break;
+	case 255:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_255; 	break;
+	case 511:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_511; 	break;
+	case 1023:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_1023; 	break;
+	case 2047:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_2047; 	break;
+	case 4095:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_4095;	break;
+
+	default: 	triangleAmpl = DAC_TRIANGLEAMPLITUDE_1; 	break;
+	}
+
 	if (HAL_DACEx_TriangleWaveGenerate( &DacHandle, DACx_CHANNEL, triangleAmpl) != HAL_OK)
 	{
 		/* Triangle wave generation Error */

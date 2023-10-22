@@ -49,6 +49,8 @@
 #define	USB_THREAD_TESTPAUSED_Evt		(1<<5)
 #define	USB_THREAD_MEASUREERROR_Evt		(1<<6)
 #define	USB_THREAD_HVERRORDETECT_Evt	(1<<7)
+#define	USB_THREAD_CHECKCURRENT_Evt		(1<<8)
+#define	USB_THREAD_CHECKCAP_Evt			(1<<9)
 
 #define	MEASURE_THREAD_STARTTEST_Evt	(1<<0)
 #define	MEASURE_THREAD_STOPTEST_Evt		(1<<1)
@@ -61,6 +63,9 @@
 #define	VALID_MARK						0xA5E5E5A5
 
 #define	SENSOR_NOT_CONNECTED			666
+
+#define	RESULT_AS_CURRENT				0
+#define	RESULT_AS_RESISTANCE			1
 
 #ifdef RTC_CLOCK_SOURCE_LSI
 #define RTC_ASYNCH_PREDIV    			0x7F
@@ -91,6 +96,11 @@ typedef struct {
 	uint32_t 	adcMeanFactor;
 	uint32_t 	dacTrianglePeriodUs;
 	uint32_t 	dacTriangleAmplitude;
+	uint32_t 	shortErrorTrshCurrent_nA;
+	uint32_t 	contactErrorTrshCapacitance_pF;
+	uint32_t 	resultPresentation;
+
+
 } sysCfg_t;
 
 typedef struct {

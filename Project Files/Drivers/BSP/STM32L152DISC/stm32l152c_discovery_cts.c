@@ -275,7 +275,8 @@ bool CheckSysCnf(void)
 				  (systemConfig.uTestVol != 0)       		 && (systemConfig.MaxErrorHV_mV != 0 )     	&&
 				  (systemConfig.IAmplifierSettleTimeMs != 0) && (systemConfig.HVMaxSettleTimeMs != 0 ) 	&&
 				  (systemConfig.adcMeanFactor  != 0)         && (systemConfig.dacTrianglePeriodUs != 0 ) &&
-				  (systemConfig.dacTriangleAmplitude != 0 );
+				  (systemConfig.dacTriangleAmplitude != 0 )  && (systemConfig.shortErrorTrshCurrent_nA != 0 ) &&
+				  (systemConfig.contactErrorTrshCapacitance_pF != 0 ) ;
 
 	if(status == false)
 	{

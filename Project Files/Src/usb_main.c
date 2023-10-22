@@ -25,6 +25,7 @@ const char * helpStrings[] = {
 		"Read Status - show the current state of the system\r\n",
 		"Read Data - show measurement results\r\n",
 		"Read Settings - show settings values\r\n",
+		"Set Result=<R/I> - show result of measure as: <R> - resistance, <I> - current\r\n",
 		"Set Vt=<value> - set <value> of test voltage in Volts\r\n",
 		"Set Vm=<value> - set <value> of measure voltage in Volts\r\n",
 		"Set Ve=<value> - set <value> of acceptable HV error in mVolts\r\n",
@@ -40,15 +41,19 @@ const char * helpStrings[] = {
 		"Echo On - switch echo on\r\n",
 		"Echo Off - switch echo off\r\n",
 		"Help - list available commands\r\n",
-		"******** fine tuning commands ********",
-		"Set Km=<value> - set ADC mean factor, 1 - 138 us \r\n",
+		"******** fine tuning commands ********\r\n",
+		"Set Km=<value> - set ADC mean factor, 1 - 138 us\r\n",
 		"Set DAC_P1=<value> - time step of DAC in triangle mode, uSec\r\n",
 		"Set DAC_P2=<value> - DAC-code triangle amplitude: 31, 63, 127, 255, 511, 1023, 2047, 4095\r\n",
+		"Set Short_I=<value> - set short high current threshold for error detect, nA \r\n",
+		"Set Contact_C=<value> - set capacitance low threshold for error detect, pF \r\n",
 		0
 };
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
+#define RANGE_12BITS                ((int32_t) 4095)    /* Max digital value with a full range of 12 bits */
+#define RANGE_12BITS_0_9            ((int32_t) (RANGE_12BITS * 0.9))    /* 0.9 from Max digital value with a full range of 12 bits */
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static char 				usb_message[APP_CDC_DATA_SIZE];
@@ -62,7 +67,10 @@ static void					sendRealHV			(void);
 static void					sendSystemStatus	( void );
 static void					sendSystemSettings	( void );
 static void					sendMemoryStatus	( void );
-static void					sendMeasureResult   (uint32_t * data);
+static void					sendMeasureResult	( uint32_t * data, uint32_t measVol );
+//static void					sendMeasureResult   (uint32_t * data);
+static void					sendCurrentTestResult(uint32_t * data);
+static void					sendCapacitanceTestResult(uint32_t * data);
 static void					sendMeasureError	(uint8_t line, uint32_t * dataMeasure);
 static void					sendVDDA			( void );
 static void					sendTestTimePass	( void );
@@ -103,7 +111,8 @@ void UsbCDCThread(const void *argument)
 		{
 			// wait message
 			osEvent event = osSignalWait( USB_THREAD_MESSAGEGOT_Evt | USB_THREAD_MEASURESTARTED_Evt | USB_THREAD_MEASUREREADY_Evt | USB_THREAD_TESTSTOPPED_Evt |
-											USB_THREAD_TESTSTARTED_Evt | USB_THREAD_TESTPAUSED_Evt | USB_THREAD_MEASUREERROR_Evt, 100 );
+											USB_THREAD_TESTSTARTED_Evt | USB_THREAD_TESTPAUSED_Evt | USB_THREAD_MEASUREERROR_Evt |
+											USB_THREAD_CHECKCURRENT_Evt | USB_THREAD_CHECKCAP_Evt, 100 );
 
 			CLEAR_ALL_EVENTS;
 
@@ -112,14 +121,14 @@ void UsbCDCThread(const void *argument)
 			{
 				if( MEASURE_GET_ERROR_CODE( getErrorCode() ) & MEASURE_HV_ERROR )
 				{
-					SEND_CDC_MESSAGE( "************* Fail set High Voltage *****************\r\n\r\n" );
+					SEND_CDC_MESSAGE( "************* Fail set High Voltage <UR> *****************\r\n\r\n" );
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, ERROR_STATUS );
 					event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 				}
 
 				if( MEASURE_GET_ERROR_CODE( getErrorCode() ) & MEASURE_CHANEL_ERROR )
 				{
-					SEND_CDC_MESSAGE( "****************** CHANEL fail **********************\r\n" );
+					SEND_CDC_MESSAGE( "********** Fail set High Voltage on Line  ****************\r\n" );
 					uint32_t   errline = MEASURE_GET_ERROR_LINE( getErrorCode() );
 					sendMeasureError( errline, getRawAdc() );
 
@@ -194,7 +203,7 @@ void UsbCDCThread(const void *argument)
 				}
 
 				SEND_CDC_MESSAGE( "***************** BEGIN OF DATA ******************\r\n" );
-				sendMeasureResult( getMeasureData() );
+				sendMeasureResult( getMeasureData(), systemConfig.uMeasureVol );
 				SEND_CDC_MESSAGE( "****************** END OF DATA *******************\r\n\r\n" );
 			}
 
@@ -230,6 +239,20 @@ void UsbCDCThread(const void *argument)
 				sendTestTimePass();
 				SEND_CDC_MESSAGE( "\r\n" );
 				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
+			}
+
+			/*  test CHECK CURRENT event */
+			if ( event.value.signals & USB_THREAD_CHECKCURRENT_Evt )
+			{
+				SEND_CDC_MESSAGE( "*********** Leakage threshold test ***********\r\n" );
+				sendCurrentTestResult(getMeasureData());
+			}
+
+			/*  test CHECK CURRENT event */
+			if ( event.value.signals & USB_THREAD_CHECKCAP_Evt )
+			{
+				SEND_CDC_MESSAGE( "*********** Capacitors Contact Test ***********\r\n" );
+				sendCapacitanceTestResult(getMeasureData());
 			}
 
 			/*  test start event */
@@ -455,7 +478,7 @@ static void messageDecode( void )
 										else
 											len += sprintf( &usb_message[len], "Temperature: --- oC\r\n" );
 										SEND_CDC_MESSAGE( usb_message );
-										sendMeasureResult( &dataMeasure[p].resistanceValMOhm[0][0] );
+										sendMeasureResult( &dataMeasure[p].resistanceValMOhm[0][0], dataAttribute[p].voltageMeasure );
 										SEND_CDC_MESSAGE( "\r\n" );
 									}
 
@@ -467,28 +490,6 @@ static void messageDecode( void )
 		}
 		return;
 	}
-
-
-	//--------------------------------------------- READ RTESULTS
-	if( strstr( usb_message, "TEST CONNECTION" ) )
-	{
-		switch(systemConfig.sysStatus)
-		{
-
-		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "Command ignored - system not configured\r\n\r\n" );
-								break;
-
-		case FINISH_STATUS:
-		case ERROR_STATUS:
-		case READY_STATUS:
-		case PAUSE_STATUS:
-								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_TESTCAP_Evt );
-								SEND_CDC_MESSAGE( "Test connection...\r\n\r\n" );
-								break;
-		}
-		return;
-	}
-
 
 	//--------------------------------------------- Set Test Voltage
 	ptr = strstr( usb_message, "SET VT=" );
@@ -823,7 +824,14 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( DAC_P2 > 4095 || DAC_P2 < 31 ) SEND_CDC_MESSAGE( "Triangle amplitude of DAC must be 31, 63, 127, 255, 511, 1023, 2047, 4095\r\n\r\n" )
+			if( (DAC_P2 != 4095) &&
+				(DAC_P2 != 2047) &&
+				(DAC_P2 != 1023) &&
+				(DAC_P2 != 511 ) &&
+				(DAC_P2 != 255 ) &&
+				(DAC_P2 != 127 ) &&
+				(DAC_P2 != 63  ) &&
+				(DAC_P2 != 31) 	) SEND_CDC_MESSAGE( "Triangle amplitude of DAC must be 31, 63, 127, 255, 511, 1023, 2047, 4095\r\n\r\n" )
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.dacTriangleAmplitude, DAC_P2 );
@@ -841,10 +849,94 @@ static void messageDecode( void )
 		return;
 	}
 
+	//--------------------------------------------- SET Short_I in nA
+	ptr = strstr( usb_message, "SET SHORT_I=" );
+	if( ptr )
+	{
+		uint32_t 	Short_I 	= 0;
+		int 		res		= sscanf( ptr, "SET SHORT_I=%lu", &Short_I );
+
+		if( res )
+		{
+			if( Short_I > 3000 || Short_I < 100 ) SEND_CDC_MESSAGE( "Value of Short_I must be 100...3000\r\n\r\n" )
+			else
+			{
+				SAVE_SYSTEM_CNF( &systemConfig.shortErrorTrshCurrent_nA, Short_I );
+
+				if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
+				{
+					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+				}
+				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+			}
+		}
+		else
+			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+
+		return;
+	}
+
+	//--------------------------------------------- SET Contact_C in pF
+	ptr = strstr( usb_message, "SET CONTACT_C=" );
+	if( ptr )
+	{
+		uint32_t 	Contact_C 	= 0;
+		int 		res		= sscanf( ptr, "SET CONTACT_C=%lu", &Contact_C );
+
+		if( res )
+		{
+			if( Contact_C > 1000 || Contact_C < 0 ) SEND_CDC_MESSAGE( "Value of Contact_C must be 0...1000\r\n\r\n" )
+			else
+			{
+				SAVE_SYSTEM_CNF( &systemConfig.contactErrorTrshCapacitance_pF, Contact_C );
+
+				if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
+				{
+					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+				}
+				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+			}
+		}
+		else
+			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+
+		return;
+	}
+
+	//---------------------------------------------
+	ptr = strstr( usb_message, "SET RESULT=" );
+	if( ptr )
+	{
+		char 		Result 	= 0;
+		int 		res		= sscanf( ptr, "SET RESULT=%c", &Result );
+
+		if( res )
+		{
+			if( Result == 'C' )
+				{
+					SAVE_SYSTEM_CNF( &systemConfig.resultPresentation, RESULT_AS_CURRENT );
+					SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				}
+			else if( Result == 'R' )
+				{
+					SAVE_SYSTEM_CNF( &systemConfig.resultPresentation, RESULT_AS_RESISTANCE );
+					SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				}
+			else SEND_CDC_MESSAGE( "Value of Result must be R or C\r\n\r\n" )
+		}
+		else
+			SEND_CDC_MESSAGE( "Wrong format\r\n\r\n" );
+
+		return;
+	}
+
 	//--------------------------------------------- SET default values of system
 	ptr = strstr( usb_message, "SET DEFAULT" );
 	if( ptr )
 	{
+		const uint32_t 	Result = RESULT_AS_CURRENT;	// show result of measure as current
+		const uint32_t 	Contact_C = 100;	// capacitance low threshold for error detect, pF
+		const uint32_t 	Short_I	= 2500;	// short high current threshold for error detect, nA
 		const uint32_t 	DAC_P2 	= 255;	// DAC-code triangle amplitude
 		const uint32_t 	DAC_P1 	= 78;	// 78 us DAC period Triangle Mode
 		const uint32_t 	Km 	= 145;	// 138 uS one ADC scan, 145 ~ 20 ms (50 Hz)
@@ -873,6 +965,9 @@ static void messageDecode( void )
 		SAVE_SYSTEM_CNF( &systemConfig.adcMeanFactor, Km );
 		SAVE_SYSTEM_CNF( &systemConfig.dacTrianglePeriodUs, DAC_P1 );
 		SAVE_SYSTEM_CNF( &systemConfig.dacTriangleAmplitude, DAC_P2 );
+		SAVE_SYSTEM_CNF( &systemConfig.shortErrorTrshCurrent_nA, Short_I );
+		SAVE_SYSTEM_CNF( &systemConfig.contactErrorTrshCapacitance_pF, Contact_C );
+		SAVE_SYSTEM_CNF( &systemConfig.resultPresentation, Result );
 
 		if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
 						SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
@@ -946,6 +1041,7 @@ static void messageDecode( void )
 			else
 				break;
 		}
+		SEND_CDC_MESSAGE( "\r\n" );
 		return;
 	}
 
@@ -1058,6 +1154,9 @@ static void	sendSystemSettings( void )
 {
 	SEND_CDC_MESSAGE( "System settings:\r\n" );
 
+	sprintf( usb_message, "Result of measure presented as %s\r\n", systemConfig.resultPresentation == RESULT_AS_RESISTANCE ? "Resistance, MOhm" : "Current, nA" );
+	SEND_CDC_MESSAGE( usb_message );
+
 	sprintf( usb_message, "Test voltage, Vt= %lu V\r\nMeasure voltage, Vm= %lu V\r\nTest time, Tt= %lu hours\r\nMeasure period, Tm= %lu minutes\r\n",
 							systemConfig.uTestVol, systemConfig.uMeasureVol, systemConfig.testingTimeSec / 3600, systemConfig.measuringPeriodSec / 60);
 	SEND_CDC_MESSAGE( usb_message );
@@ -1070,31 +1169,105 @@ static void	sendSystemSettings( void )
 						systemConfig.IAmplifierSettleTimeMs, systemConfig.HVMaxSettleTimeMs, systemConfig.adcMeanFactor );
 	SEND_CDC_MESSAGE( usb_message );
 
+	sprintf( usb_message, "Step of DAC in triangle mode, DAC_P1= %lu uSec\r\nDAC-code triangle amplitude, DAC_P2= %lu\r\n"
+			"Short high current threshold, Short_I= %lu nA \r\nCapacitance low threshold, Contact_C= %lu pF \r\n",
+			systemConfig.dacTrianglePeriodUs, systemConfig.dacTriangleAmplitude, systemConfig.shortErrorTrshCurrent_nA, systemConfig.contactErrorTrshCapacitance_pF );
+	SEND_CDC_MESSAGE( usb_message );
+
 	SEND_CDC_MESSAGE( "\r\n" );
 }
 
 /*
  *
- */
-static void	sendMeasureResult(uint32_t * dataMeasure)
+
+static void	sendMeasureResult(uint32_t * data)
 {
-
-	for( uint16_t i = 0, len = 0; i < MATRIX_LINEn; i++, len = 0 )
+	for( uint32_t i = 0, len = 0; i < MATRIX_LINEn; i++, len = 0 )
 	{
-		// len += sprintf( &usb_message[len], "Line %u, Raw  1 - 8, Resistance value, MOhm\r\n", i + 1 );
-		len += sprintf( &usb_message[len], "Line %u, Raw  1 - 8, Current value, nA\r\n", i + 1 );
+		// 1..8 header
+		if(systemConfig.resultPresentation == RESULT_AS_RESISTANCE )
+			len += sprintf( &usb_message[len], "Line %lu, Raw  1 - 8, Resistance value, MOhm\r\n", i + 1 );
+		else
+			len += sprintf( &usb_message[len], "Line %lu, Raw  1 - 8, Current value, nA\r\n", i + 1 );
 
-		for( uint8_t j = 0; j < 8; j++ )
-			 len += sprintf( &usb_message[len], "%*lu  ", 5, dataMeasure[i * MATRIX_RAWn + j] );
+		// 1..8 data
+		for( uint32_t j = 0; j < 8; j++ )
+		{
+			uint32_t outData = data[i * MATRIX_RAWn + j];
+
+			if(systemConfig.resultPresentation == RESULT_AS_RESISTANCE )
+			{
+				if( outData == 0 ) outData = 9999;
+				else
+				{
+					outData = systemConfig.uMeasureVol * 1000 / outData;	// MOhm
+					if( outData > 9999 ) outData = 9999;
+				}
+			}
+
+			len += sprintf( &usb_message[len], "%*lu  ", 5, outData );
+		}
+		// "\r\n"
 		len += sprintf( &usb_message[len], "\r\n" );
 
-		// len += sprintf( &usb_message[len], "Line %u, Raw  9 - 16, Resistance value, MOhm\r\n", i + 1 );
-		len += sprintf( &usb_message[len], "Line %u, Raw  9 - 16, Current value, nA\r\n", i + 1 );
+		// 9..16 header
+		if(systemConfig.resultPresentation == RESULT_AS_RESISTANCE )
+			len += sprintf( &usb_message[len], "Line %lu, Raw  9 - 16, Resistance value, MOhm\r\n", i + 1 );
+		else
+			len += sprintf( &usb_message[len], "Line %lu, Raw  9 - 16, Current value, nA\r\n", i + 1 );
 
-		for( uint8_t j = 8; j < 16; j++ )
-					 len += sprintf( &usb_message[len], "%*lu  ", 5, dataMeasure[i * MATRIX_RAWn + j] );
+		// 9..16 data
+		for( uint32_t j = 8; j < 16; j++ )
+		{
+			uint32_t outData = data[i * MATRIX_RAWn + j];
+
+			if(systemConfig.resultPresentation == RESULT_AS_RESISTANCE )
+			{
+				if( outData == 0 ) outData = 9999;
+				else
+				{
+					outData = systemConfig.uMeasureVol * 1000 / outData;	// MOhm
+					if( outData > 9999 ) outData = 9999;
+				}
+			}
+
+			len += sprintf( &usb_message[len], "%*lu  ", 5, outData );
+		}
+		// "\r\n"
 		len += sprintf( &usb_message[len], "\r\n" );
 
+		SEND_CDC_MESSAGE( usb_message );
+	}
+}
+*/
+
+static void	sendMeasureResult( uint32_t * data, uint32_t measVol )
+{
+	for( uint32_t i = 0, len = 0; i < MATRIX_LINEn; i++, len = 0 )
+	{
+		if(systemConfig.resultPresentation == RESULT_AS_RESISTANCE )
+			len += sprintf( &usb_message[len], "Line %lu, Raw  1 - 16, Resistance value, MOhm\r\n", i + 1 );
+		else
+			len += sprintf( &usb_message[len], "Line %lu, Raw  1 - 16, Current value, nA\r\n", i + 1 );
+
+		for( uint32_t j = 0; j < 16; j++ )
+		{
+			uint32_t outData = data[i * MATRIX_RAWn + j];
+
+			if(systemConfig.resultPresentation == RESULT_AS_RESISTANCE )
+			{
+				if( outData == 0 ) outData = 9999;
+				else
+				{
+					outData = measVol * 1000 / outData;	// MOhm
+					if( outData > 9999 ) outData = 9999;
+				}
+			}
+
+			len += sprintf( &usb_message[len], "%*lu  ", 5, outData );
+		}
+		// "\r\n"
+		len += sprintf( &usb_message[len], "\r\n" );
 		SEND_CDC_MESSAGE( usb_message );
 	}
 }
@@ -1102,13 +1275,47 @@ static void	sendMeasureResult(uint32_t * dataMeasure)
 /*
  *
  */
-static void	sendMeasureError(uint8_t line, uint32_t * dataMeasure)
+static void	sendMeasureError(uint8_t line, uint32_t * data)
 {
 	uint16_t len = 0;
 
 	len = sprintf( usb_message, "Error Line %u, Raw 1 - 16, State: Ok or Er\r\n", line + 1 );
-	for( uint8_t j = 0; j < MATRIX_RAWn; j++ )
-		{ len += sprintf( &usb_message[len], "%s  ", dataMeasure[j] < 4000 ? "Ok" : "Er" );  }
+	for( uint32_t j = 0; j < MATRIX_RAWn; j++ )
+		{ len += sprintf( &usb_message[len], "%s  ", data[j] < RANGE_12BITS_0_9 ? "Ok" : "Er" );  }
 	SEND_CDC_MESSAGE( usb_message );
+	SEND_CDC_MESSAGE( "\r\n" );
+}
+
+/*
+ *
+ */
+static void	sendCurrentTestResult(uint32_t * data)
+{
+	for( uint32_t i = 0, len = 0; i < MATRIX_LINEn; i++, len = 0 )
+	{
+		len = sprintf( usb_message, "Line %lu, Raw 1 - 16: ", i + 1 );
+		//  data
+		for( uint32_t j = 0; j < MATRIX_RAWn; j++ )
+			len += sprintf( &usb_message[len], "%s  ", data[i * MATRIX_RAWn + j] < systemConfig.shortErrorTrshCurrent_nA ? "Ok" : "Er" );
+		len += sprintf( &usb_message[len], "\r\n" );
+		SEND_CDC_MESSAGE( usb_message );
+	}
+	SEND_CDC_MESSAGE( "\r\n" );
+}
+
+/*
+ *
+ */
+static void sendCapacitanceTestResult(uint32_t * data)
+{
+	for( uint32_t i = 0, len = 0; i < MATRIX_LINEn; i++, len = 0 )
+	{
+		len = sprintf( usb_message, "Line %lu ", i + 1 );
+		//  data
+		for( uint32_t j = 0; j < MATRIX_RAWn; j++ )
+			len += sprintf( &usb_message[len], "%s  ", data[i * MATRIX_RAWn + j] > systemConfig.contactErrorTrshCapacitance_pF ? "Ok" : "Er" );
+		len += sprintf( &usb_message[len], "\r\n" );
+		SEND_CDC_MESSAGE( usb_message );
+	}
 	SEND_CDC_MESSAGE( "\r\n" );
 }
