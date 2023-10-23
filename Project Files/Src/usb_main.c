@@ -21,6 +21,7 @@ const char * helpStrings[] = {
 		"Start - start test process\r\n",
 		"Pause - pause test process\r\n",
 		"Stop - stop test process\r\n",
+		"Check - check High Voltage, Leakage Current, Capacitors Contact\r\n",
 		"Measure - take measurement immediately and show a result\r\n",
 		"Read Status - show the current state of the system\r\n",
 		"Read Data - show measurement results\r\n",
@@ -68,7 +69,6 @@ static void					sendSystemStatus	( void );
 static void					sendSystemSettings	( void );
 static void					sendMemoryStatus	( void );
 static void					sendMeasureResult	( uint32_t * data, uint32_t measVol );
-//static void					sendMeasureResult   (uint32_t * data);
 static void					sendCurrentTestResult(uint32_t * data);
 static void					sendCapacitanceTestResult(uint32_t * data);
 static void					sendMeasureError	(uint8_t line, uint32_t * dataMeasure);
@@ -112,7 +112,7 @@ void UsbCDCThread(const void *argument)
 			// wait message
 			osEvent event = osSignalWait( USB_THREAD_MESSAGEGOT_Evt | USB_THREAD_MEASURESTARTED_Evt | USB_THREAD_MEASUREREADY_Evt | USB_THREAD_TESTSTOPPED_Evt |
 											USB_THREAD_TESTSTARTED_Evt | USB_THREAD_TESTPAUSED_Evt | USB_THREAD_MEASUREERROR_Evt |
-											USB_THREAD_CHECKCURRENT_Evt | USB_THREAD_CHECKCAP_Evt, 100 );
+											USB_THREAD_CHECKCURRENT_Evt | USB_THREAD_CHECKCAP_Evt | USB_THREAD_CHECKHV_Evt, 100 );
 
 			CLEAR_ALL_EVENTS;
 
@@ -242,17 +242,38 @@ void UsbCDCThread(const void *argument)
 			}
 
 			/*  test CHECK CURRENT event */
+			if ( event.value.signals & USB_THREAD_CHECKHV_Evt )
+			{
+				SEND_CDC_MESSAGE( "*********** High Voltage test ***********\r\n" );
+				sendSystemTime();
+				sendRealHV();
+				SEND_CDC_MESSAGE( "\r\n" );
+				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
+			}
+
+			/*  test CHECK CURRENT event */
 			if ( event.value.signals & USB_THREAD_CHECKCURRENT_Evt )
 			{
 				SEND_CDC_MESSAGE( "*********** Leakage threshold test ***********\r\n" );
+				sendSystemTime();
 				sendCurrentTestResult(getMeasureData());
+				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 			}
 
 			/*  test CHECK CURRENT event */
 			if ( event.value.signals & USB_THREAD_CHECKCAP_Evt )
 			{
 				SEND_CDC_MESSAGE( "*********** Capacitors Contact Test ***********\r\n" );
+				sendSystemTime();
 				sendCapacitanceTestResult(getMeasureData());
+
+				SEND_CDC_MESSAGE( "\r\n***************** Check finished  ****************\r\n" );
+				sendSystemTime();
+				sendSystemTemperature();
+				sendSystemStatus();
+				sendRealHV();
+				SEND_CDC_MESSAGE( "\r\n" );
+				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 			}
 
 			/*  test start event */
@@ -421,6 +442,25 @@ static void messageDecode( void )
 		case ACTIVE_STATUS:
 		case FINISH_STATUS:		osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTMESURE_Evt );
 								SEND_CDC_MESSAGE( "Take measure...\r\n\r\n" );
+								break;
+		}
+		return;
+	}
+
+	//--------------------------------------------- CHECK
+	if( strstr( usb_message, "CHECK" ) )
+	{
+		switch(systemConfig.sysStatus)
+		{
+		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "Command ignored - system not configured\r\n\r\n" );
+								break;
+
+		case ERROR_STATUS:
+		case PAUSE_STATUS:
+		case READY_STATUS:
+		case ACTIVE_STATUS:
+		case FINISH_STATUS:		osSignalSet( MeasureThreadHandle, MEASURE_THREAD_CHECK_Evt );
+								SEND_CDC_MESSAGE( "Start checking procedure...\r\n\r\n" );
 								break;
 		}
 		return;
@@ -1179,68 +1219,7 @@ static void	sendSystemSettings( void )
 
 /*
  *
-
-static void	sendMeasureResult(uint32_t * data)
-{
-	for( uint32_t i = 0, len = 0; i < MATRIX_LINEn; i++, len = 0 )
-	{
-		// 1..8 header
-		if(systemConfig.resultPresentation == RESULT_AS_RESISTANCE )
-			len += sprintf( &usb_message[len], "Line %lu, Raw  1 - 8, Resistance value, MOhm\r\n", i + 1 );
-		else
-			len += sprintf( &usb_message[len], "Line %lu, Raw  1 - 8, Current value, nA\r\n", i + 1 );
-
-		// 1..8 data
-		for( uint32_t j = 0; j < 8; j++ )
-		{
-			uint32_t outData = data[i * MATRIX_RAWn + j];
-
-			if(systemConfig.resultPresentation == RESULT_AS_RESISTANCE )
-			{
-				if( outData == 0 ) outData = 9999;
-				else
-				{
-					outData = systemConfig.uMeasureVol * 1000 / outData;	// MOhm
-					if( outData > 9999 ) outData = 9999;
-				}
-			}
-
-			len += sprintf( &usb_message[len], "%*lu  ", 5, outData );
-		}
-		// "\r\n"
-		len += sprintf( &usb_message[len], "\r\n" );
-
-		// 9..16 header
-		if(systemConfig.resultPresentation == RESULT_AS_RESISTANCE )
-			len += sprintf( &usb_message[len], "Line %lu, Raw  9 - 16, Resistance value, MOhm\r\n", i + 1 );
-		else
-			len += sprintf( &usb_message[len], "Line %lu, Raw  9 - 16, Current value, nA\r\n", i + 1 );
-
-		// 9..16 data
-		for( uint32_t j = 8; j < 16; j++ )
-		{
-			uint32_t outData = data[i * MATRIX_RAWn + j];
-
-			if(systemConfig.resultPresentation == RESULT_AS_RESISTANCE )
-			{
-				if( outData == 0 ) outData = 9999;
-				else
-				{
-					outData = systemConfig.uMeasureVol * 1000 / outData;	// MOhm
-					if( outData > 9999 ) outData = 9999;
-				}
-			}
-
-			len += sprintf( &usb_message[len], "%*lu  ", 5, outData );
-		}
-		// "\r\n"
-		len += sprintf( &usb_message[len], "\r\n" );
-
-		SEND_CDC_MESSAGE( usb_message );
-	}
-}
-*/
-
+ */
 static void	sendMeasureResult( uint32_t * data, uint32_t measVol )
 {
 	for( uint32_t i = 0, len = 0; i < MATRIX_LINEn; i++, len = 0 )
