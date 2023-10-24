@@ -28,7 +28,7 @@ Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 [Tasks]
 Name: "installdriver"; Description: "Установить драйвера"; GroupDescription: "Дополнительные опции:"
 Name: "instaltermite"; Description: "Установить терминал Termite"; GroupDescription: "Дополнительные опции:"
-Name: "instalSTlink"; Description: "Установить терминал STM32 ST-Link"; GroupDescription: "Дополнительные опции:"
+Name: "instalSTlink"; Description: "Установить STM32 ST-Link"; GroupDescription: "Дополнительные опции:"
 
 [InstallDelete]
 

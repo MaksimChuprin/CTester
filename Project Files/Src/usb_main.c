@@ -1071,15 +1071,26 @@ static void messageDecode( void )
 	//---------------------------------------------
 	if( strstr( usb_message, "HELP" ) )
 	{
-		for(uint32_t i = 0; ; i++)
+		for( uint32_t i = 0, len = 0; ; )
 		{
 			if( helpStrings[i] )
 			{
-				strcpy( usb_message, helpStrings[i] );
-				SEND_CDC_MESSAGE( usb_message );
+				if( (len + strlen(helpStrings[i])) < APP_CDC_DATA_SIZE )
+				{
+					len += sprintf( &usb_message[len], helpStrings[i] );
+					i++;
+				}
+				else
+				{
+					SEND_CDC_MESSAGE( usb_message );
+					len = 0;
+				}
 			}
 			else
+			{
+				if(len) SEND_CDC_MESSAGE( usb_message );
 				break;
+			}
 		}
 		SEND_CDC_MESSAGE( "\r\n" );
 		return;
