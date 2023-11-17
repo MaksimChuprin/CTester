@@ -1,0 +1,911 @@
+Set Tt=1
+Ok
+
+Set Tt=3
+Ok
+
+Read settings
+System settings:
+Result of measure presented as Current, nA
+Test voltage, Vt= 100 V
+Measure voltage, Vm= 100 V
+Test time, Tt= 3 hours
+Measure period, Tm= 60 minutes
+Amplifier factor, Ki= 1000000
+Division factor, Kd= 101
+Discharge time, Td= 10000 msec
+Acceptable HV error, Ve= 1000 mV
+Amplifier settle time, Ta= 1000 msec
+Max HV settle time, Th= 1000 msec
+ADC mean factor, Km= 435 
+Step of DAC in triangle mode, DAC_P1= 78 uSec
+DAC-code triangle amplitude, DAC_P2= 255
+Short high current threshold, Short_I= 2500 nA 
+Capacitance low threshold, Contact_C= 1000 pF 
+
+
+Set Tt=1
+Ok
+
+Set Tp=3
+Ok
+
+Read settings
+System settings:
+Result of measure presented as Current, nA
+Test voltage, Vt= 100 V
+Measure voltage, Vm= 100 V
+Test time, Tt= 1 hours
+Measure period, Tm= 3 minutes
+Amplifier factor, Ki= 1000000
+Division factor, Kd= 101
+Discharge time, Td= 10000 msec
+Acceptable HV error, Ve= 1000 mV
+Amplifier settle time, Ta= 1000 msec
+Max HV settle time, Th= 1000 msec
+ADC mean factor, Km= 435 
+Step of DAC in triangle mode, DAC_P1= 78 uSec
+DAC-code triangle amplitude, DAC_P2= 255
+Short high current threshold, Short_I= 2500 nA 
+Capacitance low threshold, Contact_C= 1000 pF 
+
+
+start
+Starting test...
+
+*********** Leakage threshold test ***********
+System time 2023-11-16 12:57
+Line 1, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 2, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 3, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 4, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 5, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 6, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 7, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 8, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 9, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 10, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 11, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 12, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 13, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 14, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 15, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 16, Raw 1 - 16: Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+
+*********** Capacitors Contact Test ***********
+System time 2023-11-16 12:57
+Line 1 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 2 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 3 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 4 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 5 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 6 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 7 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 8 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 9 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 10 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 11 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 12 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 13 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 14 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 15 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+Line 16 Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  Ok  
+
+
+***************** Check finished  ****************
+System time 2023-11-16 12:57
+System temperature, oC: 21
+System status: ready
+Current High Voltage, UR=  40.2 V
+
+***************** Test started ****************
+System time 2023-11-16 12:57
+System temperature, oC: 21
+System status: test run
+Memory contains 0 Point(s) of Data
+System Voltage, VDD=   3.263 V
+Current High Voltage, UR=  99.8 V
+Testing time passed  0 day(s), 0 hour(s), 0 minute(s)
+
+***************** Measure started ******************
+System time 2023-11-16 13:01
+System temperature, oC: 21
+System status: test run
+Memory contains 0 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 3 minute(s)
+
+***************** Measure finished ******************
+*************** Data saved to Flash ****************
+System time 2023-11-16 13:04
+System temperature, oC: 21
+System status: test run
+Memory contains 1 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 6 minute(s)
+***************** BEGIN OF DATA ******************
+Line 1, Raw  1 - 16, Current value, nA
+   12      8     12     17     12     18     15     16      7     14      4     16     16     19     15     17  
+Line 2, Raw  1 - 16, Current value, nA
+    0      6     15     20     16      4      0      2      7     22      3     24     16     22     18     18  
+Line 3, Raw  1 - 16, Current value, nA
+   25      6     18    624     16    623      0    626     10    622     18    623     20     27     41     19  
+Line 4, Raw  1 - 16, Current value, nA
+   16    731     13      7     12    760     23    749      4    740      0    747     14    750     15    743  
+Line 5, Raw  1 - 16, Current value, nA
+  236    678    237    697      0    697    232    688    226    685    215    690    228    689    236    686  
+Line 6, Raw  1 - 16, Current value, nA
+  228      0      0     24    242     24    242     21    223     16    215     24    315     27    246      0  
+Line 7, Raw  1 - 16, Current value, nA
+  192      0    199     11    197     23    204     18    191     10    176     14    186     15    196     10  
+Line 8, Raw  1 - 16, Current value, nA
+   30      0     34     15     30      1     35     12     23     13     13     30     30     30     36     12  
+Line 9, Raw  1 - 16, Current value, nA
+    0      0     16     17     18     20     22     15      8     16      0     21     17     17     25     16  
+Line 10, Raw  1 - 16, Current value, nA
+   27      3     21     26     21     17     26     12     17     21      2     18     23     17      0     12  
+Line 11, Raw  1 - 16, Current value, nA
+   21      4      0     18     21     21     29     31     13     18      3     25     22     24     29     20  
+Line 12, Raw  1 - 16, Current value, nA
+   35      0     26      0     18     16     41     11     13     13      4     31     19     27     30     11  
+Line 13, Raw  1 - 16, Current value, nA
+   14      3     21     20     16     20     23     18     11     17      0     29     20     19     26     16  
+Line 14, Raw  1 - 16, Current value, nA
+   16      3     21     21     38     20      4     19      7     33      1      3     18     20     24     17  
+Line 15, Raw  1 - 16, Current value, nA
+   18      2     19     17      0     20     40     15      6     15      0     30     20     20     24      0  
+Line 16, Raw  1 - 16, Current value, nA
+   16     11      0     23     20     42     21     22      9     22      0     25     20     28     24     26  
+****************** END OF DATA *******************
+
+***************** Measure started ******************
+System time 2023-11-16 13:07
+System temperature, oC: 21
+System status: test run
+Memory contains 1 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 9 minute(s)
+
+help
+Start - start test process
+Pause - pause test process
+Stop - stop test process
+Check - check High Voltage, Leakage Current, Capacitors Contact
+Measure - take measurement immediately and show a result
+Read Status - show the current state of the system
+Read Data - show measurement results
+Read Settings - show settings values
+Set Result=<R/I> - show result of measure as: <R> - resistance, <I> - current
+Set Vt=<value> - set <value> of test voltage in Volts
+Set Vm=<value> - set <value> of measure voltage in Volts
+Set Ve=<value> - set <value> of acceptable HV error in mVolts
+Set Tt=<value> - set <value> of test time in Hours
+Set Tp=<value> - set <value> of measure period in Minutes
+Set Td=<value> - set <value> of discharge time in mSec
+Set Ta=<value> - set <value> of amplifier settle time in mSec
+Set Th=<value> - set <value> of max HV settle time in mSec
+Set Ki=<value> - set factor of current amplifier
+Set Kd=<value> - set division factor of HV
+Set RTC=<YYYY-MM-DD HH:MM> - set current time
+Set default - set system to default
+Echo On - switch echo on
+Echo Off - switch echo off
+Help - list available commands
+******** fine tuning commands ********
+Set Km=<value> - set ADC mean factor, 1 - 138 us
+Set DAC_P1=<value> - time step of DAC in triangle mode, uSec
+Set DAC_P2=<value> - DAC-code triangle amplitude: 31, 63, 127, 255, 511, 1023, 2047, 4095
+Set Short_I=<value> - set short high current threshold for errordetect, pF 
+
+Set Contact_C=<value> - set capacitance low threshold for error detect, pF 
+
+***************** Measure finished ******************
+*************** Data saved to Flash ****************
+System time 2023-11-16 13:10
+System temperature, oC: 21
+System status: test run
+Memory contains 2 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 12 minute(s)
+***************** BEGIN OF DATA ******************
+Line 1, Raw  1 - 16, Current value, nA
+   27     17     25     16     26     15     29     15     28     15     29     16     30     19     27     18  
+Line 2, Raw  1 - 16, Current value, nA
+    0     26     23     26     24      1      1      0     25     29     24     32     29     31     25     29  
+Line 3, Raw  1 - 16, Current value, nA
+   20      0     16     37     16     41      0     40     17     38     27     40     19      0     33      0  
+Line 4, Raw  1 - 16, Current value, nA
+   26     21     19      0     20     21     27     21     25     18     20     22     24     21     19     19  
+Line 5, Raw  1 - 16, Current value, nA
+   27     24     21     23      0     24     26     25     29     25     22     28     28     27     25     25  
+Line 6, Raw  1 - 16, Current value, nA
+   21      0      0     22     23     23     24     23     23     18     22     25     42     27     20      1  
+Line 7, Raw  1 - 16, Current value, nA
+   22     25     20     24     22     40     24     36     24     25     25     26     19     31     20     28  
+Line 8, Raw  1 - 16, Current value, nA
+   24     26     20     22     21      0     22     22     23     24     22     41     21     42     22     23  
+Line 9, Raw  1 - 16, Current value, nA
+    0      0     18     22     19     25     24     22     25     26     21     25     22     23     24     27  
+Line 10, Raw  1 - 16, Current value, nA
+   33     32     23     40     25     26     28     27     33     34     24     31     29     29      0     28  
+Line 11, Raw  1 - 16, Current value, nA
+   27     25      0     19     28     22     30     35     31     22     27     28     29     28     28     27  
+Line 12, Raw  1 - 16, Current value, nA
+   38      0     21      0     19     29     39     25     24     26     23     46     22     45     27     26  
+Line 13, Raw  1 - 16, Current value, nA
+   25     25     26     23     25     24     29     24     32     23     27     36     31     24     30     23  
+Line 14, Raw  1 - 16, Current value, nA
+   20     25     20     24     39     23      0     26     22     41     22      0     22     25     22     24  
+Line 15, Raw  1 - 16, Current value, nA
+   37     25     29     17      0     21     56     19     34     18     34     35     36     24     35      1  
+Line 16, Raw  1 - 16, Current value, nA
+   22     24      0     18     24     33     20     20     26     18     23     22     22     22     24     25  
+****************** END OF DATA *******************
+
+***************** Measure started ******************
+System time 2023-11-16 13:13
+System temperature, oC: 21
+System status: test run
+Memory contains 2 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 15 minute(s)
+
+***************** Measure finished ******************
+*************** Data saved to Flash ****************
+System time 2023-11-16 13:16
+System temperature, oC: 21
+System status: test run
+Memory contains 3 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 18 minute(s)
+***************** BEGIN OF DATA ******************
+Line 1, Raw  1 - 16, Current value, nA
+   28     23     25     20     27     21     27     20     29     20     28     19     29     23     28     23  
+Line 2, Raw  1 - 16, Current value, nA
+    0     60     41     64     43      0      0      0     42     63     40     66     45     67     43     62  
+Line 3, Raw  1 - 16, Current value, nA
+   30      0     24     23     28     29      0     28     27     24     38     24     28      0     45      0  
+Line 4, Raw  1 - 16, Current value, nA
+   26     27     19      0     22     29     25     28     24     25     21     27     22     27     23     26  
+Line 5, Raw  1 - 16, Current value, nA
+   22    250     15    246      0    253     21    246     23    246     17    248     23    245     22    250  
+Line 6, Raw  1 - 16, Current value, nA
+   24      0      0    261     26    266     24    262     25    257     21    266     42    263     24      1  
+Line 7, Raw  1 - 16, Current value, nA
+   14    186     12    182     15    241     14    220     14    179     13    175     12    185     15    184  
+Line 8, Raw  1 - 16, Current value, nA
+  557     34    558     33    562      0    559     32    560     35    558     52    561     53    563     32  
+Line 9, Raw  1 - 16, Current value, nA
+    5      0    720     22    727     24    721     23    766     24    727     26    722     21    729     27  
+Line 10, Raw  1 - 16, Current value, nA
+  775     30    764     41    772     27    770     25    781     37    764     28    771     25      0     26  
+Line 11, Raw  1 - 16, Current value, nA
+   69     24      0     18     69     22     70     33     71     20     65     29     66     25     70     27  
+Line 12, Raw  1 - 16, Current value, nA
+   31      0     17      0     17     27     30     24     19     26     16     42     17     42     21     27  
+Line 13, Raw  1 - 16, Current value, nA
+   22     24     22     21     25     24     23     23     27     21     22     36     27     20     29     22  
+Line 14, Raw  1 - 16, Current value, nA
+   23     30     21     30     42     28      0     31     22     50     22      0     22     28     25     32  
+Line 15, Raw  1 - 16, Current value, nA
+   29     30     20     21      0     27     45     23     25     20     23     37     26     26     28      0  
+Line 16, Raw  1 - 16, Current value, nA
+   20     29      0     23     24     41     17     24     22     25     20     25     23     25     23     28  
+****************** END OF DATA *******************
+
+***************** Measure started ******************
+System time 2023-11-16 13:19
+System temperature, oC: 21
+System status: test run
+Memory contains 3 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 21 minute(s)
+
+***************** Measure finished ******************
+*************** Data saved to Flash ****************
+System time 2023-11-16 13:22
+System temperature, oC: 21
+System status: test run
+Memory contains 4 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 24 minute(s)
+***************** BEGIN OF DATA ******************
+Line 1, Raw  1 - 16, Current value, nA
+   39     64     36     65     37     64     41     63     40     63     39     60     39     67     40     67  
+Line 2, Raw  1 - 16, Current value, nA
+    0     21     38     25     39      1      0      0     39     24     38     27     39     26     41     25  
+Line 3, Raw  1 - 16, Current value, nA
+   36      0     29     41     33     45      0     43     37     40     48     43     35      0     56      0  
+Line 4, Raw  1 - 16, Current value, nA
+   21     24     15      0     14     26     22     23     19     23     16     25     18     24     18     24  
+Line 5, Raw  1 - 16, Current value, nA
+   24     39     19     41      0     41     24     40     26     39     16     42     23     41     23     41  
+Line 6, Raw  1 - 16, Current value, nA
+   29      0      0     57     31     58     30     55     30     52     26     58     46     58     30      2  
+Line 7, Raw  1 - 16, Current value, nA
+   16     19     13     19     13     33     16     28     14     19     14     21     10     22     13     21  
+Line 8, Raw  1 - 16, Current value, nA
+   28     57     25     56     26      0     26     54     26     55     24     84     23     81     27     56  
+Line 9, Raw  1 - 16, Current value, nA
+    0      0     21     81     23     84     25     81     28     83     22     86     23     80     27     87  
+Line 10, Raw  1 - 16, Current value, nA
+   32     26     25     36     26     22     26     21     33     29     22     23     27     25      0     23  
+Line 11, Raw  1 - 16, Current value, nA
+   36     18      0     16     36     19     37     28     40     17     32     24     34     22     39     23  
+Line 12, Raw  1 - 16, Current value, nA
+   45      0     29      0     27     22     45     17     32     20     27     37     28     35     34     20  
+Line 13, Raw  1 - 16, Current value, nA
+   13     22     13     22     14     23     17     21     17     19     14     31     16     20     19     22  
+Line 14, Raw  1 - 16, Current value, nA
+   30     22     31     25     54     21      0     23     31     39     29      0     30     23     32     23  
+Line 15, Raw  1 - 16, Current value, nA
+   32     11     27      9      0     12     49      8     30      5     28     18     30     12     31      0  
+Line 16, Raw  1 - 16, Current value, nA
+   18     28      0     22     22     40     17     22     21     21     15     23     16     27     17     28  
+****************** END OF DATA *******************
+
+***************** Measure started ******************
+System time 2023-11-16 13:25
+System temperature, oC: 21
+System status: test run
+Memory contains 4 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 27 minute(s)
+
+***************** Measure finished ******************
+*************** Data saved to Flash ****************
+System time 2023-11-16 13:28
+System temperature, oC: 21
+System status: test run
+Memory contains 5 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 30 minute(s)
+***************** BEGIN OF DATA ******************
+Line 1, Raw  1 - 16, Current value, nA
+   14     22     13     21     15     19     17     21     16     20     16     20     17     20     15     22  
+Line 2, Raw  1 - 16, Current value, nA
+    0     17     18     18     20      0      0      0     18     18     21     20     21     19     21     19  
+Line 3, Raw  1 - 16, Current value, nA
+   39      0     34     42     36     44      0     44     35     42     49     42     37      0     55      0  
+Line 4, Raw  1 - 16, Current value, nA
+   27     29     24      0     24     26     30     23     25     26     27     22     28     23     23     23  
+Line 5, Raw  1 - 16, Current value, nA
+   30     38     25     35      0     35     29     35     29     36     26     34     30     35     27     34  
+Line 6, Raw  1 - 16, Current value, nA
+   26      4      0     22     26     23     32     19     24     20     30     23     46     22     25      1  
+Line 7, Raw  1 - 16, Current value, nA
+   19     23     20     19     19     30     22     25     18     20     23     16     18     19     17     19  
+Line 8, Raw  1 - 16, Current value, nA
+   20    195     20    192     19      8     22    192     19    195     20    202     19    202     20    193  
+Line 9, Raw  1 - 16, Current value, nA
+  128     11     30    759     29    761     34    759     29    758     33    767     34    756     34    760  
+Line 10, Raw  1 - 16, Current value, nA
+  199    764    193    817    198    758    200    755    207    795    196    763    200    757      0    750  
+Line 11, Raw  1 - 16, Current value, nA
+  252    112      0    104    254    106    259    129    259    106    249    107    249    106    255    108  
+Line 12, Raw  1 - 16, Current value, nA
+  335      5    262      0    257     25    324     19    254     27    263     36    253     35    264     21  
+Line 13, Raw  1 - 16, Current value, nA
+   38     25     40     19     38     19     40     17     41     21     40     24     44     14     43     16  
+Line 14, Raw  1 - 16, Current value, nA
+   29     34     28     31     47     27      3     30     26     48     30      0     30     25     29     29  
+Line 15, Raw  1 - 16, Current value, nA
+   28     32     21     22      0     23     44     20     19     24     26     28     24     23     23      0  
+Line 16, Raw  1 - 16, Current value, nA
+   30     66      0     56     32     78     30     55     29     55     30     54     32     54     30     59  
+****************** END OF DATA *******************
+
+***************** Measure started ******************
+System time 2023-11-16 13:31
+System temperature, oC: 21
+System status: test run
+Memory contains 5 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 33 minute(s)
+
+***************** Measure finished ******************
+*************** Data saved to Flash ****************
+System time 2023-11-16 13:34
+System temperature, oC: 21
+System status: test run
+Memory contains 6 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 36 minute(s)
+***************** BEGIN OF DATA ******************
+Line 1, Raw  1 - 16, Current value, nA
+   23     26     21     24     22     25     26     25     25     24     23     25     25     28     22     26  
+Line 2, Raw  1 - 16, Current value, nA
+    1     21     27     22     30      1      0      0     30     24     28     26     30     26     28     24  
+Line 3, Raw  1 - 16, Current value, nA
+   51      0     47     25     50     27      0     27     51     25     66     25     49      1     73      0  
+Line 4, Raw  1 - 16, Current value, nA
+   29     14     24      0     26     17     28     17     27     15     23     18     24     16     24     16  
+Line 5, Raw  1 - 16, Current value, nA
+   47     15     41     21      2     22     41     23     52     16     42     24     42     22     45     19  
+Line 6, Raw  1 - 16, Current value, nA
+   15      0      0     23     19     26     16     23     17     20     16     27     30     28     16      0  
+Line 7, Raw  1 - 16, Current value, nA
+   21     17     18     16     20     30     20     26     20     16     21     19     16     22     18     20  
+Line 8, Raw  1 - 16, Current value, nA
+   60     13     57     13     63      0     56     13     64     12     58     25     54     25     64     12  
+Line 9, Raw  1 - 16, Current value, nA
+   81      0     26     29     32     32     31     29     32     31     30     33     29     29     34     34  
+Line 10, Raw  1 - 16, Current value, nA
+   29     69     28     93     31     70     28     68     37     80     25     73     26     71      0     67  
+Line 11, Raw  1 - 16, Current value, nA
+   17     25     52     21     23     25     21     35     22     25     18     29     18     28     19     28  
+Line 12, Raw  1 - 16, Current value, nA
+   57      0     32      0     36     26     54     21     40     24     38     39     34     38     42     23  
+Line 13, Raw  1 - 16, Current value, nA
+   17     17     16     17     20     18     19     19     25     17     18     27     21     15     21     17  
+Line 14, Raw  1 - 16, Current value, nA
+   23     23     21     26     44     24      0     26     24     41     24      0     23     26     24     25  
+Line 15, Raw  1 - 16, Current value, nA
+   20     23     13     17      0     23     33     19     16     19     16     32     18     23     19      0  
+Line 16, Raw  1 - 16, Current value, nA
+   27     28      0     26     30     42     24     25     29     25     26     26     27     28     27     30  
+****************** END OF DATA *******************
+
+***************** Measure started ******************
+System time 2023-11-16 13:37
+System temperature, oC: 21
+System status: test run
+Memory contains 6 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 39 minute(s)
+
+***************** Measure finished ******************
+*************** Data saved to Flash ****************
+System time 2023-11-16 13:40
+System temperature, oC: 21
+System status: test run
+Memory contains 7 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 42 minute(s)
+***************** BEGIN OF DATA ******************
+Line 1, Raw  1 - 16, Current value, nA
+   24     24     23     24     24     24     28     23     26     24     26     24     27     26     25     26  
+Line 2, Raw  1 - 16, Current value, nA
+    1     25     31     26     31      2      0      0     30     28     29     31     33     29     30     29  
+Line 3, Raw  1 - 16, Current value, nA
+   24      0     18     18     21     20      0     20     21     19     31     20     21      0     36      0  
+Line 4, Raw  1 - 16, Current value, nA
+   33     33     29      0     28     35     32     32     32     33     28     33     28     32     28     32  
+Line 5, Raw  1 - 16, Current value, nA
+   28     22     24     23      1     25     27     26     29     24     25     27     29     25     26     23  
+Line 6, Raw  1 - 16, Current value, nA
+   22      0      0     22     22     25     24     21     23     20     23     26     38     24     22      1  
+Line 7, Raw  1 - 16, Current value, nA
+   19     23     19     24     20     40     20     35     18     25     20     27     15     29     17     27  
+Line 8, Raw  1 - 16, Current value, nA
+   27     24     25     22     25      0     26     22     26     23     25     40     22     39     26     24  
+Line 9, Raw  1 - 16, Current value, nA
+   56      0     20     20     23     24     23     22     22     21     23     25     24     21     26     26  
+Line 10, Raw  1 - 16, Current value, nA
+   24    243     21    305     21    239     23    232     28    274     21    245     22    240      0    232  
+Line 11, Raw  1 - 16, Current value, nA
+   22    254     47    252     27    255     27    301     27    252     25    260     25    258     26    259  
+Line 12, Raw  1 - 16, Current value, nA
+   45      0     25      0     27    229     44    221     29    226     31    293     28    293     34    227  
+Line 13, Raw  1 - 16, Current value, nA
+  323     45    324     43    327     46    328     43    329     45    327     62    330     41    331     42  
+Line 14, Raw  1 - 16, Current value, nA
+  742     27    739     29    819     27      9     31    744     45    749      0    736     28    747     29  
+Line 15, Raw  1 - 16, Current value, nA
+  762     31    751     23      5     29    825     25    753     24    756     40    762     29    762      0  
+Line 16, Raw  1 - 16, Current value, nA
+  147     30      0     25    156     44    144     26    152     26    148     28    145     29    151     32  
+****************** END OF DATA *******************
+
+***************** Measure started ******************
+System time 2023-11-16 13:43
+System temperature, oC: 21
+System status: test run
+Memory contains 7 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 45 minute(s)
+
+***************** Measure finished ******************
+*************** Data saved to Flash ****************
+System time 2023-11-16 13:46
+System temperature, oC: 21
+System status: test run
+Memory contains 8 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 48 minute(s)
+***************** BEGIN OF DATA ******************
+Line 1, Raw  1 - 16, Current value, nA
+   19     25     20     26     20     25     23     23     21     23     22     23     24     27     21     26  
+Line 2, Raw  1 - 16, Current value, nA
+    0     25     21     29     24      0      0      0     23     30     21     34     23     33     24     29  
+Line 3, Raw  1 - 16, Current value, nA
+   26      0     24     24     23     26      0     24     26     25     33     24     25      0     42      0  
+Line 4, Raw  1 - 16, Current value, nA
+   85     24     82      0     80     25     86     24     83     25     82     24     81     27     84     24  
+Line 5, Raw  1 - 16, Current value, nA
+   24     36     22     37      0     39     22     37     26     36     21     39     23     40     25     37  
+Line 6, Raw  1 - 16, Current value, nA
+   21      0      0     28     26     30     25     27     25     26     23     29     39     32     24      0  
+Line 7, Raw  1 - 16, Current value, nA
+  546     29    552     27    550     45    553     38    555     29    546     27    539     32    546     30  
+Line 8, Raw  1 - 16, Current value, nA
+   30    275     32    277     30      0     30    269     32    277     29    336     28    334     33    279  
+Line 9, Raw  1 - 16, Current value, nA
+  118      0     76     19     81     23     78     19     94     22     80     22     77     19     83     23  
+Line 10, Raw  1 - 16, Current value, nA
+   25     29     25     40     25     25     24     22     32     34     20     26     24     24      0     25  
+Line 11, Raw  1 - 16, Current value, nA
+   34     32     56     26     41     30     40     39     41     33     36     33     35     34     40     32  
+Line 12, Raw  1 - 16, Current value, nA
+   30      0     16      0     17     28     31     23     23     27     20     41     18     43     23     26  
+Line 13, Raw  1 - 16, Current value, nA
+   14     85     15     88     17     90     18     88     20     85     18    114     20     86     21     87  
+Line 14, Raw  1 - 16, Current value, nA
+   20     66     22     66     41     60      0     66     24     89     25      0     22     64     25     62  
+Line 15, Raw  1 - 16, Current value, nA
+   37     37     33     29      0     32     54     27     35     30     36     44     37     32     38      0  
+Line 16, Raw  1 - 16, Current value, nA
+   21     33      0     29     27     46     21     28     26     28     22     27     24     30     25     33  
+****************** END OF DATA *******************
+
+***************** Measure started ******************
+System time 2023-11-16 13:49
+System temperature, oC: 21
+System status: test run
+Memory contains 8 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 51 minute(s)
+
+***************** Measure finished ******************
+*************** Data saved to Flash ****************
+System time 2023-11-16 13:52
+System temperature, oC: 21
+System status: test run
+Memory contains 9 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 54 minute(s)
+***************** BEGIN OF DATA ******************
+Line 1, Raw  1 - 16, Current value, nA
+   19     41     19     44     18     44     19     44     19     40     19     46     22     47     19     45  
+Line 2, Raw  1 - 16, Current value, nA
+    0     23     24     26     25      1      0      2     25     27     23     28     26     28     26     26  
+Line 3, Raw  1 - 16, Current value, nA
+   26      0     25     25     24     28      0     28     26     25     35     29     28      0     43      0  
+Line 4, Raw  1 - 16, Current value, nA
+   26     28     22      0     19     29     25     28     24     25     22     26     25     27     21     26  
+Line 5, Raw  1 - 16, Current value, nA
+   18     29     17     28      1     30     18     31     21     28     17     29     19     30     19     30  
+Line 6, Raw  1 - 16, Current value, nA
+   20      0      1     30     21     31     22     30     22     26     22     32     40     33     22      0  
+Line 7, Raw  1 - 16, Current value, nA
+   47     20     49     20     51     33     48     29     54     21     49     20     44     24     49     22  
+Line 8, Raw  1 - 16, Current value, nA
+   22     31     22     30     21      0     19     30     21     31     20     46     21     45     22     29  
+Line 9, Raw  1 - 16, Current value, nA
+   52      0     25     18     25     24     24     19     28     21     26     19     27     17     29     24  
+Line 10, Raw  1 - 16, Current value, nA
+   25     29     22     37     23     25     23     23     30     33     21     28     25     23      0     25  
+Line 11, Raw  1 - 16, Current value, nA
+    8     22     20     19     10     23     10     31     11     22      8     26     11     25     11     25  
+Line 12, Raw  1 - 16, Current value, nA
+   35      0     20      0     19     28     35     24     25     26     25     38     23     39     27     25  
+Line 13, Raw  1 - 16, Current value, nA
+   53    117     53    124     55    126     54    128     61    120     55    145     59    126     60    125  
+Line 14, Raw  1 - 16, Current value, nA
+   20    181     22    164     39    160      0    167     23    209     24      3     22    163     25    161  
+Line 15, Raw  1 - 16, Current value, nA
+  230    783    221    754      0    752    294    750    225    762    223    799    230    754    233      3  
+Line 16, Raw  1 - 16, Current value, nA
+  321    179      2    160    342    203    317    157    335    157    327    156    322    158    331    162  
+****************** END OF DATA *******************
+
+***************** Measure started ******************
+System time 2023-11-16 13:55
+System temperature, oC: 21
+System status: test run
+Memory contains 9 Point(s) of Data
+Testing time passed  0 day(s), 0 hour(s), 57 minute(s)
+
+***************** Test finished  ****************
+System time 2023-11-16 13:58
+System temperature, oC: 21
+System status: test finished
+Memory contains 9 Point(s) of Data
+Current High Voltage, UR=  26.7 V
+Testing time passed  0 day(s), 1 hour(s), 0 minute(s)
+
+Set Result=R
+Ok
+
+Read Data
+*********** BEGIN OF DATA ************
+Point:   1, Time: 2023-11-16 13:04, Measure voltage: 100 V,Temperature: 21 oC
+Line 1, Raw  1 - 16, Resistance value, MOhm
+ 8333   9999   8333   5882   8333   5555   6666   6250   9999   7142   9999   6250   6250   5263   6666   5882  
+Line 2, Raw  1 - 16, Resistance value, MOhm
+ 9999   9999   6666   5000   6250   9999   9999   9999   9999   4545   9999   4166   6250   4545   5555   5555  
+Line 3, Raw  1 - 16, Resistance value, MOhm
+ 4000   9999   5555    160   6250    160   9999    159   9999    160   5555    160   5000   3703   2439   5263  
+Line 4, Raw  1 - 16, Resistance value, MOhm
+ 6250    136   7692   9999   8333    131   4347    133   9999    135   9999    133   7142    133   6666    134  
+Line 5, Raw  1 - 16, Resistance value, MOhm
+  423    147    421    143   9999    143    431    145    442    145    465    144    438    145    423    145  
+Line 6, Raw  1 - 16, Resistance value, MOhm
+  438   9999   9999   4166    413   4166    413   4761    448   6250    465   4166    317   3703    406   9999  
+Line 7, Raw  1 - 16, Resistance value, MOhm
+  520   9999    502   9090    507   4347    490   5555    523   9999    568   7142    537   6666    510   9999  
+Line 8, Raw  1 - 16, Resistance value, MOhm
+ 3333   9999   2941   6666   3333   9999   2857   8333   4347   7692   7692   3333   3333   3333   2777   8333  
+Line 9, Raw  1 - 16, Resistance value, MOhm
+ 9999   9999   6250   5882   5555   5000   4545   6666   9999   6250   9999   4761   5882   5882   4000   6250  
+Line 10, Raw  1 - 16, Resistance value, MOhm
+ 3703   9999   4761   3846   4761   5882   3846   8333   5882   4761   9999   5555   4347   5882   9999   8333  
+Line 11, Raw  1 - 16, Resistance value, MOhm
+ 4761   9999   9999   5555   4761   4761   3448   3225   7692   5555   9999   4000   4545   4166   3448   5000  
+Line 12, Raw  1 - 16, Resistance value, MOhm
+ 2857   9999   3846   9999   5555   6250   2439   9090   7692   7692   9999   3225   5263   3703   3333   9090  
+Line 13, Raw  1 - 16, Resistance value, MOhm
+ 7142   9999   4761   5000   6250   5000   4347   5555   9090   5882   9999   3448   5000   5263   3846   6250  
+Line 14, Raw  1 - 16, Resistance value, MOhm
+ 6250   9999   4761   4761   2631   5000   9999   5263   9999   3030   9999   9999   5555   5000   4166   5882  
+Line 15, Raw  1 - 16, Resistance value, MOhm
+ 5555   9999   5263   5882   9999   5000   2500   6666   9999   6666   9999   3333   5000   5000   4166   9999  
+Line 16, Raw  1 - 16, Resistance value, MOhm
+ 6250   9090   9999   4347   5000   2380   4761   4545   9999   4545   9999   4000   5000   3571   4166   3846  
+
+Point:   2, Time: 2023-11-16 13:10, Measure voltage: 100 V,Temperature: 21 oC
+Line 1, Raw  1 - 16, Resistance value, MOhm
+ 3703   5882   4000   6250   3846   6666   3448   6666   3571   6666   3448   6250   3333   5263   3703   5555  
+Line 2, Raw  1 - 16, Resistance value, MOhm
+ 9999   3846   4347   3846   4166   9999   9999   9999   4000   3448   4166   3125   3448   3225   4000   3448  
+Line 3, Raw  1 - 16, Resistance value, MOhm
+ 5000   9999   6250   2702   6250   2439   9999   2500   5882   2631   3703   2500   5263   9999   3030   9999  
+Line 4, Raw  1 - 16, Resistance value, MOhm
+ 3846   4761   5263   9999   5000   4761   3703   4761   4000   5555   5000   4545   4166   4761   5263   5263  
+Line 5, Raw  1 - 16, Resistance value, MOhm
+ 3703   4166   4761   4347   9999   4166   3846   4000   3448   4000   4545   3571   3571   3703   4000   4000  
+Line 6, Raw  1 - 16, Resistance value, MOhm
+ 4761   9999   9999   4545   4347   4347   4166   4347   4347   5555   4545   4000   2380   3703   5000   9999  
+Line 7, Raw  1 - 16, Resistance value, MOhm
+ 4545   4000   5000   4166   4545   2500   4166   2777   4166   4000   4000   3846   5263   3225   5000   3571  
+Line 8, Raw  1 - 16, Resistance value, MOhm
+ 4166   3846   5000   4545   4761   9999   4545   4545   4347   4166   4545   2439   4761   2380   4545   4347  
+Line 9, Raw  1 - 16, Resistance value, MOhm
+ 9999   9999   5555   4545   5263   4000   4166   4545   4000   3846   4761   4000   4545   4347   4166   3703  
+Line 10, Raw  1 - 16, Resistance value, MOhm
+ 3030   3125   4347   2500   4000   3846   3571   3703   3030   2941   4166   3225   3448   3448   9999   3571  
+Line 11, Raw  1 - 16, Resistance value, MOhm
+ 3703   4000   9999   5263   3571   4545   3333   2857   3225   4545   3703   3571   3448   3571   3571   3703  
+Line 12, Raw  1 - 16, Resistance value, MOhm
+ 2631   9999   4761   9999   5263   3448   2564   4000   4166   3846   4347   2173   4545   2222   3703   3846  
+Line 13, Raw  1 - 16, Resistance value, MOhm
+ 4000   4000   3846   4347   4000   4166   3448   4166   3125   4347   3703   2777   3225   4166   3333   4347  
+Line 14, Raw  1 - 16, Resistance value, MOhm
+ 5000   4000   5000   4166   2564   4347   9999   3846   4545   2439   4545   9999   4545   4000   4545   4166  
+Line 15, Raw  1 - 16, Resistance value, MOhm
+ 2702   4000   3448   5882   9999   4761   1785   5263   2941   5555   2941   2857   2777   4166   2857   9999  
+Line 16, Raw  1 - 16, Resistance value, MOhm
+ 4545   4166   9999   5555   4166   3030   5000   5000   3846   5555   4347   4545   4545   4545   4166   4000  
+
+Point:   3, Time: 2023-11-16 13:16, Measure voltage: 100 V,Temperature: 21 oC
+Line 1, Raw  1 - 16, Resistance value, MOhm
+ 3571   4347   4000   5000   3703   4761   3703   5000   3448   5000   3571   5263   3448   4347   3571   4347  
+Line 2, Raw  1 - 16, Resistance value, MOhm
+ 9999   1666   2439   1562   2325   9999   9999   9999   2380   1587   2500   1515   2222   1492   2325   1612  
+Line 3, Raw  1 - 16, Resistance value, MOhm
+ 3333   9999   4166   4347   3571   3448   9999   3571   3703   4166   2631   4166   3571   9999   2222   9999  
+Line 4, Raw  1 - 16, Resistance value, MOhm
+ 3846   3703   5263   9999   4545   3448   4000   3571   4166   4000   4761   3703   4545   3703   4347   3846  
+Line 5, Raw  1 - 16, Resistance value, MOhm
+ 4545    400   6666    406   9999    395   4761    406   4347    406   5882    403   4347    408   4545    400  
+Line 6, Raw  1 - 16, Resistance value, MOhm
+ 4166   9999   9999    383   3846    375   4166    381   4000    389   4761    375   2380    380   4166   9999  
+Line 7, Raw  1 - 16, Resistance value, MOhm
+ 7142    537   8333    549   6666    414   7142    454   7142    558   7692    571   8333    540   6666    543  
+Line 8, Raw  1 - 16, Resistance value, MOhm
+  179   2941    179   3030    177   9999    178   3125    178   2857    179   1923    178   1886    177   3125  
+Line 9, Raw  1 - 16, Resistance value, MOhm
+ 9999   9999    138   4545    137   4166    138   4347    130   4166    137   3846    138   4761    137   3703  
+Line 10, Raw  1 - 16, Resistance value, MOhm
+  129   3333    130   2439    129   3703    129   4000    128   2702    130   3571    129   4000   9999   3846  
+Line 11, Raw  1 - 16, Resistance value, MOhm
+ 1449   4166   9999   5555   1449   4545   1428   3030   1408   5000   1538   3448   1515   4000   1428   3703  
+Line 12, Raw  1 - 16, Resistance value, MOhm
+ 3225   9999   5882   9999   5882   3703   3333   4166   5263   3846   6250   2380   5882   2380   4761   3703  
+Line 13, Raw  1 - 16, Resistance value, MOhm
+ 4545   4166   4545   4761   4000   4166   4347   4347   3703   4761   4545   2777   3703   5000   3448   4545  
+Line 14, Raw  1 - 16, Resistance value, MOhm
+ 4347   3333   4761   3333   2380   3571   9999   3225   4545   2000   4545   9999   4545   3571   4000   3125  
+Line 15, Raw  1 - 16, Resistance value, MOhm
+ 3448   3333   5000   4761   9999   3703   2222   4347   4000   5000   4347   2702   3846   3846   3571   9999  
+Line 16, Raw  1 - 16, Resistance value, MOhm
+ 5000   3448   9999   4347   4166   2439   5882   4166   4545   4000   5000   4000   4347   4000   4347   3571  
+
+Point:   4, Time: 2023-11-16 13:22, Measure voltage: 100 V,Temperature: 21 oC
+Line 1, Raw  1 - 16, Resistance value, MOhm
+ 2564   1562   2777   1538   2702   1562   2439   1587   2500   1587   2564   1666   2564   1492   2500   1492  
+Line 2, Raw  1 - 16, Resistance value, MOhm
+ 9999   4761   2631   4000   2564   9999   9999   9999   2564   4166   2631   3703   2564   3846   2439   4000  
+Line 3, Raw  1 - 16, Resistance value, MOhm
+ 2777   9999   3448   2439   3030   2222   9999   2325   2702   2500   2083   2325   2857   9999   1785   9999  
+Line 4, Raw  1 - 16, Resistance value, MOhm
+ 4761   4166   6666   9999   7142   3846   4545   4347   5263   4347   6250   4000   5555   4166   5555   4166  
+Line 5, Raw  1 - 16, Resistance value, MOhm
+ 4166   2564   5263   2439   9999   2439   4166   2500   3846   2564   6250   2380   4347   2439   4347   2439  
+Line 6, Raw  1 - 16, Resistance value, MOhm
+ 3448   9999   9999   1754   3225   1724   3333   1818   3333   1923   3846   1724   2173   1724   3333   9999  
+Line 7, Raw  1 - 16, Resistance value, MOhm
+ 6250   5263   7692   5263   7692   3030   6250   3571   7142   5263   7142   4761   9999   4545   7692   4761  
+Line 8, Raw  1 - 16, Resistance value, MOhm
+ 3571   1754   4000   1785   3846   9999   3846   1851   3846   1818   4166   1190   4347   1234   3703   1785  
+Line 9, Raw  1 - 16, Resistance value, MOhm
+ 9999   9999   4761   1234   4347   1190   4000   1234   3571   1204   4545   1162   4347   1250   3703   1149  
+Line 10, Raw  1 - 16, Resistance value, MOhm
+ 3125   3846   4000   2777   3846   4545   3846   4761   3030   3448   4545   4347   3703   4000   9999   4347  
+Line 11, Raw  1 - 16, Resistance value, MOhm
+ 2777   5555   9999   6250   2777   5263   2702   3571   2500   5882   3125   4166   2941   4545   2564   4347  
+Line 12, Raw  1 - 16, Resistance value, MOhm
+ 2222   9999   3448   9999   3703   4545   2222   5882   3125   5000   3703   2702   3571   2857   2941   5000  
+Line 13, Raw  1 - 16, Resistance value, MOhm
+ 7692   4545   7692   4545   7142   4347   5882   4761   5882   5263   7142   3225   6250   5000   5263   4545  
+Line 14, Raw  1 - 16, Resistance value, MOhm
+ 3333   4545   3225   4000   1851   4761   9999   4347   3225   2564   3448   9999   3333   4347   3125   4347  
+Line 15, Raw  1 - 16, Resistance value, MOhm
+ 3125   9090   3703   9999   9999   8333   2040   9999   3333   9999   3571   5555   3333   8333   3225   9999  
+Line 16, Raw  1 - 16, Resistance value, MOhm
+ 5555   3571   9999   4545   4545   2500   5882   4545   4761   4761   6666   4347   6250   3703   5882   3571  
+
+Point:   5, Time: 2023-11-16 13:28, Measure voltage: 100 V,Temperature: 21 oC
+Line 1, Raw  1 - 16, Resistance value, MOhm
+ 7142   4545   7692   4761   6666   5263   5882   4761   6250   5000   6250   5000   5882   5000   6666   4545  
+Line 2, Raw  1 - 16, Resistance value, MOhm
+ 9999   5882   5555   5555   5000   9999   9999   9999   5555   5555   4761   5000   4761   5263   4761   5263  
+Line 3, Raw  1 - 16, Resistance value, MOhm
+ 2564   9999   2941   2380   2777   2272   9999   2272   2857   2380   2040   2380   2702   9999   1818   9999  
+Line 4, Raw  1 - 16, Resistance value, MOhm
+ 3703   3448   4166   9999   4166   3846   3333   4347   4000   3846   3703   4545   3571   4347   4347   4347  
+Line 5, Raw  1 - 16, Resistance value, MOhm
+ 3333   2631   4000   2857   9999   2857   3448   2857   3448   2777   3846   2941   3333   2857   3703   2941  
+Line 6, Raw  1 - 16, Resistance value, MOhm
+ 3846   9999   9999   4545   3846   4347   3125   5263   4166   5000   3333   4347   2173   4545   4000   9999  
+Line 7, Raw  1 - 16, Resistance value, MOhm
+ 5263   4347   5000   5263   5263   3333   4545   4000   5555   5000   4347   6250   5555   5263   5882   5263  
+Line 8, Raw  1 - 16, Resistance value, MOhm
+ 5000    512   5000    520   5263   9999   4545    520   5263    512   5000    495   5263    495   5000    518  
+Line 9, Raw  1 - 16, Resistance value, MOhm
+  781   9090   3333    131   3448    131   2941    131   3448    131   3030    130   2941    132   2941    131  
+Line 10, Raw  1 - 16, Resistance value, MOhm
+  502    130    518    122    505    131    500    132    483    125    510    131    500    132   9999    133  
+Line 11, Raw  1 - 16, Resistance value, MOhm
+  396    892   9999    961    393    943    386    775    386    943    401    934    401    943    392    925  
+Line 12, Raw  1 - 16, Resistance value, MOhm
+  298   9999    381   9999    389   4000    308   5263    393   3703    380   2777    395   2857    378   4761  
+Line 13, Raw  1 - 16, Resistance value, MOhm
+ 2631   4000   2500   5263   2631   5263   2500   5882   2439   4761   2500   4166   2272   7142   2325   6250  
+Line 14, Raw  1 - 16, Resistance value, MOhm
+ 3448   2941   3571   3225   2127   3703   9999   3333   3846   2083   3333   9999   3333   4000   3448   3448  
+Line 15, Raw  1 - 16, Resistance value, MOhm
+ 3571   3125   4761   4545   9999   4347   2272   5000   5263   4166   3846   3571   4166   4347   4347   9999  
+Line 16, Raw  1 - 16, Resistance value, MOhm
+ 3333   1515   9999   1785   3125   1282   3333   1818   3448   1818   3333   1851   3125   1851   3333   1694  
+
+Point:   6, Time: 2023-11-16 13:34, Measure voltage: 100 V,Temperature: 21 oC
+Line 1, Raw  1 - 16, Resistance value, MOhm
+ 4347   3846   4761   4166   4545   4000   3846   4000   4000   4166   4347   4000   4000   3571   4545   3846  
+Line 2, Raw  1 - 16, Resistance value, MOhm
+ 9999   4761   3703   4545   3333   9999   9999   9999   3333   4166   3571   3846   3333   3846   3571   4166  
+Line 3, Raw  1 - 16, Resistance value, MOhm
+ 1960   9999   2127   4000   2000   3703   9999   3703   1960   4000   1515   4000   2040   9999   1369   9999  
+Line 4, Raw  1 - 16, Resistance value, MOhm
+ 3448   7142   4166   9999   3846   5882   3571   5882   3703   6666   4347   5555   4166   6250   4166   6250  
+Line 5, Raw  1 - 16, Resistance value, MOhm
+ 2127   6666   2439   4761   9999   4545   2439   4347   1923   6250   2380   4166   2380   4545   2222   5263  
+Line 6, Raw  1 - 16, Resistance value, MOhm
+ 6666   9999   9999   4347   5263   3846   6250   4347   5882   5000   6250   3703   3333   3571   6250   9999  
+Line 7, Raw  1 - 16, Resistance value, MOhm
+ 4761   5882   5555   6250   5000   3333   5000   3846   5000   6250   4761   5263   6250   4545   5555   5000  
+Line 8, Raw  1 - 16, Resistance value, MOhm
+ 1666   7692   1754   7692   1587   9999   1785   7692   1562   8333   1724   4000   1851   4000   1562   8333  
+Line 9, Raw  1 - 16, Resistance value, MOhm
+ 1234   9999   3846   3448   3125   3125   3225   3448   3125   3225   3333   3030   3448   3448   2941   2941  
+Line 10, Raw  1 - 16, Resistance value, MOhm
+ 3448   1449   3571   1075   3225   1428   3571   1470   2702   1250   4000   1369   3846   1408   9999   1492  
+Line 11, Raw  1 - 16, Resistance value, MOhm
+ 5882   4000   1923   4761   4347   4000   4761   2857   4545   4000   5555   3448   5555   3571   5263   3571  
+Line 12, Raw  1 - 16, Resistance value, MOhm
+ 1754   9999   3125   9999   2777   3846   1851   4761   2500   4166   2631   2564   2941   2631   2380   4347  
+Line 13, Raw  1 - 16, Resistance value, MOhm
+ 5882   5882   6250   5882   5000   5555   5263   5263   4000   5882   5555   3703   4761   6666   4761   5882  
+Line 14, Raw  1 - 16, Resistance value, MOhm
+ 4347   4347   4761   3846   2272   4166   9999   3846   4166   2439   4166   9999   4347   3846   4166   4000  
+Line 15, Raw  1 - 16, Resistance value, MOhm
+ 5000   4347   7692   5882   9999   4347   3030   5263   6250   5263   6250   3125   5555   4347   5263   9999  
+Line 16, Raw  1 - 16, Resistance value, MOhm
+ 3703   3571   9999   3846   3333   2380   4166   4000   3448   4000   3846   3846   3703   3571   3703   3333  
+
+Point:   7, Time: 2023-11-16 13:40, Measure voltage: 100 V,Temperature: 21 oC
+Line 1, Raw  1 - 16, Resistance value, MOhm
+ 4166   4166   4347   4166   4166   4166   3571   4347   3846   4166   3846   4166   3703   3846   4000   3846  
+Line 2, Raw  1 - 16, Resistance value, MOhm
+ 9999   4000   3225   3846   3225   9999   9999   9999   3333   3571   3448   3225   3030   3448   3333   3448  
+Line 3, Raw  1 - 16, Resistance value, MOhm
+ 4166   9999   5555   5555   4761   5000   9999   5000   4761   5263   3225   5000   4761   9999   2777   9999  
+Line 4, Raw  1 - 16, Resistance value, MOhm
+ 3030   3030   3448   9999   3571   2857   3125   3125   3125   3030   3571   3030   3571   3125   3571   3125  
+Line 5, Raw  1 - 16, Resistance value, MOhm
+ 3571   4545   4166   4347   9999   4000   3703   3846   3448   4166   4000   3703   3448   4000   3846   4347  
+Line 6, Raw  1 - 16, Resistance value, MOhm
+ 4545   9999   9999   4545   4545   4000   4166   4761   4347   5000   4347   3846   2631   4166   4545   9999  
+Line 7, Raw  1 - 16, Resistance value, MOhm
+ 5263   4347   5263   4166   5000   2500   5000   2857   5555   4000   5000   3703   6666   3448   5882   3703  
+Line 8, Raw  1 - 16, Resistance value, MOhm
+ 3703   4166   4000   4545   4000   9999   3846   4545   3846   4347   4000   2500   4545   2564   3846   4166  
+Line 9, Raw  1 - 16, Resistance value, MOhm
+ 1785   9999   5000   5000   4347   4166   4347   4545   4545   4761   4347   4000   4166   4761   3846   3846  
+Line 10, Raw  1 - 16, Resistance value, MOhm
+ 4166    411   4761    327   4761    418   4347    431   3571    364   4761    408   4545    416   9999    431  
+Line 11, Raw  1 - 16, Resistance value, MOhm
+ 4545    393   2127    396   3703    392   3703    332   3703    396   4000    384   4000    387   3846    386  
+Line 12, Raw  1 - 16, Resistance value, MOhm
+ 2222   9999   4000   9999   3703    436   2272    452   3448    442   3225    341   3571    341   2941    440  
+Line 13, Raw  1 - 16, Resistance value, MOhm
+  309   2222    308   2325    305   2173    304   2325    303   2222    305   1612    303   2439    302   2380  
+Line 14, Raw  1 - 16, Resistance value, MOhm
+  134   3703    135   3448    122   3703   9999   3225    134   2222    133   9999    135   3571    133   3448  
+Line 15, Raw  1 - 16, Resistance value, MOhm
+  131   3225    133   4347   9999   3448    121   4000    132   4166    132   2500    131   3448    131   9999  
+Line 16, Raw  1 - 16, Resistance value, MOhm
+  680   3333   9999   4000    641   2272    694   3846    657   3846    675   3571    689   3448    662   3125  
+
+Point:   8, Time: 2023-11-16 13:46, Measure voltage: 100 V,Temperature: 21 oC
+Line 1, Raw  1 - 16, Resistance value, MOhm
+ 5263   4000   5000   3846   5000   4000   4347   4347   4761   4347   4545   4347   4166   3703   4761   3846  
+Line 2, Raw  1 - 16, Resistance value, MOhm
+ 9999   4000   4761   3448   4166   9999   9999   9999   4347   3333   4761   2941   4347   3030   4166   3448  
+Line 3, Raw  1 - 16, Resistance value, MOhm
+ 3846   9999   4166   4166   4347   3846   9999   4166   3846   4000   3030   4166   4000   9999   2380   9999  
+Line 4, Raw  1 - 16, Resistance value, MOhm
+ 1176   4166   1219   9999   1250   4000   1162   4166   1204   4000   1219   4166   1234   3703   1190   4166  
+Line 5, Raw  1 - 16, Resistance value, MOhm
+ 4166   2777   4545   2702   9999   2564   4545   2702   3846   2777   4761   2564   4347   2500   4000   2702  
+Line 6, Raw  1 - 16, Resistance value, MOhm
+ 4761   9999   9999   3571   3846   3333   4000   3703   4000   3846   4347   3448   2564   3125   4166   9999  
+Line 7, Raw  1 - 16, Resistance value, MOhm
+  183   3448    181   3703    181   2222    180   2631    180   3448    183   3703    185   3125    183   3333  
+Line 8, Raw  1 - 16, Resistance value, MOhm
+ 3333    363   3125    361   3333   9999   3333    371   3125    361   3448    297   3571    299   3030    358  
+Line 9, Raw  1 - 16, Resistance value, MOhm
+  847   9999   1315   5263   1234   4347   1282   5263   1063   4545   1250   4545   1298   5263   1204   4347  
+Line 10, Raw  1 - 16, Resistance value, MOhm
+ 4000   3448   4000   2500   4000   4000   4166   4545   3125   2941   5000   3846   4166   4166   9999   4000  
+Line 11, Raw  1 - 16, Resistance value, MOhm
+ 2941   3125   1785   3846   2439   3333   2500   2564   2439   3030   2777   3030   2857   2941   2500   3125  
+Line 12, Raw  1 - 16, Resistance value, MOhm
+ 3333   9999   6250   9999   5882   3571   3225   4347   4347   3703   5000   2439   5555   2325   4347   3846  
+Line 13, Raw  1 - 16, Resistance value, MOhm
+ 7142   1176   6666   1136   5882   1111   5555   1136   5000   1176   5555    877   5000   1162   4761   1149  
+Line 14, Raw  1 - 16, Resistance value, MOhm
+ 5000   1515   4545   1515   2439   1666   9999   1515   4166   1123   4000   9999   4545   1562   4000   1612  
+Line 15, Raw  1 - 16, Resistance value, MOhm
+ 2702   2702   3030   3448   9999   3125   1851   3703   2857   3333   2777   2272   2702   3125   2631   9999  
+Line 16, Raw  1 - 16, Resistance value, MOhm
+ 4761   3030   9999   3448   3703   2173   4761   3571   3846   3571   4545   3703   4166   3333   4000   3030  
+
+Point:   9, Time: 2023-11-16 13:52, Measure voltage: 100 V,Temperature: 21 oC
+Line 1, Raw  1 - 16, Resistance value, MOhm
+ 5263   2439   5263   2272   5555   2272   5263   2272   5263   2500   5263   2173   4545   2127   5263   2222  
+Line 2, Raw  1 - 16, Resistance value, MOhm
+ 9999   4347   4166   3846   4000   9999   9999   9999   4000   3703   4347   3571   3846   3571   3846   3846  
+Line 3, Raw  1 - 16, Resistance value, MOhm
+ 3846   9999   4000   4000   4166   3571   9999   3571   3846   4000   2857   3448   3571   9999   2325   9999  
+Line 4, Raw  1 - 16, Resistance value, MOhm
+ 3846   3571   4545   9999   5263   3448   4000   3571   4166   4000   4545   3846   4000   3703   4761   3846  
+Line 5, Raw  1 - 16, Resistance value, MOhm
+ 5555   3448   5882   3571   9999   3333   5555   3225   4761   3571   5882   3448   5263   3333   5263   3333  
+Line 6, Raw  1 - 16, Resistance value, MOhm
+ 5000   9999   9999   3333   4761   3225   4545   3333   4545   3846   4545   3125   2500   3030   4545   9999  
+Line 7, Raw  1 - 16, Resistance value, MOhm
+ 2127   5000   2040   5000   1960   3030   2083   3448   1851   4761   2040   5000   2272   4166   2040   4545  
+Line 8, Raw  1 - 16, Resistance value, MOhm
+ 4545   3225   4545   3333   4761   9999   5263   3333   4761   3225   5000   2173   4761   2222   4545   3448  
+Line 9, Raw  1 - 16, Resistance value, MOhm
+ 1923   9999   4000   5555   4000   4166   4166   5263   3571   4761   3846   5263   3703   5882   3448   4166  
+Line 10, Raw  1 - 16, Resistance value, MOhm
+ 4000   3448   4545   2702   4347   4000   4347   4347   3333   3030   4761   3571   4000   4347   9999   4000  
+Line 11, Raw  1 - 16, Resistance value, MOhm
+ 9999   4545   5000   5263   9999   4347   9999   3225   9090   4545   9999   3846   9090   4000   9090   4000  
+Line 12, Raw  1 - 16, Resistance value, MOhm
+ 2857   9999   5000   9999   5263   3571   2857   4166   4000   3846   4000   2631   4347   2564   3703   4000  
+Line 13, Raw  1 - 16, Resistance value, MOhm
+ 1886    854   1886    806   1818    793   1851    781   1639    833   1818    689   1694    793   1666    800  
+Line 14, Raw  1 - 16, Resistance value, MOhm
+ 5000    552   4545    609   2564    625   9999    598   4347    478   4166   9999   4545    613   4000    621  
+Line 15, Raw  1 - 16, Resistance value, MOhm
+  434    127    452    132   9999    132    340    133    444    131    448    125    434    132    429   9999  
+Line 16, Raw  1 - 16, Resistance value, MOhm
+  311    558   9999    625    292    492    315    636    298    636    305    641    310    632    302    617  
+
+************ END OF DATA *************
+

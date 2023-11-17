@@ -1,0 +1,130 @@
+
+********************************************
+Start Capacitor Termo-Testing System
+SW version: 0.0.1
+System time 2023-11-16 16:10
+System temperature - sensor not connected
+System status: test finished
+Memory contains 16 Point(s) of Data
+********************************************
+
+Read Settings
+System settings:
+Result of measure presented as Current, nA
+Test voltage, Vt= 100 V
+Measure voltage, Vm= 100 V
+Test time, Tt= 1 hours
+Measure period, Tm= 3 minutes
+Amplifier factor, Ki= 1000000
+Division factor, Kd= 101
+Discharge time, Td= 5000 msec
+Acceptable HV error, Ve= 1000 mV
+Amplifier settle time, Ta= 50 msec
+Max HV settle time, Th= 1000 msec
+ADC mean factor, Km= 270 
+Step of DAC in triangle mode, DAC_P1= 78 uSec
+DAC-code triangle amplitude, DAC_P2= 255
+Short high current threshold, Short_I= 2500 nA 
+Capacitance low threshold, Contact_C= 100 pF 
+
+
+Set Vt=25
+Ok
+
+Set Vm=25
+Ok
+
+Measure
+Take measure...
+
+***************** Measure started ******************
+System time 2023-11-16 16:13
+System temperature - sensor not connected
+System status: test finished
+
+***************** Measure finished ******************
+System time 2023-11-16 16:14
+System temperature - sensor not connected
+System status: test finished
+***************** BEGIN OF DATA ******************
+Line 1, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 2, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 3, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 4, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 5, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 6, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 7, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 8, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 9, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 10, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 11, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 12, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 13, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 14, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 15, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 16, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+****************** END OF DATA *******************
+
+Measure
+Take measure...
+
+***************** Measure started ******************
+System time 2023-11-16 16:15
+System temperature - sensor not connected
+System status: test finished
+
+***************** Measure finished ******************
+System time 2023-11-16 16:17
+System temperature, oC: 25
+System status: test finished
+***************** BEGIN OF DATA ******************
+Line 1, Raw  1 - 16, Current value, nA
+    0      0      0      0      0      0      0      0      0      0      0      0      0      0      0      0  
+Line 2, Raw  1 - 16, Current value, nA
+    2      2      5      1      0      0      0      0      2      5      3      6      3      4      3      4  
+Line 3, Raw  1 - 16, Current value, nA
+    2      3   3178      2      3      5      4      5      3      7      3      5      3      6      3      5  
+Line 4, Raw  1 - 16, Current value, nA
+    2      2      5      1      5      5      5      4      5      6      6      4      5      5      5      5  
+Line 5, Raw  1 - 16, Current value, nA
+    2      2      4      1   3178      5      5      4      5      4      4      4      4      5      5      5  
+Line 6, Raw  1 - 16, Current value, nA
+    2      1      3      0      4   3175      4      4      3      4      4      3      2      4      3      4  
+Line 7, Raw  1 - 16, Current value, nA
+    7     29     13     28     13     33   3180     32     12     33      7     33      9     34     13   3175  
+Line 8, Raw  1 - 16, Current value, nA
+    0      1      1      0      1      2      1   3178      1      3      3      2      0      2      0     51  
+Line 9, Raw  1 - 16, Current value, nA
+    1      1      3      1      2      3      2      3   3176      3      3      3      1      3      1     47  
+Line 10, Raw  1 - 16, Current value, nA
+    2      2      3      1      3      3      3      4      3   3174      3      3      2      3      3     31  
+Line 11, Raw  1 - 16, Current value, nA
+    1      2      2      1      2      4      2      4      1      4   3178      4      1      4      2     26  
+Line 12, Raw  1 - 16, Current value, nA
+    2      1      3      0      3      2      3      2      3      2      4   3175      3      2      4     23  
+Line 13, Raw  1 - 16, Current value, nA
+    1      1      2      1      1      1      1      2      1      2      2      2   3176      1      1     18  
+Line 14, Raw  1 - 16, Current value, nA
+   19      1     21      1     20      3     20      3     20      3     20      3     20   3173     20     22  
+Line 15, Raw  1 - 16, Current value, nA
+    2      1      3      1      3      2      3      3      3      3      4      2      3      2   3175     20  
+Line 16, Raw  1 - 16, Current value, nA
+    2      2      3      0      3      2      3      3      3      3      4      2      3      3      3   3176  
+****************** END OF DATA *******************
+
