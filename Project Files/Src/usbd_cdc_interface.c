@@ -43,9 +43,9 @@ USBD_CDC_LineCodingTypeDef LineCoding =
     0x08    /* nb. of bits 8*/
   };
 
-static uint8_t UserRxBuffer[APP_CDC_DATA_SIZE];		/* Received Data over USB are stored in this buffer */
-static uint8_t UserTxBuffer[APP_CDC_DATA_SIZE];		/* Data to transmit over USB (CDC interface) are stored in this buffer */
-static char    UserRxBufferCopy[APP_CDC_DATA_SIZE];	/* Copy of Received Data over USB are stored in this buffer */
+static uint8_t UserRxBuffer[APP_CDC_RX_DATA_SIZE];		/* Received Data over USB are stored in this buffer */
+static uint8_t UserTxBuffer[APP_CDC_TX_DATA_SIZE];		/* Data to transmit over USB (CDC interface) are stored in this buffer */
+static char    UserRxBufferCopy[APP_CDC_RX_DATA_SIZE];	/* Copy of Received Data over USB are stored in this buffer */
 
 /* USB handler declaration */
 extern USBD_HandleTypeDef  	USBD_Device;
@@ -209,8 +209,8 @@ void getCDCmessage(char * Buf)
   */
 uint8_t sendCDCmessage(char * Buf)
 {
-	memcpy( UserTxBuffer, Buf, strlen(Buf));
-	USBD_CDC_SetTxBuffer( &USBD_Device, UserTxBuffer, strlen(Buf));
+	memcpy( UserTxBuffer, Buf, strlen(Buf) );
+	USBD_CDC_SetTxBuffer( &USBD_Device, UserTxBuffer, strlen(Buf) );
 
 	return USBD_CDC_TransmitPacket(&USBD_Device);
 }

@@ -57,7 +57,7 @@ const char * helpStrings[] = {
 #define RANGE_12BITS_0_9            ((int32_t) (RANGE_12BITS * 0.9))    /* 0.9 from Max digital value with a full range of 12 bits */
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static char 				usb_message[APP_CDC_DATA_SIZE];
+static char 				usb_message[APP_CDC_TX_DATA_SIZE];
 /* Private function prototypes -----------------------------------------------*/
 //static bool 				isCableConnected	( void );
 static void 				messageDecode		( void );
@@ -1075,7 +1075,7 @@ static void messageDecode( void )
 		{
 			if( helpStrings[i] )
 			{
-				if( (len + strlen(helpStrings[i])) < APP_CDC_DATA_SIZE )
+				if( (len + strlen(helpStrings[i])) < APP_CDC_TX_DATA_SIZE )
 				{
 					len += sprintf( &usb_message[len], helpStrings[i] );
 					i++;
@@ -1097,7 +1097,7 @@ static void messageDecode( void )
 	}
 
 	//---------------------------------------------
-	sendCDCmessage( "Unknown command - enter HELP\r\n" );
+	SEND_CDC_MESSAGE( "Unknown command - enter HELP\r\n" );
 }
 
 /*
@@ -1309,3 +1309,4 @@ static void sendCapacitanceTestResult(uint32_t * data)
 	}
 	SEND_CDC_MESSAGE( "\r\n" );
 }
+
