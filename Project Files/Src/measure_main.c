@@ -127,10 +127,11 @@ static int32_t 						dacMinValue;
 static int32_t 						dacMaxValue;
 static uint32_t						errorCode = MEASURE_NOERROR;
 static bool							HV_PowerGood = false;
+static bool							doCheck = false;
 
 /* Private function prototypes -----------------------------------------------*/
 static void 						getRawAdcCode( void );
-static void 						getVrefHVRaw( void );
+static void 						getVrefHV( void );
 static void							getZeroShifts( void );
 static void 						getCurrentOneLine( Line_NumDef LineNum );
 static void 						setHV( void );
@@ -210,6 +211,7 @@ void MeasureThread(const void *argument)
 			event.value.signals 	=	0;
 			MeasureThreadCounter	=	0;
 			firstModeStep 			=  	true;
+			doCheck					=   true;
 			currentMode				=	testMode;
 		}
 
@@ -245,7 +247,7 @@ void MeasureThread(const void *argument)
 			MeasureThreadCounter   +=	MEASURE_TICK_TIME_MS;
 
 			/* measure Vref & HighVoltage */
-			getVrefHVRaw();
+			getVrefHV();
 
 			/* stab HV error */
 			setHV();
@@ -373,8 +375,23 @@ static currentMode_t testModeProcess( bool * p_firstStep )
 
 						testModeCounter = 0;
 						LineNum 		= LineAD0;
-						testModeState	= checkLines;
-						BSP_CTS_SetSingleLine( LineNum );
+
+						if(doCheck)
+						{
+							doCheck 			= false;
+							BSP_CTS_SetSingleLine( LineNum );
+
+							testModeState		= checkLines;
+						}
+						else
+						{
+							TaskHighVoltage_mV 	= systemConfig.uTestVol * 1000;
+
+							DAC_FIRST_APPROACH;
+							BSP_CTS_SetAnyLine( AllLineAD, Line_HV, Opto_Open );
+
+							testModeState		= runTest;
+						}
 						return testMode;
 					}
 
@@ -427,14 +444,14 @@ static currentMode_t testModeProcess( bool * p_firstStep )
 					if( testModeCounter < systemConfig.dischargeTimeMs ) return testMode;
 
 					// select line
-					BSP_CTS_SetSingleLine( LineNum );
+					BSP_CTS_SetSingleLine   ( LineNum );
 					osDelay					( 50 );
 
 					// start triangle for Mux_1_8
 					BSP_SET_RMUX( Mux_1_8 );
 					configDACxTriangleMode	( 0 , systemConfig.dacTriangleAmplitude );
-					osDelay					( 17 );
-					getCapacitanceOneLine	( LineNum, Mux_1_8 );  // ~ 2 ms
+					osDelay					( 5 );
+					getCapacitanceOneLine	( LineNum, Mux_1_8 );  // ~ 10 ms
 
 					// discharge HV
 					configDACxStatMode		( 0 );
@@ -443,8 +460,8 @@ static currentMode_t testModeProcess( bool * p_firstStep )
 					// start triangle for Mux_9_16
 					BSP_SET_RMUX( Mux_9_16 );
 					configDACxTriangleMode	( 0 , systemConfig.dacTriangleAmplitude );
-					osDelay					( 17 );
-					getCapacitanceOneLine 	( LineNum, Mux_9_16 ); // ~ 2 ms
+					osDelay					( 5 );
+					getCapacitanceOneLine 	( LineNum, Mux_9_16 ); // ~ 10 ms
 
 					// discharge HV
 					configDACxStatMode		( 0 );
@@ -478,6 +495,7 @@ static currentMode_t testModeProcess( bool * p_firstStep )
 						osSignalSet( USBThreadHandle, USB_THREAD_MEASUREERROR_Evt );
 						// restart test mode to find error line/raw
 						*p_firstStep = true;
+						doCheck      = true;
 					}
 					else
 					{
@@ -594,8 +612,8 @@ static currentMode_t checkModeProcess( bool * p_firstStep )
 					// start triangle for Mux_1_8
 					BSP_SET_RMUX( Mux_1_8 );
 					configDACxTriangleMode	( 0 , systemConfig.dacTriangleAmplitude );
-					osDelay					( 17 );
-					getCapacitanceOneLine	( LineNum, Mux_1_8 );  // ~ 2 ms
+					osDelay					( 5 );
+					getCapacitanceOneLine	( LineNum, Mux_1_8 );  // ~ 10 ms
 
 					// discharge HV
 					configDACxStatMode		( 0 );
@@ -604,8 +622,8 @@ static currentMode_t checkModeProcess( bool * p_firstStep )
 					// start triangle for Mux_9_16
 					BSP_SET_RMUX( Mux_9_16 );
 					configDACxTriangleMode	( 0 , systemConfig.dacTriangleAmplitude );
-					osDelay					( 17 );
-					getCapacitanceOneLine 	( LineNum, Mux_9_16 ); // ~ 2 ms
+					osDelay					( 5 );
+					getCapacitanceOneLine 	( LineNum, Mux_9_16 ); // ~ 10 ms
 
 					// discharge HV
 					configDACxStatMode		( 0 );
@@ -753,24 +771,24 @@ static void setHV(void)
 	/* HV_PowerGood flag detect */
 	if( abs( TaskHighVoltage_mV - HighVoltage_mV ) <  systemConfig.MaxErrorHV_mV )
 	{
-		if( ++HW_GoodCounter > 3)
+		if( ++HW_GoodCounter > 5)
 		{
 			HV_PowerGood 	= true;
-			HW_GoodCounter 	= 3;
+			HW_GoodCounter 	= 5;
 			HW_BadCounter	= 0;
 		}
 	}
 	else
 	{
-		if( ++HW_BadCounter > 3)
+		if( ++HW_BadCounter > 5)
 		{
 			HV_PowerGood 	= false;
 			HW_GoodCounter 	= 0;
-			HW_BadCounter	= 3;
+			HW_BadCounter	= 5;
 		}
 	}
 
-	/* HV stab procedure */
+	/* HV stab procedure
 	if( abs( TaskHighVoltage_mV - HighVoltage_mV ) > systemConfig.MaxErrorHV_mV / 2 )
 	{
 		int32_t		err_dac = ( TaskHighVoltage_mV - HighVoltage_mV ) * RANGE_12BITS / (int32_t)systemConfig.kdDivider / Vref_mV;
@@ -781,10 +799,11 @@ static void setHV(void)
 
 		setValDACx( dacValue );
 	}
+	*/
 }
 
 /* measure Vref & HighVoltage */
-static void getVrefHVRaw(void)
+static void getVrefHV(void)
 {
 	CLEAN_MEAN_MEASURE;
 
@@ -820,7 +839,7 @@ static void getRawAdcCode(void)
 	CLEAN_MEAN_MEASURE;
 	/* channels 1..8 */
 	BSP_SET_RMUX(Mux_1_8);
-	osDelay( systemConfig.dischargeTimeMs );
+	osDelay( systemConfig.IAmplifierSettleTimeMs );
 
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
@@ -835,7 +854,7 @@ static void getRawAdcCode(void)
 
 	/* channels 9..16 */
 	BSP_SET_RMUX(Mux_9_16);
-	osDelay( systemConfig.dischargeTimeMs );
+	osDelay( systemConfig.IAmplifierSettleTimeMs );
 
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
@@ -861,6 +880,7 @@ static void	getZeroShifts( void )
 {
 	CLEAN_MEAN_ZERO;
 	BSP_SET_OPTO( Opto_Close );	// disconnect All ZV capacitors from HV driver
+	osDelay( systemConfig.IAmplifierSettleTimeMs );
 
 	/* channels 1..8 */
 	BSP_SET_RMUX(Mux_1_8);
@@ -902,6 +922,7 @@ static void getCurrentOneLine( Line_NumDef LineNum )
 
 	CLEAN_MEAN_MEASURE;
 	BSP_SET_OPTO( Opto_Close ); // disconnect All ZV capacitors from HV driver
+	osDelay( systemConfig.IAmplifierSettleTimeMs );
 
 	/* channels 1..8 */
 	BSP_SET_RMUX(Mux_1_8);
@@ -933,7 +954,7 @@ static void getCurrentOneLine( Line_NumDef LineNum )
 		}
 	}
 
-	BSP_SET_RMUX(Mux_1_8);
+	// BSP_SET_RMUX(Mux_1_8);
 	/* correct zero shift and calc */
 	float ki_V_nA    = 1e9 / systemConfig.kiAmplifire;
 	float adc_code_V = Vref_mV / 1000. / RANGE_12BITS;
@@ -953,9 +974,10 @@ static void getCurrentOneLine( Line_NumDef LineNum )
 static void getCapacitanceOneLine( Line_NumDef LineNum, RMux_StateDef mux )
 {
 
-#define	TRIANGLE_MEAN_FACTOR		15
+#define	TRIANGLE_MEAN_FACTOR		75
 
 	BSP_SET_OPTO( Opto_Close ); // disconnect All ZV capacitors from amplifiers
+	osDelay( systemConfig.IAmplifierSettleTimeMs );
 
 	CLEAN_MEAN_MEASURE;
 

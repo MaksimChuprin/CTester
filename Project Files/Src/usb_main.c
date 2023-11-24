@@ -271,7 +271,6 @@ void UsbCDCThread(const void *argument)
 				sendSystemTime();
 				sendSystemTemperature();
 				sendSystemStatus();
-				sendRealHV();
 				SEND_CDC_MESSAGE( "\r\n" );
 				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 			}
@@ -729,7 +728,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( Td > 10000 || Td < 10 ) SEND_CDC_MESSAGE( "Time of Discharge must be 10...10000 mSec\r\n\r\n" )
+			if( Td > 50000 || Td < 10 ) SEND_CDC_MESSAGE( "Time of Discharge must be 10...50000 mSec\r\n\r\n" )
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.dischargeTimeMs, Td );
@@ -756,7 +755,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( Ta > 1000 || Ta < 10 ) SEND_CDC_MESSAGE( "Time of amplifier settle time must be 10...1000 mSec\r\n\r\n" )
+			if( Ta > 5000 || Ta < 10 ) SEND_CDC_MESSAGE( "Time of amplifier settle time must be 10...5000 mSec\r\n\r\n" )
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.IAmplifierSettleTimeMs, Ta );
@@ -981,14 +980,14 @@ static void messageDecode( void )
 		const uint32_t 	DAC_P1 	= 78;	// 78 us DAC period Triangle Mode
 		const uint32_t 	Km 	= 145;	// 138 uS one ADC scan, 145 ~ 20 ms (50 Hz)
 		const uint32_t 	Th 	= 1000;	// msec
-		const uint32_t 	Ta 	= 50;	// msec
-		const uint32_t 	Td 	= 500;	// msec
+		const uint32_t 	Ta 	= 2000;	// msec
+		const uint32_t 	Td 	= 5000;	// msec
 		const uint32_t 	Tm 	= 60;	// minutes
 		const uint32_t 	Tt 	= 168;	// hours
 		const uint32_t 	Kd 	= 101;
 		const uint32_t 	Ki 	= 1000000;
-		const uint32_t 	Ve 	= 500;	// mV
-		const uint32_t 	Vm 	= 25;	// V
+		const uint32_t 	Ve 	= 1000;	// mV
+		const uint32_t 	Vm 	= 50;	// V
 		const uint32_t 	Vt 	= 50;	// V
 
 		SAVE_SYSTEM_CNF( &systemConfig.measureSavedPoints, 0 );

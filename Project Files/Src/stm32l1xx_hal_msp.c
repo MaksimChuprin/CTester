@@ -259,7 +259,7 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc)
   /* NVIC configuration for ADC interrupt */
   /* Priority: high-priority */
   HAL_NVIC_SetPriority(ADCx_IRQn, 9, 0);
-  HAL_NVIC_EnableIRQ(ADCx_IRQn);
+  // HAL_NVIC_EnableIRQ(ADCx_IRQn);
 }
 
 /**

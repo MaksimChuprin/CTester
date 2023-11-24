@@ -123,7 +123,7 @@ static void OneSecThread(const void *argument)
 		for( rtcPoint = 0; rtcPoint < SAVE_ARRAY_SIZE; rtcPoint++ )
 		if( rtcSaveArray[rtcPoint] == 0 )
 		{
-			DateTime_t  date = { .year = 2023, .month = 10, .day = 31, .hours = 12 };
+			DateTime_t  date = { .year = 2023, .month = 11, .day = 30, .hours = 12 };
 
 			if( rtcPoint ) convertUnixTimeToDate( rtcSaveArray[rtcPoint - 1], &date );
 
