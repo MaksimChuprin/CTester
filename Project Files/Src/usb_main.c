@@ -33,6 +33,7 @@ const char * helpStrings[] = {
 		"Set Tt=<value> - set <value> of test time in Hours\r\n",
 		"Set Tp=<value> - set <value> of measure period in Minutes\r\n",
 		"Set Td=<value> - set <value> of discharge time in mSec\r\n",
+		"Set To=<value> - set <value> of <OPTO> signal settle time in mSec\r\n",
 		"Set Ta=<value> - set <value> of amplifier settle time in mSec\r\n",
 		"Set Th=<value> - set <value> of max HV settle time in mSec\r\n",
 		"Set Ki=<value> - set factor of current amplifier\r\n",
@@ -86,7 +87,10 @@ void UsbCDCThread(const void *argument)
 {
 	for(;; osDelay(500))
 	{
-		 if( !isCableConnected() ) continue;
+		if( !isCableConnected() ) continue;
+
+		// wait Vref, Temperature
+		osDelay(1500);
 
 		/* Init Device Library */
 		USBD_Init(&USBD_Device, &VCP_Desc, 0);
@@ -99,7 +103,7 @@ void UsbCDCThread(const void *argument)
 
 		/* display sys info */
 		SEND_CDC_MESSAGE( "\r\n********************************************\r\n" );
-		SEND_CDC_MESSAGE( "Start Capacitor Termo-Testing System\r\nSW version: 0.0.1\r\n" );
+		SEND_CDC_MESSAGE( "Start Capacitor Termo-Testing System\r\nSW version: 0.0.2\r\n" );
 		sendSystemTime();
 		sendSystemTemperature();
 		sendSystemStatus();
@@ -773,6 +777,33 @@ static void messageDecode( void )
 		return;
 	}
 
+	//--------------------------------------------- SET <OPTO> signal settle time To
+	ptr = strstr( usb_message, "SET TO=" );
+	if( ptr )
+	{
+		uint32_t 	To 	= 0;
+		int 		res			= sscanf( ptr, "SET TO=%lu", &To );
+
+		if( res )
+		{
+			if( To > 10000 || To < 100 ) SEND_CDC_MESSAGE( "<OPTO> signal settle time must be 100...10000 mSec\r\n\r\n" )
+			else
+			{
+				SAVE_SYSTEM_CNF( &systemConfig.optoSignalSettleTimeMs, To );
+
+				if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
+				{
+					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+				}
+				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+			}
+		}
+		else
+			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+
+		return;
+	}
+
 	//--------------------------------------------- SET HV max settle time Th
 	ptr = strstr( usb_message, "SET TH=" );
 	if( ptr )
@@ -973,22 +1004,23 @@ static void messageDecode( void )
 	ptr = strstr( usb_message, "SET DEFAULT" );
 	if( ptr )
 	{
-		const uint32_t 	Result = RESULT_AS_CURRENT;	// show result of measure as current
-		const uint32_t 	Contact_C = 100;	// capacitance low threshold for error detect, pF
-		const uint32_t 	Short_I	= 2500;	// short high current threshold for error detect, nA
-		const uint32_t 	DAC_P2 	= 255;	// DAC-code triangle amplitude
-		const uint32_t 	DAC_P1 	= 78;	// 78 us DAC period Triangle Mode
-		const uint32_t 	Km 	= 145;	// 138 uS one ADC scan, 145 ~ 20 ms (50 Hz)
-		const uint32_t 	Th 	= 1000;	// msec
-		const uint32_t 	Ta 	= 2000;	// msec
-		const uint32_t 	Td 	= 5000;	// msec
-		const uint32_t 	Tm 	= 60;	// minutes
-		const uint32_t 	Tt 	= 168;	// hours
-		const uint32_t 	Kd 	= 101;
-		const uint32_t 	Ki 	= 1000000;
-		const uint32_t 	Ve 	= 1000;	// mV
-		const uint32_t 	Vm 	= 50;	// V
-		const uint32_t 	Vt 	= 50;	// V
+		const uint32_t 	Result 		= RESULT_AS_CURRENT;	// show result of measure as current
+		const uint32_t 	Contact_C 	= 100;	// capacitance low threshold for error detect, pF
+		const uint32_t 	Short_I		= 2500;	// short high current threshold for error detect, nA
+		const uint32_t 	DAC_P2 		= 255;	// DAC-code triangle amplitude
+		const uint32_t 	DAC_P1 		= 78;	// 78 us DAC period Triangle Mode
+		const uint32_t 	Km 			= 145;	// 138 uS one ADC scan, 145 ~ 20 ms (50 Hz)
+		const uint32_t 	Th 			= 1000;	// msec
+		const uint32_t 	To 			= 1000;	// msec
+		const uint32_t 	Ta 			= 1000;	// msec
+		const uint32_t 	Td 			= 5000;	// msec
+		const uint32_t 	Tm 			= 60;	// minutes
+		const uint32_t 	Tt 			= 168;	// hours
+		const uint32_t 	Kd 			= 101;
+		const uint32_t 	Ki 			= 1000000;
+		const uint32_t 	Ve 			= 1000;	// mV
+		const uint32_t 	Vm 			= 50;	// V
+		const uint32_t 	Vt 			= 50;	// V
 
 		SAVE_SYSTEM_CNF( &systemConfig.measureSavedPoints, 0 );
 		SAVE_SYSTEM_CNF( &systemConfig.uTestVol, Vt );
@@ -1000,6 +1032,7 @@ static void messageDecode( void )
 		SAVE_SYSTEM_CNF( &systemConfig.measuringPeriodSec, Tm * 60 );
 		SAVE_SYSTEM_CNF( &systemConfig.dischargeTimeMs, Td );
 		SAVE_SYSTEM_CNF( &systemConfig.IAmplifierSettleTimeMs, Ta );
+		SAVE_SYSTEM_CNF( &systemConfig.optoSignalSettleTimeMs, To );
 		SAVE_SYSTEM_CNF( &systemConfig.HVMaxSettleTimeMs, Th );
 		SAVE_SYSTEM_CNF( &systemConfig.adcMeanFactor, Km );
 		SAVE_SYSTEM_CNF( &systemConfig.dacTrianglePeriodUs, DAC_P1 );
@@ -1175,10 +1208,10 @@ static void	sendSystemStatus(void)
 {
 	switch(systemConfig.sysStatus)
 	{
-			case READY_STATUS:		SEND_CDC_MESSAGE( "System status: ready\r\n" );
+			case READY_STATUS:		SEND_CDC_MESSAGE( "System status: idle\r\n" );
 									break;
 
-			case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "System status: test run\r\n" );
+			case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "System status: test running\r\n" );
 									break;
 
 			case PAUSE_STATUS:		SEND_CDC_MESSAGE( "System status: test paused\r\n" );
@@ -1207,7 +1240,7 @@ static void	sendSystemSettings( void )
 	sprintf( usb_message, "Result of measure presented as %s\r\n", systemConfig.resultPresentation == RESULT_AS_RESISTANCE ? "Resistance, MOhm" : "Current, nA" );
 	SEND_CDC_MESSAGE( usb_message );
 
-	sprintf( usb_message, "Test voltage, Vt= %lu V\r\nMeasure voltage, Vm= %lu V\r\nTest time, Tt= %lu hours\r\nMeasure period, Tm= %lu minutes\r\n",
+	sprintf( usb_message, "Test voltage, Vt= %lu V\r\nMeasure voltage, Vm= %lu V\r\nTest time, Tt= %lu hours\r\nMeasure period, Tp= %lu minutes\r\n",
 							systemConfig.uTestVol, systemConfig.uMeasureVol, systemConfig.testingTimeSec / 3600, systemConfig.measuringPeriodSec / 60);
 	SEND_CDC_MESSAGE( usb_message );
 
@@ -1215,8 +1248,8 @@ static void	sendSystemSettings( void )
 						systemConfig.kiAmplifire, systemConfig.kdDivider, systemConfig.dischargeTimeMs, systemConfig.MaxErrorHV_mV );
 	SEND_CDC_MESSAGE( usb_message );
 
-	sprintf( usb_message, "Amplifier settle time, Ta= %lu msec\r\nMax HV settle time, Th= %lu msec\r\nADC mean factor, Km= %lu \r\n",
-						systemConfig.IAmplifierSettleTimeMs, systemConfig.HVMaxSettleTimeMs, systemConfig.adcMeanFactor );
+	sprintf( usb_message, "Amplifier settle time, Ta= %lu msec\r\nMax HV settle time, Th= %lu msec\r\n<OPTO> signal settle time, To=  %lu msec\r\nADC mean factor, Km= %lu \r\n",
+						systemConfig.IAmplifierSettleTimeMs, systemConfig.HVMaxSettleTimeMs, systemConfig.optoSignalSettleTimeMs, systemConfig.adcMeanFactor );
 	SEND_CDC_MESSAGE( usb_message );
 
 	sprintf( usb_message, "Step of DAC in triangle mode, DAC_P1= %lu uSec\r\nDAC-code triangle amplitude, DAC_P2= %lu\r\n"

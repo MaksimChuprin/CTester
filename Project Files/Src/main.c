@@ -116,6 +116,9 @@ int main(void)
  */
 static void OneSecThread(const void *argument)
 {
+	bool 	rtcNeedSaveF 			= false;
+	bool 	testTimePassNeedSaveF 	= false;
+
 	// init  rtcPoint, timePoint,
 	if( validMark != VALID_MARK )
 	{
@@ -148,17 +151,25 @@ static void OneSecThread(const void *argument)
 	/* one second circle */
 	for( TickType_t startTime = 0, oneSecTickDelayMs = 0, passTime = 0; ; passTime = xTaskGetTickCount() - startTime )
 	{
-		/* read temperature */
-		temperature = getDataTMP121();
 
 		/* calc time delay */
-		oneSecTickDelayMs = (ONESEC_TICK_TIME_MS > pdTick_to_MS(passTime)) ? ONESEC_TICK_TIME_MS - pdTick_to_MS(passTime) : 0;
+		oneSecTickDelayMs = (ONESEC_TICK_TIME_MS > pdTick_to_MS(passTime)) ? ONESEC_TICK_TIME_MS - pdTick_to_MS(passTime) : 1;
 		osDelay(oneSecTickDelayMs);
 		startTime = xTaskGetTickCount();
 
+		/* read temperature */
+		temperature = getDataTMP121();
+
 		// save RTC each 5 min
-		if( (++oneSecCounter % 300) == 0 )
+		if( (++oneSecCounter % 300) == 0 ) rtcNeedSaveF = true;
+
+
+		if( 		rtcNeedSaveF
+				&&  (getCurrentMeasureMode() != measureMode)
+				&&  (getCurrentMeasureMode() != checkMode) )
 		{
+			rtcNeedSaveF = false;
+
 			if( rtcPoint == SAVE_ARRAY_SIZE )
 			{
 				rtcPoint = 0;
@@ -184,8 +195,14 @@ static void OneSecThread(const void *argument)
 			}
 
 			// save testTimePass each 5 min
-			if( (testTimePass % 300) == 0 )
+			if( (testTimePass % 300) == 0 ) testTimePassNeedSaveF = true;
+
+			if( 	testTimePassNeedSaveF
+				&&  (getCurrentMeasureMode() != measureMode)
+				&&  (getCurrentMeasureMode() != checkMode) )
 			{
+				testTimePassNeedSaveF = false;
+
 				if( timePoint == SAVE_ARRAY_SIZE )
 				{
 					timePoint = 0;
@@ -590,7 +607,12 @@ static int16_t getDataTMP121(void)
 	spi_rx_data >>= 7;
 	spi_rx_data  |= ((spi_rx_data & (1<<8)) ? 0xff00 : 0x0);
 
-	return spi_rx_data;
+	int16_t  t = spi_rx_data;
+
+	if(t > 125) return SENSOR_NOT_CONNECTED;
+	if(t < -80) return SENSOR_NOT_CONNECTED;
+
+	return t;
 }
 
 

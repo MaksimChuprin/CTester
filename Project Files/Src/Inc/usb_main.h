@@ -24,7 +24,7 @@
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
-#define SEND_CDC_MESSAGE(MSG)	{ while( isCableConnected() && sendCDCmessage( (MSG) ) ) osDelay(100); }
+#define SEND_CDC_MESSAGE(MSG)	{ uint8_t i = 5;  while( isCableConnected() && sendCDCmessage( (MSG) ) && --i ) osDelay(50); }
 /* Exported functions ------------------------------------------------------- */
 void 		UsbCDCThread		(const void *argument);
 bool 		isCableConnected	(void);

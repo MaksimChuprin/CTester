@@ -104,6 +104,16 @@
 #define SPIx_MOSI_AF                     		GPIO_AF5_SPI1
 
 /* Exported types ------------------------------------------------------------*/
+typedef enum {
+
+	stopMode = 0,
+	pauseMode,
+	testMode,
+	measureMode,
+	checkMode,
+	errorMode
+
+} currentMeasureMode_t;
 
 /* Exported functions ------------------------------------------------------- */
 uint32_t * 										getRawAdc		(void);
@@ -111,6 +121,7 @@ uint32_t * 										getMeasureData	(void);
 int32_t    										getVrefmV		(void);
 uint32_t   										getErrorCode	(void);
 uint32_t   										getHighVoltagemV(void);
+currentMeasureMode_t   							getCurrentMeasureMode(void);
 /* Exported macro ------------------------------------------------------------*/
 
 /* Exported functions ------------------------------------------------------- */

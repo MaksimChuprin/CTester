@@ -100,8 +100,7 @@ typedef struct {
 	uint32_t 	shortErrorTrshCurrent_nA;
 	uint32_t 	contactErrorTrshCapacitance_pF;
 	uint32_t 	resultPresentation;
-
-
+	uint32_t	optoSignalSettleTimeMs;
 } sysCfg_t;
 
 typedef struct {
