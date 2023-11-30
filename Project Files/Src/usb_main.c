@@ -9,7 +9,6 @@
 #include "main.h"
 
 extern 	USBD_HandleTypeDef  		USBD_Device;
-extern 	osThreadId					USBThreadHandle;
 extern 	osThreadId					MeasureThreadHandle;
 
 extern 	volatile sysCfg_t			systemConfig;
@@ -116,7 +115,7 @@ void UsbCDCThread(const void *argument)
 			// wait message
 			osEvent event = osSignalWait( USB_THREAD_MESSAGEGOT_Evt | USB_THREAD_MEASURESTARTED_Evt | USB_THREAD_MEASUREREADY_Evt | USB_THREAD_TESTSTOPPED_Evt |
 											USB_THREAD_TESTSTARTED_Evt | USB_THREAD_TESTPAUSED_Evt | USB_THREAD_MEASUREERROR_Evt |
-											USB_THREAD_CHECKCURRENT_Evt | USB_THREAD_CHECKCAP_Evt | USB_THREAD_CHECKHV_Evt, 100 );
+											USB_THREAD_CHECKCURRENT_Evt | USB_THREAD_CHECKCAP_Evt | USB_THREAD_CHECKHV_Evt | USB_THREAD_IDLEMODE_Evt, 100 );
 
 			CLEAR_ALL_EVENTS;
 
@@ -159,7 +158,6 @@ void UsbCDCThread(const void *argument)
 				sendSystemStatus();
 				sendMemoryStatus();
 				sendVDDA();
-				sendRealHV();
 				if( (systemConfig.sysStatus == ACTIVE_STATUS) || (systemConfig.sysStatus == PAUSE_STATUS) ) sendTestTimePass();
 				SEND_CDC_MESSAGE( "\r\n" );
 			}
@@ -224,7 +222,6 @@ void UsbCDCThread(const void *argument)
 				sendSystemTemperature();
 				sendSystemStatus();
 				sendMemoryStatus();
-				sendRealHV();
 				sendTestTimePass();
 				SEND_CDC_MESSAGE( "\r\n" );
 				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
@@ -239,7 +236,6 @@ void UsbCDCThread(const void *argument)
 				sendSystemTemperature();
 				sendSystemStatus();
 				sendMemoryStatus();
-				sendRealHV();
 				sendTestTimePass();
 				SEND_CDC_MESSAGE( "\r\n" );
 				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
@@ -248,9 +244,8 @@ void UsbCDCThread(const void *argument)
 			/*  test CHECK CURRENT event */
 			if ( event.value.signals & USB_THREAD_CHECKHV_Evt )
 			{
-				SEND_CDC_MESSAGE( "*********** High Voltage test ***********\r\n" );
+				SEND_CDC_MESSAGE( "*********** High Voltage test - OK ***********\r\n" );
 				sendSystemTime();
-				sendRealHV();
 				SEND_CDC_MESSAGE( "\r\n" );
 				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 			}
@@ -300,10 +295,16 @@ void UsbCDCThread(const void *argument)
 				sendSystemStatus();
 				sendMemoryStatus();
 				sendVDDA();
-				sendRealHV();
 				sendTestTimePass();
 				SEND_CDC_MESSAGE( "\r\n" );
 				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
+			}
+
+			/*  test pause event */
+			if ( event.value.signals & USB_THREAD_IDLEMODE_Evt )
+			{
+				SEND_CDC_MESSAGE( "\r\n***************** System Idle  ****************\r\n\r\n" );
+				event.value.signals &= ~USB_THREAD_IDLEMODE_Evt;
 			}
 
 			/* message got event  */
@@ -1010,12 +1011,12 @@ static void messageDecode( void )
 		const uint32_t 	DAC_P2 		= 255;	// DAC-code triangle amplitude
 		const uint32_t 	DAC_P1 		= 78;	// 78 us DAC period Triangle Mode
 		const uint32_t 	Km 			= 145;	// 138 uS one ADC scan, 145 ~ 20 ms (50 Hz)
-		const uint32_t 	Th 			= 1000;	// msec
-		const uint32_t 	To 			= 1000;	// msec
-		const uint32_t 	Ta 			= 1000;	// msec
+		const uint32_t 	Th 			= 2000;	// msec
+		const uint32_t 	To 			= 2000;	// msec
+		const uint32_t 	Ta 			= 100;	// msec
 		const uint32_t 	Td 			= 5000;	// msec
-		const uint32_t 	Tm 			= 60;	// minutes
-		const uint32_t 	Tt 			= 168;	// hours
+		const uint32_t 	Tm 			= 15;	// minutes
+		const uint32_t 	Tt 			= 24;	// hours
 		const uint32_t 	Kd 			= 101;
 		const uint32_t 	Ki 			= 1000000;
 		const uint32_t 	Ve 			= 1000;	// mV
@@ -1137,7 +1138,8 @@ static void messageDecode( void )
  */
 static void	sendMemoryStatus(void)
 {
-	sprintf( usb_message, "Memory contains %lu Point(s) of Data\r\n", systemConfig.measureSavedPoints );
+	sprintf( usb_message, "Memory contains %lu Point(s) of Data\r\nDebug Info DMA error counter: %lu\r\n", systemConfig.measureSavedPoints, getDMAErrorCounter() );
+
 	SEND_CDC_MESSAGE(usb_message);
 }
 
@@ -1223,7 +1225,8 @@ static void	sendSystemStatus(void)
 			case ERROR_STATUS:		SEND_CDC_MESSAGE( "System status: fail\r\n" );
 									break;
 
-			default:				SAVE_SYSTEM_CNF( &systemConfig.sysStatus, NO_CONFIG_STATUS );
+			default:				SAVE_SYSTEM_CNF( &systemConfig.sysStatus, NO_CONFIG_STATUS ); // @suppress("No break at end of case")
+
 
 			case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "System status: not configured\r\n" );
 									break;

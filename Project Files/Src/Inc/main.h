@@ -52,6 +52,7 @@
 #define	USB_THREAD_CHECKCURRENT_Evt		(1<<8)
 #define	USB_THREAD_CHECKCAP_Evt			(1<<9)
 #define	USB_THREAD_CHECKHV_Evt			(1<<10)
+#define	USB_THREAD_IDLEMODE_Evt			(1<<11)
 
 #define	MEASURE_THREAD_STARTTEST_Evt	(1<<0)
 #define	MEASURE_THREAD_STOPTEST_Evt		(1<<1)
@@ -145,7 +146,7 @@ typedef struct {
 												HAL_FLASH_Unlock ( ); 						\
 												HAL_FLASHEx_Erase( &EraseInit, &PageError); \
 												for( uint32_t i = 0; i < 256; i++, adr += 4 ) HAL_FLASH_Program( FLASH_TYPEPROGRAM_WORD, adr, (pDATA)[i] ); \
-												HAL_FLASH_Lock   ( ); \
+												HAL_FLASH_Lock   ( ); 						\
 											} while(0)
 
 /* Exported functions ------------------------------------------------------- */

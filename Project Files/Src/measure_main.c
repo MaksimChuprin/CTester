@@ -10,14 +10,8 @@
 
 /* Global variables ---------------------------------------------------------*/
 extern 	osThreadId					USBThreadHandle;
-extern 	osThreadId					MeasureThreadHandle;
-extern 	osThreadId					OneSecThreadHandle;
-extern 	USBD_HandleTypeDef  		USBD_Device;
 extern 	ADC_HandleTypeDef    		AdcHandle;
-
 extern 	volatile sysCfg_t			systemConfig;
-extern  dataAttribute_t				dataAttribute[];
-extern 	dataMeasure_t				dataMeasure[];
 
 /* Private typedef -----------------------------------------------------------*/
 
@@ -119,6 +113,7 @@ static int32_t 						dacValue;
 static int32_t 						dacMinValue;
 static int32_t 						dacMaxValue;
 static uint32_t						errorCode = MEASURE_NOERROR;
+static uint32_t						errorDetect_debug;
 static bool							HV_PowerGood = false;
 static bool							doCheck = false;
 currentMeasureMode_t 				currentMode;
@@ -141,6 +136,7 @@ uint32_t * 							getRawAdc(void) 				{ return  rawAdcCode; }
 int32_t    							getVrefmV(void) 				{ return  Vref_mV; }
 uint32_t   							getErrorCode(void) 				{ return  errorCode; }
 uint32_t   							getHighVoltagemV(void) 			{ return  (uint32_t)HighVoltage_mV; }
+uint32_t   							getDMAErrorCounter(void) 		{ return  errorDetect_debug; }
 currentMeasureMode_t   				getCurrentMeasureMode(void) 	{ return  currentMode; }
 
 
@@ -163,7 +159,6 @@ void MeasureThread(const void *argument)
 	{
 		currentMode		= testMode;
 		firstModeStep 	= true;
-		doCheck			= true;
 	}
 	else
 	{
@@ -213,6 +208,8 @@ void MeasureThread(const void *argument)
 			firstModeStep 			=  	true;
 			doCheck					=   true;
 			currentMode				=	testMode;
+
+			errorDetect_debug		=	0;
 		}
 
 		/* START MEASURE MANUAL */
@@ -220,6 +217,7 @@ void MeasureThread(const void *argument)
 		{
 			event.value.signals 	=	0;
 			MeasureThreadCounter	=	0;
+
 
 			if( currentMode	!=	measureMode) // if already measuring
 			{
@@ -260,7 +258,7 @@ void MeasureThread(const void *argument)
 				case stopMode:	if( firstModeStep )
 								{
 									firstModeStep 			= 	false;
-									TaskHighVoltage_mV 		= 	0;
+									TaskHighVoltage_mV 		= 	0 * VOLTS_2_mVOLTS;
 									DAC_FIRST_APPROACH;
 									BSP_CTS_SetAllLineDischarge();
 									osSignalSet( USBThreadHandle, USB_THREAD_TESTSTOPPED_Evt );
@@ -289,6 +287,7 @@ void MeasureThread(const void *argument)
 								}
 								break;
 
+
 				case testMode:
 								newMode = testModeProcess( &firstModeStep );
 								if( currentMode != newMode )
@@ -313,6 +312,22 @@ void MeasureThread(const void *argument)
 								{
 									MeasureThreadCounter	=	0;
 									currentMode 			= 	newMode;
+								}
+								break;
+
+				case idleMode:	if( firstModeStep )
+								{
+									firstModeStep 			= 	false;
+									TaskHighVoltage_mV 		= 	0;
+									DAC_FIRST_APPROACH;
+									BSP_CTS_SetAllLineDischarge();
+									osSignalSet( USBThreadHandle, USB_THREAD_IDLEMODE_Evt );
+								}
+
+								if( (MeasureThreadCounter == HV_ZERO_MAX_TIME_MS ) && (HighVoltage_mV > 5000) )
+								{
+									errorCode     =  MEASURE_HV_ZERO_ERROR;
+									osSignalSet( USBThreadHandle, USB_THREAD_MEASUREERROR_Evt );
 								}
 								break;
 
@@ -672,8 +687,8 @@ static currentMeasureMode_t measureModeProcess( bool * p_firstStep )
 		measureModeState 	= 	measureZeroShift;
 		measureModeCounter	= 	0;
 		TaskHighVoltage_mV 	=	0 * VOLTS_2_mVOLTS;
-		BSP_CTS_SetAllLineDischarge();
 		DAC_FIRST_APPROACH;
+		BSP_CTS_SetAllLineDischarge();
 	}
 
 	/* measure mode process */
@@ -688,8 +703,8 @@ static currentMeasureMode_t measureModeProcess( bool * p_firstStep )
 					// set measure Voltage
 					measureModeCounter 	= 	0;
 					TaskHighVoltage_mV 	=	systemConfig.uMeasureVol * VOLTS_2_mVOLTS;
-					measureModeState	= 	hvStabM;
 					DAC_FIRST_APPROACH;
+					measureModeState	= 	hvStabM;
 					BSP_CTS_SetAllLineDischarge();
 					return measureMode;
 
@@ -740,9 +755,8 @@ static currentMeasureMode_t measureModeProcess( bool * p_firstStep )
 							}
 							else
 							{
-								TaskHighVoltage_mV = 0 * VOLTS_2_mVOLTS;;
-								DAC_FIRST_APPROACH;
-								return stopMode;
+								*p_firstStep 		 =	true;
+								return idleMode;
 							}
 						}
 
@@ -814,8 +828,8 @@ static void getVrefHV(void)
 	for( uint32_t i = 0; i < VREF_MEAN_FACTOR; )
 	{
 		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
-		HAL_GPIO_WritePin( GPIOA, GPIO_PIN_15, GPIO_PIN_SET );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+		HAL_ADC_Stop( &AdcHandle );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			adcMeanMeasure[ADC_MEAN_ARRAY_DAC] 	   += adcDMABuffer[ADC_DMA_ARRAY_DAC];
@@ -849,6 +863,7 @@ static void getRawAdcCode(void)
 	{
 		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+		HAL_ADC_Stop( &AdcHandle );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2] += adcDMABuffer[j];
@@ -864,14 +879,13 @@ static void getRawAdcCode(void)
 	{
 		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+		HAL_ADC_Stop( &AdcHandle );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2 + 1] += adcDMABuffer[j];
 			i++;
 		}
 	}
-
-	BSP_SET_RMUX(Mux_1_8);
 
 	for(uint32_t i = 0; i < MATRIX_RAWn; i++)
 	{
@@ -894,11 +908,14 @@ static void	getAmplifireZero( void )
 	{
 		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+		HAL_ADC_Stop( &AdcHandle );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanZero[j * 2] += adcDMABuffer[j];
 			i++;
 		}
+		else
+			errorDetect_debug++;
 	}
 
 	/* channels 9..16 */
@@ -909,14 +926,15 @@ static void	getAmplifireZero( void )
 	{
 		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+		HAL_ADC_Stop( &AdcHandle );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanZero[j * 2 + 1] += adcDMABuffer[j];
 			i++;
 		}
+		else
+			errorDetect_debug++;
 	}
-
-	BSP_SET_RMUX(Mux_1_8);
 }
 
 /* get current - one line*/
@@ -935,12 +953,16 @@ static void getCurrentByLine( Line_NumDef LineNum )
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
 		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+		HAL_GPIO_WritePin( GPIOA, GPIO_PIN_15, GPIO_PIN_SET );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+		HAL_ADC_Stop( &AdcHandle );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2] += adcDMABuffer[j];
 			i++;
 		}
+		else
+			errorDetect_debug++;
 	}
 
 	/* channels 9..16 */
@@ -950,12 +972,16 @@ static void getCurrentByLine( Line_NumDef LineNum )
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
 		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+		HAL_GPIO_WritePin( GPIOA, GPIO_PIN_15, GPIO_PIN_SET );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+		HAL_ADC_Stop( &AdcHandle );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2 + 1] += adcDMABuffer[j];
 			i++;
 		}
+		else
+			errorDetect_debug++;
 	}
 
 	// BSP_SET_RMUX(Mux_1_8);
@@ -995,6 +1021,7 @@ static void getCapacitanceByLine( Line_NumDef LineNum, RMux_StateDef mux )
 	{
 		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+		HAL_ADC_Stop( &AdcHandle );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2 + muxFactor] += adcDMABuffer[j];

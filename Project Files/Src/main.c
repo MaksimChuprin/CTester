@@ -93,15 +93,15 @@ int main(void)
 
   /* Create Threads */
   /* USB CDC Threads */
-  osThreadDef( USBTask, UsbCDCThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 3 );
+  osThreadDef( USBTask, UsbCDCThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 8 );
   USBThreadHandle = osThreadCreate( osThread(USBTask), NULL);
 
   /*  measure thread  */
-  osThreadDef( MesTask, MeasureThread, osPriorityAboveNormal, 0, configMINIMAL_STACK_SIZE * 3 );
+  osThreadDef( MesTask, MeasureThread, osPriorityAboveNormal, 0, configMINIMAL_STACK_SIZE * 8 );
   MeasureThreadHandle = osThreadCreate( osThread(MesTask), NULL);
 
   /*  OneSec thread  */
-  osThreadDef( OneSecTask, OneSecThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 2 );
+  osThreadDef( OneSecTask, OneSecThread, osPriorityNormal, 0, configMINIMAL_STACK_SIZE * 8 );
   OneSecThreadHandle = osThreadCreate( osThread(OneSecTask), NULL);
 
   /* Start scheduler */

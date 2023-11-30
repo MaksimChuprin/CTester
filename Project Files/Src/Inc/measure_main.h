@@ -111,7 +111,8 @@ typedef enum {
 	testMode,
 	measureMode,
 	checkMode,
-	errorMode
+	errorMode,
+	idleMode
 
 } currentMeasureMode_t;
 
@@ -121,6 +122,7 @@ uint32_t * 										getMeasureData	(void);
 int32_t    										getVrefmV		(void);
 uint32_t   										getErrorCode	(void);
 uint32_t   										getHighVoltagemV(void);
+uint32_t   										getDMAErrorCounter(void);
 currentMeasureMode_t   							getCurrentMeasureMode(void);
 /* Exported macro ------------------------------------------------------------*/
 
