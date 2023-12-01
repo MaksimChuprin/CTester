@@ -113,7 +113,6 @@ static int32_t 						dacValue;
 static int32_t 						dacMinValue;
 static int32_t 						dacMaxValue;
 static uint32_t						errorCode = MEASURE_NOERROR;
-static uint32_t						errorDetect_debug;
 static bool							HV_PowerGood = false;
 static bool							doCheck = false;
 currentMeasureMode_t 				currentMode;
@@ -136,7 +135,6 @@ uint32_t * 							getRawAdc(void) 				{ return  rawAdcCode; }
 int32_t    							getVrefmV(void) 				{ return  Vref_mV; }
 uint32_t   							getErrorCode(void) 				{ return  errorCode; }
 uint32_t   							getHighVoltagemV(void) 			{ return  (uint32_t)HighVoltage_mV; }
-uint32_t   							getDMAErrorCounter(void) 		{ return  errorDetect_debug; }
 currentMeasureMode_t   				getCurrentMeasureMode(void) 	{ return  currentMode; }
 
 
@@ -208,8 +206,6 @@ void MeasureThread(const void *argument)
 			firstModeStep 			=  	true;
 			doCheck					=   true;
 			currentMode				=	testMode;
-
-			errorDetect_debug		=	0;
 		}
 
 		/* START MEASURE MANUAL */
@@ -914,8 +910,6 @@ static void	getAmplifireZero( void )
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanZero[j * 2] += adcDMABuffer[j];
 			i++;
 		}
-		else
-			errorDetect_debug++;
 	}
 
 	/* channels 9..16 */
@@ -932,8 +926,6 @@ static void	getAmplifireZero( void )
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanZero[j * 2 + 1] += adcDMABuffer[j];
 			i++;
 		}
-		else
-			errorDetect_debug++;
 	}
 }
 
@@ -961,8 +953,6 @@ static void getCurrentByLine( Line_NumDef LineNum )
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2] += adcDMABuffer[j];
 			i++;
 		}
-		else
-			errorDetect_debug++;
 	}
 
 	/* channels 9..16 */
@@ -980,8 +970,6 @@ static void getCurrentByLine( Line_NumDef LineNum )
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2 + 1] += adcDMABuffer[j];
 			i++;
 		}
-		else
-			errorDetect_debug++;
 	}
 
 	// BSP_SET_RMUX(Mux_1_8);

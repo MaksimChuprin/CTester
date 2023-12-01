@@ -594,14 +594,18 @@ static void iniTIMx( void )
  */
 static int16_t getDataTMP121(void)
 {
-	uint16_t	spi_rx_data = 0;
+	static	uint8_t		errCounter;
+	static	int16_t		lastGoodMeasure = SENSOR_NOT_CONNECTED;
+
+	uint16_t			spi_rx_data = 0;
+	bool				result 		= true;
 
 	BSP_SET_CS( 0 );
 	HAL_SPI_Receive( &SpiHandle, (uint8_t *)&spi_rx_data, 1, 2);
 	BSP_SET_CS( 1 );
 
-	if( !(spi_rx_data) ) 		return SENSOR_NOT_CONNECTED;	// data line error
-	if( spi_rx_data & (1<<2) ) 	return SENSOR_NOT_CONNECTED;	// no TMP121 on spi
+	if( !(spi_rx_data) ) 		result = false;	// data line error
+	if( spi_rx_data & (1<<2) ) 	result = false;	// no TMP121 on spi
 
 	/* convert negative values */
 	spi_rx_data >>= 7;
@@ -609,10 +613,23 @@ static int16_t getDataTMP121(void)
 
 	int16_t  t = spi_rx_data;
 
-	if(t > 125) return SENSOR_NOT_CONNECTED;
-	if(t < -80) return SENSOR_NOT_CONNECTED;
+	if(t > 125) result = false;
+	if(t < -80) result = false;
 
-	return t;
+	if( result )
+	{
+		lastGoodMeasure = t;
+		errCounter		= 0;
+		return t;
+	}
+
+	if( ++errCounter > 10 )
+	{
+		errCounter = 10;
+		return SENSOR_NOT_CONNECTED;
+	}
+	else
+		return lastGoodMeasure;
 }
 
 

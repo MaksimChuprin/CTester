@@ -124,14 +124,14 @@ void UsbCDCThread(const void *argument)
 			{
 				if( MEASURE_GET_ERROR_CODE( getErrorCode() ) & MEASURE_HV_ERROR )
 				{
-					SEND_CDC_MESSAGE( "************* Fail set High Voltage <UR> *****************\r\n\r\n" );
+					SEND_CDC_MESSAGE( "\r\n************* Fail set High Voltage <UR> *****************\r\n\r\n" );
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, ERROR_STATUS );
 					event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 				}
 
 				if( MEASURE_GET_ERROR_CODE( getErrorCode() ) & MEASURE_CHANEL_ERROR )
 				{
-					SEND_CDC_MESSAGE( "********** Fail set High Voltage on Line  ****************\r\n" );
+					SEND_CDC_MESSAGE( "\r\n********** Fail set High Voltage on Line  ****************\r\n" );
 					uint32_t   errline = MEASURE_GET_ERROR_LINE( getErrorCode() );
 					sendMeasureError( errline, getRawAdc() );
 
@@ -145,12 +145,12 @@ void UsbCDCThread(const void *argument)
 
 				if( MEASURE_GET_ERROR_CODE( getErrorCode() ) & MEASURE_HV_UNSTABLE_ERROR )
 				{
-					SEND_CDC_MESSAGE( "********* Detected unstable High Voltage **********\r\n\r\n" );
+					SEND_CDC_MESSAGE( "\r\n********* Detected unstable High Voltage **********\r\n\r\n" );
 				}
 
 				if( MEASURE_GET_ERROR_CODE( getErrorCode() ) & MEASURE_HV_ZERO_ERROR )
 				{
-					SEND_CDC_MESSAGE( "!!!!   ALARM! Unable switch off High Voltage   !!!!\r\n\r\n" );
+					SEND_CDC_MESSAGE( "\r\n!!!!   ALARM! Unable switch off High Voltage   !!!!\r\n\r\n" );
 				}
 
 				sendSystemTime();
@@ -165,7 +165,7 @@ void UsbCDCThread(const void *argument)
 			/*  measure started event */
 			if ( event.value.signals & USB_THREAD_MEASURESTARTED_Evt )
 			{
-				SEND_CDC_MESSAGE( "***************** Measure started ******************\r\n" );
+				SEND_CDC_MESSAGE( "\r\n***************** Measure started ******************\r\n" );
 				sendSystemTime();
 				sendSystemTemperature();
 				sendSystemStatus();
@@ -180,7 +180,7 @@ void UsbCDCThread(const void *argument)
 			/*  measure ready event */
 			if ( event.value.signals & USB_THREAD_MEASUREREADY_Evt )
 			{
-				SEND_CDC_MESSAGE( "***************** Measure finished ******************\r\n" );
+				SEND_CDC_MESSAGE( "\r\n***************** Measure finished ******************\r\n" );
 
 				/* save data */
 				if( (systemConfig.sysStatus == ACTIVE_STATUS) && systemConfig.measureSavedPoints < STAT_ARRAY_SIZE )
@@ -191,7 +191,7 @@ void UsbCDCThread(const void *argument)
 					SAVE_SYSTEM_CNF( &dataAttribute[systemConfig.measureSavedPoints].temperatureMeasure, (uint32_t)getTemperature() );
 					uint32_t newSavePoint = systemConfig.measureSavedPoints + 1;
 					SAVE_SYSTEM_CNF( &systemConfig.measureSavedPoints, newSavePoint );
-					SEND_CDC_MESSAGE( "*************** Data saved to Flash ****************\r\n" );
+					SEND_CDC_MESSAGE( "\r\n*************** Data saved ****************\r\n" );
 				}
 
 				sendSystemTime();
@@ -204,9 +204,9 @@ void UsbCDCThread(const void *argument)
 					sendTestTimePass();
 				}
 
-				SEND_CDC_MESSAGE( "***************** BEGIN OF DATA ******************\r\n" );
+				SEND_CDC_MESSAGE( "\r\n***************** BEGIN OF DATA ******************\r\n" );
 				sendMeasureResult( getMeasureData(), systemConfig.uMeasureVol );
-				SEND_CDC_MESSAGE( "****************** END OF DATA *******************\r\n\r\n" );
+				SEND_CDC_MESSAGE( "\r\n****************** END OF DATA *******************\r\n\r\n" );
 			}
 
 			/*  test stop event */
@@ -217,7 +217,7 @@ void UsbCDCThread(const void *argument)
 				else
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 
-				SEND_CDC_MESSAGE( "***************** Test finished  ****************\r\n" );
+				SEND_CDC_MESSAGE( "\r\n***************** Test finished  ****************\r\n" );
 				sendSystemTime();
 				sendSystemTemperature();
 				sendSystemStatus();
@@ -231,7 +231,7 @@ void UsbCDCThread(const void *argument)
 			if ( event.value.signals & USB_THREAD_TESTPAUSED_Evt )
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.sysStatus, PAUSE_STATUS );
-				SEND_CDC_MESSAGE( "***************** Test paused  ****************\r\n" );
+				SEND_CDC_MESSAGE( "\r\n***************** Test paused  ****************\r\n" );
 				sendSystemTime();
 				sendSystemTemperature();
 				sendSystemStatus();
@@ -244,7 +244,7 @@ void UsbCDCThread(const void *argument)
 			/*  test CHECK CURRENT event */
 			if ( event.value.signals & USB_THREAD_CHECKHV_Evt )
 			{
-				SEND_CDC_MESSAGE( "*********** High Voltage test - OK ***********\r\n" );
+				SEND_CDC_MESSAGE( "\r\n*********** High Voltage test - OK ***********\r\n" );
 				sendSystemTime();
 				SEND_CDC_MESSAGE( "\r\n" );
 				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
@@ -253,7 +253,7 @@ void UsbCDCThread(const void *argument)
 			/*  test CHECK CURRENT event */
 			if ( event.value.signals & USB_THREAD_CHECKCURRENT_Evt )
 			{
-				SEND_CDC_MESSAGE( "*********** Leakage threshold test ***********\r\n" );
+				SEND_CDC_MESSAGE( "\r\n*********** Leakage threshold test ***********\r\n" );
 				sendSystemTime();
 				sendCurrentTestResult(getMeasureData());
 				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
@@ -262,7 +262,7 @@ void UsbCDCThread(const void *argument)
 			/*  test CHECK CURRENT event */
 			if ( event.value.signals & USB_THREAD_CHECKCAP_Evt )
 			{
-				SEND_CDC_MESSAGE( "*********** Capacitors Contact Test ***********\r\n" );
+				SEND_CDC_MESSAGE( "\r\n*********** Capacitors Contact Test ***********\r\n" );
 				sendSystemTime();
 				sendCapacitanceTestResult(getMeasureData());
 
@@ -280,12 +280,12 @@ void UsbCDCThread(const void *argument)
 				switch( systemConfig.sysStatus )
 				{
 				case READY_STATUS:
-				case ERROR_STATUS: 	SEND_CDC_MESSAGE( "***************** Test started ****************\r\n" );
+				case ERROR_STATUS: 	SEND_CDC_MESSAGE( "\r\n***************** Test started ****************\r\n" );
 									SAVE_SYSTEM_CNF( &systemConfig.measureSavedPoints, 0 );
 									break;
 
 				case PAUSE_STATUS:
-				case ACTIVE_STATUS: SEND_CDC_MESSAGE( "***************** Test continued ****************\r\n" );
+				case ACTIVE_STATUS: SEND_CDC_MESSAGE( "\r\n***************** Test continued ****************\r\n" );
 									break;
 				}
 
@@ -1138,7 +1138,7 @@ static void messageDecode( void )
  */
 static void	sendMemoryStatus(void)
 {
-	sprintf( usb_message, "Memory contains %lu Point(s) of Data\r\nDebug Info DMA error counter: %lu\r\n", systemConfig.measureSavedPoints, getDMAErrorCounter() );
+	sprintf( usb_message, "Memory contains %lu Point(s) of Data\r\n", systemConfig.measureSavedPoints );
 
 	SEND_CDC_MESSAGE(usb_message);
 }
