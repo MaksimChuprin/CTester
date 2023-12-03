@@ -407,7 +407,8 @@ static void OneSecThread(const void *argument)
 		startTime = xTaskGetTickCount();
 
 		/* read temperature */
-		temperature = getDataTMP121();
+		if( (getCurrentMeasureMode() != measureMode) && (getCurrentMeasureMode() != checkMode) )
+				temperature = getDataTMP121();
 
 		// save RTC each 5 min
 		if( (++oneSecCounter % 300) == 0 ) rtcNeedSaveF = true;
