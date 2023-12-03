@@ -38,6 +38,7 @@ static uint16_t 			timePoint 		__attribute__((section(".noinit_rtc")));
 static uint32_t				validMark 		__attribute__((section(".noinit_rtc")));
 
 static int16_t				temperature = 25;
+
 /* Private function prototypes -----------------------------------------------*/
 static void 				SystemClock_Config 	( void );
 static void 				OneSecThread		( const void *argument );
@@ -46,8 +47,23 @@ static void 				iniRTC				( void );
 static void 				iniSPIx				( void );
 static void 				iniTIMx				( void );
 static int16_t 				getDataTMP121		( void );
-/* Private functions ---------------------------------------------------------*/
-uint32_t getTestTimePass(void) { return testTimePass; }
+
+/*
+ *  get test time pass
+ */
+uint32_t getTestTimePass(void) {
+
+	return testTimePass;
+}
+
+/*
+ *  get Temperature
+ */
+int16_t getTemperature(void){
+
+	return temperature;
+}
+
 /**
   * @brief  Main program
   * @param  None
@@ -111,6 +127,239 @@ int main(void)
   Error_Handler();
 }
 
+/**
+  * @brief  DAC Static Configuration
+  * @param  dacVal
+  * @retval None
+  */
+void configDACxStatMode	( uint32_t dacVal )
+{
+	/* clear previously settings  */
+	HAL_DAC_DeInit( &DacHandle );
+
+	/* stop TIMx */
+	if( htimHandle.Instance != NULL ) HAL_TIM_Base_Stop( &htimHandle );
+
+	/* Set the DAC parameters */
+	DacHandle.Instance = DACx;
+
+	if (HAL_DAC_Init( &DacHandle ) != HAL_OK)
+	{
+		/* Initialization Error */
+		Error_Handler();
+	}
+
+	DAC_ChannelConfTypeDef sConfig = { .DAC_Trigger = DAC_TRIGGER_NONE, .DAC_OutputBuffer = DAC_OUTPUTBUFFER_DISABLE };
+
+	if (HAL_DAC_ConfigChannel( &DacHandle, &sConfig, DACx_CHANNEL) != HAL_OK)
+	{
+	    /* Channel configuration Error */
+	    Error_Handler();
+	}
+
+	if (HAL_DAC_SetValue( &DacHandle, DACx_CHANNEL, DAC_ALIGN_12B_R, dacVal ) != HAL_OK)
+	{
+		/* Setting value Error */
+	    Error_Handler();
+	}
+
+	if (HAL_DAC_Start( &DacHandle, DACx_CHANNEL) != HAL_OK)
+	{
+	    /* Start Error */
+	    Error_Handler();
+	}
+}
+
+/**
+  * @brief  DACx Set Value
+  * @param  dacVal
+  * @retval None
+  */
+uint32_t setValDACx ( uint32_t dacVal )
+{
+	if ( DacHandle.Instance == NULL )
+	{
+		return 0xffffffff;
+	}
+
+	if (HAL_DAC_SetValue( &DacHandle, DACx_CHANNEL, DAC_ALIGN_12B_R, dacVal ) != HAL_OK)
+	{
+		/* Setting value Error */
+	    Error_Handler();
+	}
+
+	return HAL_DAC_GetValue ( &DacHandle, DACx_CHANNEL );
+}
+
+/**
+  * @brief  DAC Triangle Configuration
+  * @param  dacVal, triangleAmpl
+  * @retval None
+  */
+void configDACxTriangleMode	( uint32_t dacVal, uint32_t triangleAmpl )
+{
+	/* clear previously settings  */
+	HAL_DAC_DeInit( &DacHandle );
+
+	/* stop TIMx */
+	if( htimHandle.Instance != NULL ) HAL_TIM_Base_Stop( &htimHandle );
+
+	/* Set the DAC parameters */
+	DacHandle.Instance = DACx;
+
+	/*##-1- Initialize the DAC peripheral ######################################*/
+	if (HAL_DAC_Init( &DacHandle ) != HAL_OK)
+	{
+		/* DAC initialization Error */
+		Error_Handler();
+	}
+
+	/*##-2- DAC Configuration #########################################*/
+	DAC_ChannelConfTypeDef sConfig = { .DAC_Trigger = DAC_EXTERNALTRIGCONV_Tx_TRGO, .DAC_OutputBuffer = DAC_OUTPUTBUFFER_DISABLE };
+
+	if (HAL_DAC_ConfigChannel( &DacHandle, &sConfig, DACx_CHANNEL) != HAL_OK)
+	{
+		/* Channel configuration Error */
+		Error_Handler();
+	}
+
+	/*##-3- DAC channel2 Triangle Wave generation configuration ################*/
+	switch(triangleAmpl)
+	{
+	case 31:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_31; 	break;
+	case 63:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_63; 	break;
+	case 127:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_127; 	break;
+	case 255:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_255; 	break;
+	case 511:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_511; 	break;
+	case 1023:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_1023; 	break;
+	case 2047:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_2047; 	break;
+	case 4095:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_4095;	break;
+
+	default: 	triangleAmpl = DAC_TRIANGLEAMPLITUDE_1; 	break;
+	}
+
+	if (HAL_DACEx_TriangleWaveGenerate( &DacHandle, DACx_CHANNEL, triangleAmpl) != HAL_OK)
+	{
+		/* Triangle wave generation Error */
+		Error_Handler();
+	}
+
+	/*##-4- Set DAC RD register ################################################*/
+	if (HAL_DAC_SetValue( &DacHandle, DACx_CHANNEL, DAC_ALIGN_12B_R, dacVal) != HAL_OK)
+	{
+		/* Setting value Error */
+		Error_Handler();
+	}
+
+	/*##-5- Enable DAC  ################################################*/
+	if (HAL_DAC_Start( &DacHandle, DACx_CHANNEL) != HAL_OK)
+	{
+		/* Start Error */
+		Error_Handler();
+	}
+
+	/*## 6- start TIMx for trig */
+	 HAL_TIM_Base_Start( &htimHandle );
+}
+
+/*
+ * set rtc
+ */
+void setRTC( DateTime_t * date )
+{
+	RTC_DateTypeDef  sdatestructure;
+	RTC_TimeTypeDef  stimestructure;
+
+	/*##-1- Configure the Date #################################################*/
+	sdatestructure.Year    			= date->year - 2000;
+	sdatestructure.Month   			= date->month;
+	sdatestructure.Date    			= date->day;
+	sdatestructure.WeekDay 			= date->dayOfWeek;
+
+	if(HAL_RTC_SetDate( &RtcHandle, &sdatestructure, RTC_FORMAT_BIN) != HAL_OK)
+	{
+	    /* Initialization Error */
+	    Error_Handler();
+	}
+
+	/*##-2- Configure the Time #################################################*/
+	stimestructure.Hours 			= date->hours;
+	stimestructure.Minutes 			= date->minutes;
+	stimestructure.Seconds 			= 0x00;
+	stimestructure.TimeFormat 		= RTC_HOURFORMAT12_AM;
+	stimestructure.DayLightSaving 	= RTC_DAYLIGHTSAVING_NONE ;
+	stimestructure.StoreOperation 	= RTC_STOREOPERATION_RESET;
+
+	if(HAL_RTC_SetTime( &RtcHandle, &stimestructure, RTC_FORMAT_BIN) != HAL_OK)
+	{
+		/* Initialization Error */
+	    Error_Handler();
+	}
+}
+
+
+/*
+ * 		get rtc UNIX
+ * */
+systime_t getRTC( void )
+{
+	DateTime_t  	 date = {0};
+	RTC_DateTypeDef  sdatestructure;
+	RTC_TimeTypeDef  stimestructure;
+
+	HAL_RTC_GetTime( &RtcHandle, &stimestructure, RTC_FORMAT_BIN );
+	HAL_RTC_GetDate( &RtcHandle, &sdatestructure, RTC_FORMAT_BIN );
+
+	date.year    = 2000 + sdatestructure.Year;
+	date.month   = sdatestructure.Month;
+	date.day     = sdatestructure.Date;
+	date.dayOfWeek = sdatestructure.WeekDay;
+	date.hours   = stimestructure.Hours;
+	date.minutes = stimestructure.Minutes;
+	date.seconds = stimestructure.Seconds;
+
+	return convertDateToUnixTime( &date );
+}
+
+/**
+  * @brief  Conversion complete callback in non blocking mode
+  * @param  AdcHandle : ADC handle
+  * @note   This example shows a simple way to report end of conversion
+  *         and get conversion result. You can add your own implementation.
+  * @retval None
+  */
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle)
+{
+	/* Report to main program that ADC sequencer has reached its end */
+	osSignalSet( MeasureThreadHandle, MEASURE_THREAD_CONVCMPLT_Evt );
+	HAL_GPIO_WritePin( GPIOA, GPIO_PIN_15, GPIO_PIN_RESET );
+}
+
+
+/**
+  * @brief  ADC error callback in non blocking mode
+  *        (ADC conversion with interruption or transfer by DMA)
+  * @param  hadc: ADC handle
+  * @retval None
+  */
+void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
+{
+	/* In case of ADC error, call main error handler */
+	osSignalSet( MeasureThreadHandle, MEASURE_THREAD_CONVERROR_Evt );
+}
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @param  None
+  * @retval None
+  */
+void Error_Handler( void )
+{
+	while (1);
+}
+
+
+/* Private functions ---------------------------------------------------------*/
 /*
  *
  */
@@ -275,53 +524,6 @@ static void SystemClock_Config(void)
   }
 }
 
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @param  None
-  * @retval None
-  */
-void Error_Handler( void )
-{
-	while (1);
-}
-
-
-/**
-  * @brief  Conversion complete callback in non blocking mode
-  * @param  AdcHandle : ADC handle
-  * @note   This example shows a simple way to report end of conversion
-  *         and get conversion result. You can add your own implementation.
-  * @retval None
-  */
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *AdcHandle)
-{
-	/* Report to main program that ADC sequencer has reached its end */
-	osSignalSet( MeasureThreadHandle, MEASURE_THREAD_CONVCMPLT_Evt );
-	HAL_GPIO_WritePin( GPIOA, GPIO_PIN_15, GPIO_PIN_RESET );
-}
-
-/**
-  * @brief  Conversion DMA half-transfer callback in non blocking mode
-  * @param  hadc: ADC handle
-  * @retval None
-  */
-void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
-{
-
-}
-
-/**
-  * @brief  ADC error callback in non blocking mode
-  *        (ADC conversion with interruption or transfer by DMA)
-  * @param  hadc: ADC handle
-  * @retval None
-  */
-void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
-{
-	/* In case of ADC error, call main error handler */
-	osSignalSet( MeasureThreadHandle, MEASURE_THREAD_CONVERROR_Evt );
-}
-
 /*
  * ADC hw ini
  */
@@ -406,141 +608,6 @@ static void	iniADCx	( ADC_HandleTypeDef * pAdcHandle )
 }
 
 
-/**
-  * @brief  DAC Static Configuration
-  * @param  dacVal
-  * @retval None
-  */
-void configDACxStatMode	( uint32_t dacVal )
-{
-	/* clear previously settings  */
-	HAL_DAC_DeInit( &DacHandle );
-
-	/* stop TIMx */
-	if( htimHandle.Instance != NULL ) HAL_TIM_Base_Stop( &htimHandle );
-
-	/* Set the DAC parameters */
-	DacHandle.Instance = DACx;
-
-	if (HAL_DAC_Init( &DacHandle ) != HAL_OK)
-	{
-		/* Initialization Error */
-		Error_Handler();
-	}
-
-	DAC_ChannelConfTypeDef sConfig = { .DAC_Trigger = DAC_TRIGGER_NONE, .DAC_OutputBuffer = DAC_OUTPUTBUFFER_DISABLE };
-
-	if (HAL_DAC_ConfigChannel( &DacHandle, &sConfig, DACx_CHANNEL) != HAL_OK)
-	{
-	    /* Channel configuration Error */
-	    Error_Handler();
-	}
-
-	if (HAL_DAC_SetValue( &DacHandle, DACx_CHANNEL, DAC_ALIGN_12B_R, dacVal ) != HAL_OK)
-	{
-		/* Setting value Error */
-	    Error_Handler();
-	}
-
-	if (HAL_DAC_Start( &DacHandle, DACx_CHANNEL) != HAL_OK)
-	{
-	    /* Start Error */
-	    Error_Handler();
-	}
-}
-
-/**
-  * @brief  DACx Set Value
-  * @param  dacVal
-  * @retval None
-  */
-uint32_t setValDACx ( uint32_t dacVal )
-{
-	if ( DacHandle.Instance == NULL )
-	{
-		return 0xffffffff;
-	}
-
-	if (HAL_DAC_SetValue( &DacHandle, DACx_CHANNEL, DAC_ALIGN_12B_R, dacVal ) != HAL_OK)
-	{
-		/* Setting value Error */
-	    Error_Handler();
-	}
-
-	return HAL_DAC_GetValue ( &DacHandle, DACx_CHANNEL );
-}
-
-/**
-  * @brief  DAC Triangle Configuration
-  * @param  dacVal, triangleAmpl
-  * @retval None
-  */
-void configDACxTriangleMode	( uint32_t dacVal, uint32_t triangleAmpl )
-{
-	/* clear previously settings  */
-	HAL_DAC_DeInit( &DacHandle );
-
-	/* stop TIMx */
-	if( htimHandle.Instance != NULL ) HAL_TIM_Base_Stop( &htimHandle );
-
-	/* Set the DAC parameters */
-	DacHandle.Instance = DACx;
-
-	/*##-1- Initialize the DAC peripheral ######################################*/
-	if (HAL_DAC_Init( &DacHandle ) != HAL_OK)
-	{
-		/* DAC initialization Error */
-		Error_Handler();
-	}
-
-	/*##-2- DAC Configuration #########################################*/
-	DAC_ChannelConfTypeDef sConfig = { .DAC_Trigger = DAC_EXTERNALTRIGCONV_Tx_TRGO, .DAC_OutputBuffer = DAC_OUTPUTBUFFER_DISABLE };
-
-	if (HAL_DAC_ConfigChannel( &DacHandle, &sConfig, DACx_CHANNEL) != HAL_OK)
-	{
-		/* Channel configuration Error */
-		Error_Handler();
-	}
-
-	/*##-3- DAC channel2 Triangle Wave generation configuration ################*/
-	switch(triangleAmpl)
-	{
-	case 31:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_31; 	break;
-	case 63:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_63; 	break;
-	case 127:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_127; 	break;
-	case 255:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_255; 	break;
-	case 511:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_511; 	break;
-	case 1023:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_1023; 	break;
-	case 2047:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_2047; 	break;
-	case 4095:	triangleAmpl = DAC_TRIANGLEAMPLITUDE_4095;	break;
-
-	default: 	triangleAmpl = DAC_TRIANGLEAMPLITUDE_1; 	break;
-	}
-
-	if (HAL_DACEx_TriangleWaveGenerate( &DacHandle, DACx_CHANNEL, triangleAmpl) != HAL_OK)
-	{
-		/* Triangle wave generation Error */
-		Error_Handler();
-	}
-
-	/*##-4- Set DAC RD register ################################################*/
-	if (HAL_DAC_SetValue( &DacHandle, DACx_CHANNEL, DAC_ALIGN_12B_R, dacVal) != HAL_OK)
-	{
-		/* Setting value Error */
-		Error_Handler();
-	}
-
-	/*##-5- Enable DAC  ################################################*/
-	if (HAL_DAC_Start( &DacHandle, DACx_CHANNEL) != HAL_OK)
-	{
-		/* Start Error */
-		Error_Handler();
-	}
-
-	/*## 6- start TIMx for trig */
-	 HAL_TIM_Base_Start( &htimHandle );
-}
-
 /*
  * SPI hw ini
  */
@@ -594,43 +661,34 @@ static void iniTIMx( void )
  */
 static int16_t getDataTMP121(void)
 {
-	static	uint8_t		errCounter;
-	static	int16_t		lastGoodMeasure = SENSOR_NOT_CONNECTED;
-
 	uint16_t			spi_rx_data = 0;
-	bool				result 		= true;
 
 	BSP_SET_CS( 0 );
-	HAL_SPI_Receive( &SpiHandle, (uint8_t *)&spi_rx_data, 1, 2);
-	BSP_SET_CS( 1 );
 
-	if( !(spi_rx_data) ) 		result = false;	// data line error
-	if( spi_rx_data & (1<<2) ) 	result = false;	// no TMP121 on spi
-
-	/* convert negative values */
-	spi_rx_data >>= 7;
-	spi_rx_data  |= ((spi_rx_data & (1<<8)) ? 0xff00 : 0x0);
-
-	int16_t  t = spi_rx_data;
-
-	if(t > 125) result = false;
-	if(t < -80) result = false;
-
-	if( result )
+	for(uint8_t i = 0; i < 50; i++)
 	{
-		lastGoodMeasure = t;
-		errCounter		= 0;
+		HAL_SPI_Receive( &SpiHandle, (uint8_t *)&spi_rx_data, 1, 5);
+
+		if( !(spi_rx_data) ) 		continue;	// data line error
+		if( spi_rx_data & (1<<2) ) 	continue;	// no TMP121 on spi
+
+		// convert negative values
+		spi_rx_data >>= 7;
+		spi_rx_data  |= ((spi_rx_data & (1<<8)) ? 0xff00 : 0x0);
+
+		int16_t  t = spi_rx_data;
+
+		if(t > 150) continue;
+		if(t < -55) continue;
+
+		BSP_SET_CS( 1 );
 		return t;
 	}
 
-	if( ++errCounter > 10 )
-	{
-		errCounter = 10;
-		return SENSOR_NOT_CONNECTED;
-	}
-	else
-		return lastGoodMeasure;
+	BSP_SET_CS( 1 );
+	return SENSOR_NOT_CONNECTED;
 }
+
 
 
 /*
@@ -651,73 +709,6 @@ static void iniRTC( void )
 		/* Initialization Error */
 		Error_Handler();
 	}
-}
-
-/*
- * set rtc
- */
-void setRTC( DateTime_t * date )
-{
-	RTC_DateTypeDef  sdatestructure;
-	RTC_TimeTypeDef  stimestructure;
-
-	/*##-1- Configure the Date #################################################*/
-	sdatestructure.Year    			= date->year - 2000;
-	sdatestructure.Month   			= date->month;
-	sdatestructure.Date    			= date->day;
-	sdatestructure.WeekDay 			= date->dayOfWeek;
-
-	if(HAL_RTC_SetDate( &RtcHandle, &sdatestructure, RTC_FORMAT_BIN) != HAL_OK)
-	{
-	    /* Initialization Error */
-	    Error_Handler();
-	}
-
-	/*##-2- Configure the Time #################################################*/
-	stimestructure.Hours 			= date->hours;
-	stimestructure.Minutes 			= date->minutes;
-	stimestructure.Seconds 			= 0x00;
-	stimestructure.TimeFormat 		= RTC_HOURFORMAT12_AM;
-	stimestructure.DayLightSaving 	= RTC_DAYLIGHTSAVING_NONE ;
-	stimestructure.StoreOperation 	= RTC_STOREOPERATION_RESET;
-
-	if(HAL_RTC_SetTime( &RtcHandle, &stimestructure, RTC_FORMAT_BIN) != HAL_OK)
-	{
-		/* Initialization Error */
-	    Error_Handler();
-	}
-}
-
-
-/*
- * 		get rtc UNIX
- * */
-systime_t getRTC( void )
-{
-	DateTime_t  	 date = {0};
-	RTC_DateTypeDef  sdatestructure;
-	RTC_TimeTypeDef  stimestructure;
-
-	HAL_RTC_GetTime( &RtcHandle, &stimestructure, RTC_FORMAT_BIN );
-	HAL_RTC_GetDate( &RtcHandle, &sdatestructure, RTC_FORMAT_BIN );
-
-	date.year    = 2000 + sdatestructure.Year;
-	date.month   = sdatestructure.Month;
-	date.day     = sdatestructure.Date;
-	date.dayOfWeek = sdatestructure.WeekDay;
-	date.hours   = stimestructure.Hours;
-	date.minutes = stimestructure.Minutes;
-	date.seconds = stimestructure.Seconds;
-
-	return convertDateToUnixTime( &date );
-}
-
-/*
- * return Temperature
- */
-int16_t getTemperature(void)
-{
-	return temperature;
 }
 
 

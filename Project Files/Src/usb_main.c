@@ -15,6 +15,31 @@ extern 	volatile sysCfg_t			systemConfig;
 extern  dataAttribute_t				dataAttribute[];
 extern 	dataMeasure_t				dataMeasure[];
 
+/* Private typedef -----------------------------------------------------------*/
+/* Private define ------------------------------------------------------------*/
+#define RANGE_12BITS                ((int32_t) 4095)    /* Max digital value with a full range of 12 bits */
+#define RANGE_12BITS_90             ((int32_t) (RANGE_12BITS * 0.9))    /* 0.9 from Max digital value with a full range of 12 bits */
+#define HELP_END					0
+/* Private macro -------------------------------------------------------------*/
+/* Private variables ---------------------------------------------------------*/
+static char 				usb_message[APP_CDC_TX_DATA_SIZE];
+/* Private function prototypes -----------------------------------------------*/
+static void 				messageDecode				( void );
+static void 				UpperCase					( char * ptrmessage );
+static void					sendSystemTime				( void );
+static void					sendSystemTemperature		( void );
+static void					sendRealHV					(void);
+static void					sendSystemStatus			( void );
+static void					sendSystemSettings			( void );
+static void					sendMemoryStatus			( void );
+static void					sendMeasureResult			( uint32_t * data, uint32_t measVol );
+static void					sendCurrentTestResult		(uint32_t * data);
+static void					sendCapacitanceTestResult	(uint32_t * data);
+static void					sendMeasureError			(uint8_t line, uint32_t * dataMeasure);
+static void					sendVDDA					( void );
+static void					sendTestTimePass			( void );
+
+/* Constants ---------------------------------------------------------*/
 const char * helpStrings[] = {
 
 		"Start - start test process\r\n",
@@ -48,34 +73,10 @@ const char * helpStrings[] = {
 		"Set DAC_P2=<value> - DAC-code triangle amplitude: 31, 63, 127, 255, 511, 1023, 2047, 4095\r\n",
 		"Set Short_I=<value> - set short high current threshold for error detect, nA \r\n",
 		"Set Contact_C=<value> - set capacitance low threshold for error detect, pF \r\n",
-		0
+		HELP_END
 };
 
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-#define RANGE_12BITS                ((int32_t) 4095)    /* Max digital value with a full range of 12 bits */
-#define RANGE_12BITS_0_9            ((int32_t) (RANGE_12BITS * 0.9))    /* 0.9 from Max digital value with a full range of 12 bits */
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
-static char 				usb_message[APP_CDC_TX_DATA_SIZE];
-/* Private function prototypes -----------------------------------------------*/
-//static bool 				isCableConnected	( void );
-static void 				messageDecode		( void );
-static void 				UpperCase			( char * ptrmessage );
-static void					sendSystemTime		( void );
-static void					sendSystemTemperature( void );
-static void					sendRealHV			(void);
-static void					sendSystemStatus	( void );
-static void					sendSystemSettings	( void );
-static void					sendMemoryStatus	( void );
-static void					sendMeasureResult	( uint32_t * data, uint32_t measVol );
-static void					sendCurrentTestResult(uint32_t * data);
-static void					sendCapacitanceTestResult(uint32_t * data);
-static void					sendMeasureError	(uint8_t line, uint32_t * dataMeasure);
-static void					sendVDDA			( void );
-static void					sendTestTimePass	( void );
-/* Private functions ---------------------------------------------------------*/
-
+/* static variables ---------------------------------------------------------*/
 
 /**
   * @brief  UsbCDCThread
@@ -88,9 +89,6 @@ void UsbCDCThread(const void *argument)
 	{
 		if( !isCableConnected() ) continue;
 
-		// wait Vref, Temperature
-		osDelay(1500);
-
 		/* Init Device Library */
 		USBD_Init(&USBD_Device, &VCP_Desc, 0);
 		/* Add Supported Class */
@@ -99,6 +97,9 @@ void UsbCDCThread(const void *argument)
 		USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_fops);
 		/* Start Device Process */
 		USBD_Start(&USBD_Device);
+
+		// wait Vref, Temperature
+		osDelay(1500);
 
 		/* display sys info */
 		SEND_CDC_MESSAGE( "\r\n********************************************\r\n" );
@@ -334,6 +335,8 @@ bool isCableConnected(void)
 	// return BSP_PAN_GetState();
 }
 
+/* Private functions ---------------------------------------------------------*/
+
 /**
   * @brief  convert message to upper case
   * @param  argument: Not used
@@ -501,7 +504,7 @@ static void messageDecode( void )
 		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "Command ignored - system not configured\r\n\r\n" );
 								break;
 
-		case FINISH_STATUS:		SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
+		case FINISH_STATUS:		SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS ); // @suppress("No break at end of case")
 		case ERROR_STATUS:
 		case READY_STATUS:
 		case PAUSE_STATUS:
@@ -1306,7 +1309,7 @@ static void	sendMeasureError(uint8_t line, uint32_t * data)
 
 	len = sprintf( usb_message, "Error Line %u, Raw 1 - 16, State: Ok or Er\r\n", line + 1 );
 	for( uint32_t j = 0; j < MATRIX_RAWn; j++ )
-		{ len += sprintf( &usb_message[len], "%s  ", data[j] < RANGE_12BITS_0_9 ? "Ok" : "Er" );  }
+		{ len += sprintf( &usb_message[len], "%s  ", data[j] < RANGE_12BITS_90 ? "Ok" : "Er" );  }
 	SEND_CDC_MESSAGE( usb_message );
 	SEND_CDC_MESSAGE( "\r\n" );
 }

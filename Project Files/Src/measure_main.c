@@ -128,7 +128,6 @@ static currentMeasureMode_t 		testModeProcess( bool * p_firstStep );
 static currentMeasureMode_t 		measureModeProcess( bool * firstStep );
 static currentMeasureMode_t 		checkModeProcess( bool * p_firstStep );
 
-/* Private functions ---------------------------------------------------------*/
 
 uint32_t * 							getMeasureData(void) 			{ return  &mainMeasureArray[0][0]; }
 uint32_t * 							getRawAdc(void) 				{ return  rawAdcCode; }
@@ -136,8 +135,6 @@ int32_t    							getVrefmV(void) 				{ return  Vref_mV; }
 uint32_t   							getErrorCode(void) 				{ return  errorCode; }
 uint32_t   							getHighVoltagemV(void) 			{ return  (uint32_t)HighVoltage_mV; }
 currentMeasureMode_t   				getCurrentMeasureMode(void) 	{ return  currentMode; }
-
-
 
 /**
   * @brief  Main program
@@ -347,6 +344,9 @@ void MeasureThread(const void *argument)
 	}
 }
 
+
+
+/* Private functions ---------------------------------------------------------*/
 
 /*
  *
