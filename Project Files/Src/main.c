@@ -663,6 +663,7 @@ static void iniTIMx( void )
 static int16_t getDataTMP121(void)
 {
 	uint16_t			spi_rx_data = 0;
+	int16_t				last_t 		= 0;
 
 	BSP_SET_CS( 0 );
 
@@ -681,6 +682,12 @@ static int16_t getDataTMP121(void)
 
 		if(t > 150) continue;
 		if(t < -55) continue;
+
+		if( t != last_t )
+		{
+			last_t = t;
+			continue;
+		}
 
 		BSP_SET_CS( 1 );
 		return t;

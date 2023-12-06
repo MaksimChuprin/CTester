@@ -1013,7 +1013,7 @@ static void messageDecode( void )
 		const uint32_t 	Short_I		= 2500;	// short high current threshold for error detect, nA
 		const uint32_t 	DAC_P2 		= 255;	// DAC-code triangle amplitude
 		const uint32_t 	DAC_P1 		= 78;	// 78 us DAC period Triangle Mode
-		const uint32_t 	Km 			= 145;	// 138 uS one ADC scan, 145 ~ 20 ms (50 Hz)
+		const uint32_t 	Km 			= 530;	// 189 uS one ADC scan, 530 ~ 100 ms (50 Hz)
 		const uint32_t 	Th 			= 2000;	// msec
 		const uint32_t 	To 			= 2000;	// msec
 		const uint32_t 	Ta 			= 100;	// msec
@@ -1022,7 +1022,7 @@ static void messageDecode( void )
 		const uint32_t 	Tt 			= 24;	// hours
 		const uint32_t 	Kd 			= 101;
 		const uint32_t 	Ki 			= 1000000;
-		const uint32_t 	Ve 			= 1000;	// mV
+		const uint32_t 	Ve 			= 1500;	// mV
 		const uint32_t 	Vm 			= 50;	// V
 		const uint32_t 	Vt 			= 50;	// V
 
