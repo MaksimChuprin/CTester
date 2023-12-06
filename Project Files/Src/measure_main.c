@@ -821,11 +821,14 @@ static void getVrefHV(void)
 {
 	CLEAN_MEAN_MEASURE;
 
+	// preON ADC
+	HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+	osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+
 	for( uint32_t i = 0; i < VREF_MEAN_FACTOR; )
 	{
-		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+		HAL_ADC_Start( &AdcHandle );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
-		HAL_ADC_Stop( &AdcHandle );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			adcMeanMeasure[ADC_MEAN_ARRAY_DAC] 	   += adcDMABuffer[ADC_DMA_ARRAY_DAC];
@@ -833,6 +836,9 @@ static void getVrefHV(void)
 			i++;
 		}
 	}
+
+	// off ADC
+	HAL_ADC_Stop( &AdcHandle );
 
 	/* calc Vref & HV */
 
@@ -851,15 +857,19 @@ static void getVrefHV(void)
 static void getRawAdcCode(void)
 {
 	CLEAN_MEAN_MEASURE;
+
+	// preON ADC
+	HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+	osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+
 	/* channels 1..8 */
 	BSP_SET_RMUX(Mux_1_8);
 	osDelay( systemConfig.IAmplifierSettleTimeMs );
 
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
-		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+		HAL_ADC_Start( &AdcHandle );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
-		HAL_ADC_Stop( &AdcHandle );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2] += adcDMABuffer[j];
@@ -873,15 +883,17 @@ static void getRawAdcCode(void)
 
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
-		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+		HAL_ADC_Start( &AdcHandle );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
-		HAL_ADC_Stop( &AdcHandle );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2 + 1] += adcDMABuffer[j];
 			i++;
 		}
 	}
+
+	// off ADC
+	HAL_ADC_Stop( &AdcHandle );
 
 	for(uint32_t i = 0; i < MATRIX_RAWn; i++)
 	{
@@ -896,15 +908,18 @@ static void	getAmplifireZero( void )
 	BSP_SET_OPTO( Opto_Close );	// disconnect All ZV capacitors from HV driver
 	osDelay( systemConfig.optoSignalSettleTimeMs );
 
+	// preON ADC
+	HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+	osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+
 	/* channels 1..8 */
 	BSP_SET_RMUX(Mux_1_8);
 	osDelay( systemConfig.IAmplifierSettleTimeMs );
 
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
-		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+		HAL_ADC_Start( &AdcHandle );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
-		HAL_ADC_Stop( &AdcHandle );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanZero[j * 2] += adcDMABuffer[j];
@@ -918,15 +933,17 @@ static void	getAmplifireZero( void )
 
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
-		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+		HAL_ADC_Start( &AdcHandle );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
-		HAL_ADC_Stop( &AdcHandle );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanZero[j * 2 + 1] += adcDMABuffer[j];
 			i++;
 		}
 	}
+
+	// off ADC
+	HAL_ADC_Stop( &AdcHandle );
 }
 
 /* get current - one line*/
@@ -938,16 +955,19 @@ static void getCurrentByLine( Line_NumDef LineNum )
 	BSP_SET_OPTO( Opto_Close ); // disconnect All ZV capacitors from HV driver
 	osDelay( systemConfig.optoSignalSettleTimeMs );
 
+	// preON ADC
+	HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+	osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+
 	/* channels 1..8 */
 	BSP_SET_RMUX(Mux_1_8);
 	osDelay( systemConfig.IAmplifierSettleTimeMs );
 
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
-		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+		HAL_ADC_Start( &AdcHandle );
 		HAL_GPIO_WritePin( GPIOA, GPIO_PIN_15, GPIO_PIN_SET );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
-		HAL_ADC_Stop( &AdcHandle );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2] += adcDMABuffer[j];
@@ -961,16 +981,18 @@ static void getCurrentByLine( Line_NumDef LineNum )
 
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
-		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+		HAL_ADC_Start( &AdcHandle );
 		HAL_GPIO_WritePin( GPIOA, GPIO_PIN_15, GPIO_PIN_SET );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
-		HAL_ADC_Stop( &AdcHandle );
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2 + 1] += adcDMABuffer[j];
 			i++;
 		}
 	}
+
+	// off ADC
+	HAL_ADC_Stop( &AdcHandle );
 
 	// BSP_SET_RMUX(Mux_1_8);
 	/* correct zero shift and calc */
@@ -991,8 +1013,12 @@ static void getCurrentByLine( Line_NumDef LineNum )
 /* get capacitance - one line, one mux stage */
 static void getCapacitanceByLine( Line_NumDef LineNum, RMux_StateDef mux )
 {
+	// preON ADC
+	HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+	osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
 
-	BSP_SET_OPTO( Opto_Close ); // disconnect All ZV capacitors from amplifiers
+	// disconnect All ZV capacitors from amplifiers
+	BSP_SET_OPTO( Opto_Close );
 	osDelay( systemConfig.optoSignalSettleTimeMs );
 
 	CLEAN_MEAN_MEASURE;
@@ -1007,15 +1033,18 @@ static void getCapacitanceByLine( Line_NumDef LineNum, RMux_StateDef mux )
 	// for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	for( uint32_t i = 0; i < TRIANGLE_MEAN_FACTOR; )
 	{
-		HAL_ADC_Start_DMA( &AdcHandle, (uint32_t *)adcDMABuffer, ADC_DMA_ARRAY_LEN );
+		HAL_ADC_Start( &AdcHandle );
 		osEvent event = osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
-		HAL_ADC_Stop( &AdcHandle );
+
 		if( event.value.signals & MEASURE_THREAD_CONVCMPLT_Evt )
 		{
 			for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++ ) adcMeanMeasure[j * 2 + muxFactor] += adcDMABuffer[j];
 			i++;
 		}
 	}
+
+	// off ADC
+	HAL_ADC_Stop( &AdcHandle );
 
 	/* correct zero shift and calc */
 	for(uint32_t j = ADC_DMA_ARRAY_R0_8; j <= ADC_DMA_ARRAY_R7_15; j++)
