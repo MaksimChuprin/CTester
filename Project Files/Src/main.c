@@ -7,6 +7,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "stdint.h"
 
 /* Global variables ---------------------------------------------------------*/
 osThreadId					USBThreadHandle;
@@ -663,7 +664,7 @@ static void iniTIMx( void )
 static int16_t getDataTMP121(void)
 {
 	uint16_t			spi_rx_data = 0;
-	int16_t				last_t 		= 0;
+	int16_t				last_t 		= INT16_MAX;
 
 	BSP_SET_CS( 0 );
 
