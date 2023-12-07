@@ -664,7 +664,7 @@ static void iniTIMx( void )
 static int16_t getDataTMP121(void)
 {
 	uint16_t			spi_rx_data = 0;
-	int16_t				last_t 		= INT16_MAX;
+	int16_t				last_t 		= INT16_MIN;
 
 	BSP_SET_CS( 0 );
 
@@ -673,7 +673,7 @@ static int16_t getDataTMP121(void)
 		HAL_SPI_Receive( &SpiHandle, (uint8_t *)&spi_rx_data, 1, 5);
 
 		if( !(spi_rx_data) ) 		continue;	// data line error
-		if( spi_rx_data & (1<<2) ) 	continue;	// no TMP121 on spi
+		if( spi_rx_data & (1<<2) ) 	continue;	// no TMP121 on SPI
 
 		// convert negative values
 		spi_rx_data >>= 7;
