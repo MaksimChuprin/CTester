@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    USB_Device/CDC_Standalone/Inc/usbd_cdc_interface.h
-  * @author  MCD Application Team
+  * @author  mr. X
   * @brief   Header for usbd_cdc_interface.c file.
   ******************************************************************************
   * @attention

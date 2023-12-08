@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    stm32l152c_discovery_cts.c
-  * @author  MCD Application Team
+  * @author  mr. X
   * @brief   This file provides
   *            - set of firmware functions to manage Led and push-button
   *          available on STM32L152C-Discovery board from STMicroelectronics.  
