@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    measure_main.c
-  * @author  Epta
+  * @author  mr. X
   * @brief   CTS application measure_main file
   ****************************************************************************** */
 
@@ -957,7 +957,9 @@ static void getCurrentByLine( Line_NumDef LineNum )
 	// if( systemConfig.measureMask & (1 << LineNum) ) return;
 
 	CLEAN_MEAN_MEASURE;
-	BSP_SET_OPTO( Opto_Close ); // disconnect All ZV capacitors from HV driver
+
+	// disconnect All ZV capacitors from HV driver
+	BSP_SET_OPTO( Opto_Close );
 	osDelay( systemConfig.optoSignalSettleTimeMs );
 
 	// preON ADC

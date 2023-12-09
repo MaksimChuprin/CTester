@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    USB_Device/CDC_Standalone/Src/usbd_cdc_interface.c
-  * @author  MCD Application Team
+  * @author  MCD Application Team + mr. X
   * @brief   Source file for USBD CDC interface
   ******************************************************************************
   * @attention

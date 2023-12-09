@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    USB_Device/CDC_Standalone/Inc/usb_main.h
-  * @author  MCD Application Team
+  * @author  mr. X
   * @brief   Header for main.c module
   ******************************************************************************
   * @attention

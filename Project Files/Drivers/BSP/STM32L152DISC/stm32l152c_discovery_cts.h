@@ -1,7 +1,7 @@
 /**
   ******************************************************************************
   * @file    stm32l152c_discovery_cts.h
-  * @author  Epta
+  * @author  mr. X
   * @brief   This file contains definitions for STM32L152C-Discovery & CTS
   ******************************************************************************
 
