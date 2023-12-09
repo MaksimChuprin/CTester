@@ -85,6 +85,9 @@ const char * helpStrings[] = {
   */
 void UsbCDCThread(const void *argument)
 {
+	// wait Vref, Temperature
+	osDelay(1500);
+
 	for(;; osDelay(500))
 	{
 		if( !isCableConnected() ) continue;
@@ -97,9 +100,8 @@ void UsbCDCThread(const void *argument)
 		USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_fops);
 		/* Start Device Process */
 		USBD_Start(&USBD_Device);
-
-		// wait Vref, Temperature
-		osDelay(1500);
+		/* */
+		osDelay(100);
 
 		/* display sys info */
 		SEND_CDC_MESSAGE( "\r\n********************************************\r\n" );

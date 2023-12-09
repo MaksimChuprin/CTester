@@ -115,7 +115,7 @@ static int32_t 						dacMaxValue;
 static uint32_t						errorCode = MEASURE_NOERROR;
 static bool							HV_PowerGood = false;
 static bool							doCheck = false;
-currentMeasureMode_t 				currentMode;
+static currentMeasureMode_t 		currentMode;
 
 /* Private function prototypes -----------------------------------------------*/
 static void 						getRawAdcCode( void );
@@ -127,7 +127,6 @@ static void 						getCapacitanceByLine( Line_NumDef LineNum, RMux_StateDef mux )
 static currentMeasureMode_t 		testModeProcess( bool * p_firstStep );
 static currentMeasureMode_t 		measureModeProcess( bool * firstStep );
 static currentMeasureMode_t 		checkModeProcess( bool * p_firstStep );
-
 
 uint32_t * 							getMeasureData(void) 			{ return  &mainMeasureArray[0][0]; }
 uint32_t * 							getRawAdc(void) 				{ return  rawAdcCode; }
@@ -145,6 +144,9 @@ void MeasureThread(const void *argument)
 {
 	bool					firstModeStep 			= false;
 	static uint32_t 		MeasureThreadCounter 	= 0;
+
+	// read Temperature
+	readTemperature();
 
 	// Vref dFilter load
 	for(uint8_t i = 0; i < 10; i++, getVrefHV()) ;
@@ -692,6 +694,9 @@ static currentMeasureMode_t measureModeProcess( bool * p_firstStep )
 	{
 	case measureZeroShift:
 					if( measureModeCounter < systemConfig.dischargeTimeMs ) return measureMode;
+
+					// read Temperature
+					readTemperature();
 
 					// zero of amplifier
 					getAmplifireZero();

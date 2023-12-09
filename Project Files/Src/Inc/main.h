@@ -157,6 +157,7 @@ uint32_t			setValDACx 				( uint32_t dacVal );
 void 				setRTC					( DateTime_t * date );
 systime_t 			getRTC					( void );
 int16_t 			getTemperature			( void );
+void 				readTemperature			( void );
 uint32_t 			getTestTimePass			( void );
 
 #endif /* __MAIN_H */

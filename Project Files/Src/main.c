@@ -59,11 +59,20 @@ uint32_t getTestTimePass(void) {
 
 /*
  *  get Temperature
- */
+*/
 int16_t getTemperature(void){
 
 	return temperature;
 }
+
+/*
+ *  read Temperature
+*/
+void readTemperature(void) {
+
+	temperature = getDataTMP121();
+}
+
 
 /**
   * @brief  Main program
@@ -407,9 +416,9 @@ static void OneSecThread(const void *argument)
 		osDelay(oneSecTickDelayMs);
 		startTime = xTaskGetTickCount();
 
-		/* read temperature */
+		/* read temperature
 		if( (getCurrentMeasureMode() != measureMode) && (getCurrentMeasureMode() != checkMode) )
-				temperature = getDataTMP121();
+				temperature = getDataTMP121(); */
 
 		// save RTC each 5 min
 		if( (++oneSecCounter % 300) == 0 ) rtcNeedSaveF = true;
@@ -668,7 +677,7 @@ static int16_t getDataTMP121(void)
 
 	BSP_SET_CS( 0 );
 
-	for(uint8_t i = 0; i < 50; i++)
+	for(uint8_t i = 0; i < 10; i++)
 	{
 		HAL_SPI_Receive( &SpiHandle, (uint8_t *)&spi_rx_data, 1, 5);
 
@@ -697,7 +706,6 @@ static int16_t getDataTMP121(void)
 	BSP_SET_CS( 1 );
 	return SENSOR_NOT_CONNECTED;
 }
-
 
 
 /*
