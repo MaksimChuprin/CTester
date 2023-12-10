@@ -695,9 +695,6 @@ static currentMeasureMode_t measureModeProcess( bool * p_firstStep )
 	case measureZeroShift:
 					if( measureModeCounter < systemConfig.dischargeTimeMs ) return measureMode;
 
-					// read Temperature
-					readTemperature();
-
 					// zero of amplifier
 					getAmplifireZero();
 
@@ -789,20 +786,20 @@ static void setHV(void)
 	/* HV_PowerGood flag detect */
 	if( abs( TaskHighVoltage_mV - HighVoltage_mV ) <  systemConfig.MaxErrorHV_mV )
 	{
-		if( ++HW_GoodCounter > 5)
+		if( ++HW_GoodCounter > 3)
 		{
 			HV_PowerGood 	= true;
-			HW_GoodCounter 	= 5;
+			HW_GoodCounter 	= 3;
 			HW_BadCounter	= 0;
 		}
 	}
 	else
 	{
-		if( ++HW_BadCounter > 5)
+		if( ++HW_BadCounter > 3)
 		{
 			HV_PowerGood 	= false;
 			HW_GoodCounter 	= 0;
-			HW_BadCounter	= 5;
+			HW_BadCounter	= 3;
 		}
 	}
 
@@ -819,6 +816,9 @@ static void setHV(void)
 		setValDACx( dacValue );
 	}
 	*/
+
+	// read temp sensor while UR off
+	if( (TaskHighVoltage_mV == 0) && (HighVoltage_mV < 5000 ) ) readTemperature();
 }
 
 /* measure Vref & HighVoltage */

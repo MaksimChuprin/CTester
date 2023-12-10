@@ -28,14 +28,14 @@ static void 				messageDecode				( void );
 static void 				UpperCase					( char * ptrmessage );
 static void					sendSystemTime				( void );
 static void					sendSystemTemperature		( void );
-static void					sendRealHV					(void);
+static void					sendRealHV					( void );
 static void					sendSystemStatus			( void );
 static void					sendSystemSettings			( void );
 static void					sendMemoryStatus			( void );
 static void					sendMeasureResult			( uint32_t * data, uint32_t measVol );
-static void					sendCurrentTestResult		(uint32_t * data);
-static void					sendCapacitanceTestResult	(uint32_t * data);
-static void					sendMeasureError			(uint8_t line, uint32_t * dataMeasure);
+static void					sendCurrentTestResult		( uint32_t * data );
+static void					sendCapacitanceTestResult	( uint32_t * data );
+static void					sendMeasureError			( uint8_t line, uint32_t * dataMeasure );
 static void					sendVDDA					( void );
 static void					sendTestTimePass			( void );
 
@@ -86,7 +86,7 @@ const char * helpStrings[] = {
 void UsbCDCThread(const void *argument)
 {
 	// wait Vref, Temperature
-	osDelay(1500);
+	osDelay(1000);
 
 	for(;; osDelay(500))
 	{
