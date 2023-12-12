@@ -105,7 +105,7 @@ void UsbCDCThread(const void *argument)
 
 		/* display sys info */
 		SEND_CDC_MESSAGE( "\r\n********************************************\r\n" );
-		SEND_CDC_MESSAGE( "Start Capacitor Termo-Testing System\r\nSW version: 0.0.3\r\n" );
+		SEND_CDC_MESSAGE( "Start Capacitor Termo-Testing System\r\nSW version: 0.0.3a\r\n" );
 		sendSystemTime();
 		sendSystemTemperature();
 		sendSystemStatus();

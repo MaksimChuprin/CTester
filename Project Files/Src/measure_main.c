@@ -871,6 +871,13 @@ static void getRawAdcCode(void)
 	BSP_SET_RMUX(Mux_1_8);
 	osDelay( systemConfig.IAmplifierSettleTimeMs );
 
+	// wait cycle
+	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; i++)
+	{
+		HAL_ADC_Start( &AdcHandle );
+		osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+	}
+	// measure cycle
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
 		HAL_ADC_Start( &AdcHandle );
@@ -886,6 +893,13 @@ static void getRawAdcCode(void)
 	BSP_SET_RMUX(Mux_9_16);
 	osDelay( systemConfig.IAmplifierSettleTimeMs );
 
+	// wait cycle
+	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; i++)
+	{
+		HAL_ADC_Start( &AdcHandle );
+		osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+	}
+	// measure cycle
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
 		HAL_ADC_Start( &AdcHandle );
@@ -921,6 +935,13 @@ static void	getAmplifireZero( void )
 	BSP_SET_RMUX(Mux_1_8);
 	osDelay( systemConfig.IAmplifierSettleTimeMs );
 
+	// wait cycle
+	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; i++)
+	{
+		HAL_ADC_Start( &AdcHandle );
+		osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+	}
+	// measure cycle
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
 		HAL_ADC_Start( &AdcHandle );
@@ -936,6 +957,12 @@ static void	getAmplifireZero( void )
 	BSP_SET_RMUX(Mux_9_16);
 	osDelay( systemConfig.IAmplifierSettleTimeMs );
 
+	// wait cycle
+	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; i++)
+	{
+		HAL_ADC_Start( &AdcHandle );
+		osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+	}
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
 		HAL_ADC_Start( &AdcHandle );
@@ -970,6 +997,13 @@ static void getCurrentByLine( Line_NumDef LineNum )
 	BSP_SET_RMUX(Mux_1_8);
 	osDelay( systemConfig.IAmplifierSettleTimeMs );
 
+	// wait cycle
+	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; i++)
+	{
+		HAL_ADC_Start( &AdcHandle );
+		osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+	}
+	// measure cycle
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
 		HAL_ADC_Start( &AdcHandle );
@@ -982,10 +1016,18 @@ static void getCurrentByLine( Line_NumDef LineNum )
 		}
 	}
 
+
 	/* channels 9..16 */
 	BSP_SET_RMUX(Mux_9_16);
 	osDelay( systemConfig.IAmplifierSettleTimeMs );
 
+	// wait cycle
+	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; i++ )
+	{
+		HAL_ADC_Start( &AdcHandle );
+		osSignalWait( MEASURE_THREAD_CONVCMPLT_Evt | MEASURE_THREAD_CONVERROR_Evt, osWaitForever );
+	}
+	// measure cycle
 	for( uint32_t i = 0; i < systemConfig.adcMeanFactor; )
 	{
 		HAL_ADC_Start( &AdcHandle );
