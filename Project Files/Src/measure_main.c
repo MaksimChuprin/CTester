@@ -782,6 +782,7 @@ static void setHV(void)
 {
 	static uint8_t HW_GoodCounter  = 0;
 	static uint8_t HW_BadCounter   = 0;
+	static uint8_t tsens_Counter   = 0;
 
 	/* HV_PowerGood flag detect */
 	if( abs( TaskHighVoltage_mV - HighVoltage_mV ) <  systemConfig.MaxErrorHV_mV )
@@ -818,7 +819,14 @@ static void setHV(void)
 	*/
 
 	// read temp sensor while UR off
-	if( (TaskHighVoltage_mV == 0) && (HighVoltage_mV < 5000 ) ) readTemperature();
+	if( (TaskHighVoltage_mV == 0) && (HighVoltage_mV < 5000 ) )
+	{
+		if( ++tsens_Counter * MEASURE_TICK_TIME_MS  > 2000 )
+		{
+			tsens_Counter = 0;
+			readTemperature();
+		}
+	}
 }
 
 /* measure Vref & HighVoltage */
@@ -1110,3 +1118,4 @@ static void getCapacitanceByLine( Line_NumDef LineNum, RMux_StateDef mux )
 		mainMeasureArray[LineNum][j * 2 + muxFactor] = current_pA / amplitude_V * slopeTime_s + .5; // capacitance pF
 	}
 }
+

@@ -13,6 +13,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "cmsis_os.h"
 #include "stdbool.h"
+#include "stdint.h"
 #include "date_time.h"
 #include "stm32l152c_discovery_cts.h"
 #include "stm32l1xx_hal.h"

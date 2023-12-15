@@ -7,7 +7,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "stdint.h"
 
 /* Global variables ---------------------------------------------------------*/
 osThreadId					USBThreadHandle;
@@ -677,7 +676,7 @@ static int16_t getDataTMP121(void)
 
 	BSP_SET_CS( 0 );
 
-	for(uint8_t i = 0; i < 10; i++)
+	for(uint8_t i = 0; i < 25; i++)
 	{
 		HAL_SPI_Receive( &SpiHandle, (uint8_t *)&spi_rx_data, 1, 5);
 
