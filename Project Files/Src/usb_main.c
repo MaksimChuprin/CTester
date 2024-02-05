@@ -38,6 +38,7 @@ static void					sendCapacitanceTestResult	( uint32_t * data );
 static void					sendMeasureError			( uint8_t line, uint32_t * dataMeasure );
 static void					sendVDDA					( void );
 static void					sendTestTimePass			( void );
+static uint8_t				sendMessage				( char * message );
 
 /* Constants ---------------------------------------------------------*/
 const char * helpStrings[] = {
@@ -101,13 +102,13 @@ void UsbCDCThread(const void *argument)
 		osDelay(1000);
 
 		/* display sys info */
-		SEND_CDC_MESSAGE( "\r\n********************************************\r\n" );
-		SEND_CDC_MESSAGE( "Start Capacitor Termo-Testing System\r\nSW version: 0.0.3a\r\n" );
+		sendMessage( "\r\n********************************************\r\n" );
+		sendMessage( "Start Capacitor Termo-Testing System\r\nSW version: 0.0.3b\r\n" );
 		sendSystemTime();
 		sendSystemTemperature();
 		sendSystemStatus();
 		sendMemoryStatus();
-		SEND_CDC_MESSAGE( "********************************************\r\n\r\n" );
+		sendMessage( "********************************************\r\n\r\n" );
 
 		// do connection
 		for(;;)
@@ -124,14 +125,14 @@ void UsbCDCThread(const void *argument)
 			{
 				if( MEASURE_GET_ERROR_CODE( getErrorCode() ) & MEASURE_HV_ERROR )
 				{
-					SEND_CDC_MESSAGE( "\r\n************* Fail set High Voltage <UR> *****************\r\n\r\n" );
+					sendMessage( "\r\n************* Fail set High Voltage <UR> *****************\r\n\r\n" );
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, ERROR_STATUS );
 					event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 				}
 
 				if( MEASURE_GET_ERROR_CODE( getErrorCode() ) & MEASURE_CHANEL_ERROR )
 				{
-					SEND_CDC_MESSAGE( "\r\n********** Fail set High Voltage on Line  ****************\r\n" );
+					sendMessage( "\r\n********** Fail set High Voltage on Line  ****************\r\n" );
 					uint32_t   errline = MEASURE_GET_ERROR_LINE( getErrorCode() );
 					sendMeasureError( errline, getRawAdc() );
 
@@ -140,17 +141,17 @@ void UsbCDCThread(const void *argument)
 						SAVE_SYSTEM_CNF( &systemConfig.sysStatus, PAUSE_STATUS );
 						event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 					}
-					SEND_CDC_MESSAGE( "\r\n" );
+					sendMessage( "\r\n" );
 				}
 
 				if( MEASURE_GET_ERROR_CODE( getErrorCode() ) & MEASURE_HV_UNSTABLE_ERROR )
 				{
-					SEND_CDC_MESSAGE( "\r\n********* Detected unstable High Voltage **********\r\n\r\n" );
+					sendMessage( "\r\n********* Detected unstable High Voltage **********\r\n\r\n" );
 				}
 
 				if( MEASURE_GET_ERROR_CODE( getErrorCode() ) & MEASURE_HV_ZERO_ERROR )
 				{
-					SEND_CDC_MESSAGE( "\r\n!!!!   ALARM! Unable switch off High Voltage   !!!!\r\n\r\n" );
+					sendMessage( "\r\n!!!!   ALARM! Unable switch off High Voltage   !!!!\r\n\r\n" );
 				}
 
 				sendSystemTime();
@@ -159,13 +160,13 @@ void UsbCDCThread(const void *argument)
 				sendMemoryStatus();
 				sendVDDA();
 				if( (systemConfig.sysStatus == ACTIVE_STATUS) || (systemConfig.sysStatus == PAUSE_STATUS) ) sendTestTimePass();
-				SEND_CDC_MESSAGE( "\r\n" );
+				sendMessage( "\r\n" );
 			}
 
 			/*  measure started event */
 			if ( event.value.signals & USB_THREAD_MEASURESTARTED_Evt )
 			{
-				SEND_CDC_MESSAGE( "\r\n***************** Measure started ******************\r\n" );
+				sendMessage( "\r\n***************** Measure started ******************\r\n" );
 				sendSystemTime();
 				sendSystemTemperature();
 				sendSystemStatus();
@@ -174,13 +175,13 @@ void UsbCDCThread(const void *argument)
 					sendMemoryStatus();
 					sendTestTimePass();
 				}
-				SEND_CDC_MESSAGE( "\r\n" );
+				sendMessage( "\r\n" );
 			}
 
 			/*  measure ready event */
 			if ( event.value.signals & USB_THREAD_MEASUREREADY_Evt )
 			{
-				SEND_CDC_MESSAGE( "\r\n***************** Measure finished ******************\r\n" );
+				sendMessage( "\r\n***************** Measure finished ******************\r\n" );
 
 				/* save data */
 				if( (systemConfig.sysStatus == ACTIVE_STATUS) && systemConfig.measureSavedPoints < STAT_ARRAY_SIZE )
@@ -191,7 +192,7 @@ void UsbCDCThread(const void *argument)
 					SAVE_SYSTEM_CNF( &dataAttribute[systemConfig.measureSavedPoints].temperatureMeasure, (uint32_t)getTemperature() );
 					uint32_t newSavePoint = systemConfig.measureSavedPoints + 1;
 					SAVE_SYSTEM_CNF( &systemConfig.measureSavedPoints, newSavePoint );
-					SEND_CDC_MESSAGE( "\r\n*************** Data saved ****************\r\n" );
+					sendMessage( "\r\n*************** Data saved ****************\r\n" );
 				}
 
 				sendSystemTime();
@@ -204,9 +205,9 @@ void UsbCDCThread(const void *argument)
 					sendTestTimePass();
 				}
 
-				SEND_CDC_MESSAGE( "\r\n***************** BEGIN OF DATA ******************\r\n" );
+				sendMessage( "\r\n***************** BEGIN OF DATA ******************\r\n" );
 				sendMeasureResult( getMeasureData(), systemConfig.uMeasureVol );
-				SEND_CDC_MESSAGE( "\r\n****************** END OF DATA *******************\r\n\r\n" );
+				sendMessage( "\r\n****************** END OF DATA *******************\r\n\r\n" );
 			}
 
 			/*  test stop event */
@@ -217,13 +218,13 @@ void UsbCDCThread(const void *argument)
 				else
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 
-				SEND_CDC_MESSAGE( "\r\n***************** Test finished  ****************\r\n" );
+				sendMessage( "\r\n***************** Test finished  ****************\r\n" );
 				sendSystemTime();
 				sendSystemTemperature();
 				sendSystemStatus();
 				sendMemoryStatus();
 				sendTestTimePass();
-				SEND_CDC_MESSAGE( "\r\n" );
+				sendMessage( "\r\n" );
 				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 			}
 
@@ -231,29 +232,29 @@ void UsbCDCThread(const void *argument)
 			if ( event.value.signals & USB_THREAD_TESTPAUSED_Evt )
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.sysStatus, PAUSE_STATUS );
-				SEND_CDC_MESSAGE( "\r\n***************** Test paused  ****************\r\n" );
+				sendMessage( "\r\n***************** Test paused  ****************\r\n" );
 				sendSystemTime();
 				sendSystemTemperature();
 				sendSystemStatus();
 				sendMemoryStatus();
 				sendTestTimePass();
-				SEND_CDC_MESSAGE( "\r\n" );
+				sendMessage( "\r\n" );
 				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 			}
 
 			/*  test CHECK CURRENT event */
 			if ( event.value.signals & USB_THREAD_CHECKHV_Evt )
 			{
-				SEND_CDC_MESSAGE( "\r\n*********** High Voltage test - OK ***********\r\n" );
+				sendMessage( "\r\n*********** High Voltage test - OK ***********\r\n" );
 				sendSystemTime();
-				SEND_CDC_MESSAGE( "\r\n" );
+				sendMessage( "\r\n" );
 				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 			}
 
 			/*  test CHECK CURRENT event */
 			if ( event.value.signals & USB_THREAD_CHECKCURRENT_Evt )
 			{
-				SEND_CDC_MESSAGE( "\r\n*********** Leakage threshold test ***********\r\n" );
+				sendMessage( "\r\n*********** Leakage threshold test ***********\r\n" );
 				sendSystemTime();
 				sendCurrentTestResult(getMeasureData());
 				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
@@ -262,15 +263,15 @@ void UsbCDCThread(const void *argument)
 			/*  test CHECK CURRENT event */
 			if ( event.value.signals & USB_THREAD_CHECKCAP_Evt )
 			{
-				SEND_CDC_MESSAGE( "\r\n*********** Capacitors Contact Test ***********\r\n" );
+				sendMessage( "\r\n*********** Capacitors Contact Test ***********\r\n" );
 				sendSystemTime();
 				sendCapacitanceTestResult(getMeasureData());
 
-				SEND_CDC_MESSAGE( "\r\n***************** Check finished  ****************\r\n" );
+				sendMessage( "\r\n***************** Check finished  ****************\r\n" );
 				sendSystemTime();
 				sendSystemTemperature();
 				sendSystemStatus();
-				SEND_CDC_MESSAGE( "\r\n" );
+				sendMessage( "\r\n" );
 				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 			}
 
@@ -280,12 +281,12 @@ void UsbCDCThread(const void *argument)
 				switch( systemConfig.sysStatus )
 				{
 				case READY_STATUS:
-				case ERROR_STATUS: 	SEND_CDC_MESSAGE( "\r\n***************** Test started ****************\r\n" );
+				case ERROR_STATUS: 	sendMessage( "\r\n***************** Test started ****************\r\n" );
 									SAVE_SYSTEM_CNF( &systemConfig.measureSavedPoints, 0 );
 									break;
 
 				case PAUSE_STATUS:
-				case ACTIVE_STATUS: SEND_CDC_MESSAGE( "\r\n***************** Test continued ****************\r\n" );
+				case ACTIVE_STATUS: sendMessage( "\r\n***************** Test continued ****************\r\n" );
 									break;
 				}
 
@@ -296,14 +297,14 @@ void UsbCDCThread(const void *argument)
 				sendMemoryStatus();
 				sendVDDA();
 				sendTestTimePass();
-				SEND_CDC_MESSAGE( "\r\n" );
+				sendMessage( "\r\n" );
 				event.value.signals &= ~USB_THREAD_MESSAGEGOT_Evt;
 			}
 
 			/*  test pause event */
 			if ( event.value.signals & USB_THREAD_IDLEMODE_Evt )
 			{
-				SEND_CDC_MESSAGE( "\r\n***************** System Idle  ****************\r\n\r\n" );
+				sendMessage( "\r\n***************** System Idle  ****************\r\n\r\n" );
 				event.value.signals &= ~USB_THREAD_IDLEMODE_Evt;
 			}
 
@@ -362,7 +363,7 @@ static void messageDecode( void )
 
 	getCDCmessage( usb_message );
 
-	if( echoOFF == false ) SEND_CDC_MESSAGE(usb_message);
+	if( echoOFF == false ) sendMessage(usb_message);
 
 	UpperCase(usb_message);
 
@@ -371,21 +372,21 @@ static void messageDecode( void )
 	{
 		switch(systemConfig.sysStatus)
 		{
-		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "Command ignored - system not configured\r\n\r\n" );
+		case NO_CONFIG_STATUS:	sendMessage( "Command ignored - system not configured\r\n\r\n" );
 								break;
 
-		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "Command ignored - test already run\r\n\r\n" );
+		case ACTIVE_STATUS:		sendMessage( "Command ignored - test already run\r\n\r\n" );
 								break;
 
-		case FINISH_STATUS:		SEND_CDC_MESSAGE( "Command ignored - data of finished test not read yet\r\n\r\n" );
+		case FINISH_STATUS:		sendMessage( "Command ignored - data of finished test not read yet\r\n\r\n" );
 								break;
 
 		case ERROR_STATUS:
-		case READY_STATUS:		SEND_CDC_MESSAGE( "Starting test...\r\n\r\n" );
+		case READY_STATUS:		sendMessage( "Starting test...\r\n\r\n" );
 								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTTEST_Evt );
 								break;
 
-		case PAUSE_STATUS:		SEND_CDC_MESSAGE( "Continue test...\r\n\r\n" );
+		case PAUSE_STATUS:		sendMessage( "Continue test...\r\n\r\n" );
 								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTTEST_Evt );
 								break;
 		}
@@ -397,16 +398,16 @@ static void messageDecode( void )
 	{
 		switch(systemConfig.sysStatus)
 		{
-		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "Command ignored - system not configured\r\n\r\n" );
+		case NO_CONFIG_STATUS:	sendMessage( "Command ignored - system not configured\r\n\r\n" );
 								break;
 
 		case ERROR_STATUS:
 		case FINISH_STATUS:
 		case PAUSE_STATUS:
-		case READY_STATUS:		SEND_CDC_MESSAGE( "Command ignored -  test not run\r\n\r\n" );
+		case READY_STATUS:		sendMessage( "Command ignored -  test not run\r\n\r\n" );
 								break;
 
-		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "Pausing test...\r\n\r\n" );
+		case ACTIVE_STATUS:		sendMessage( "Pausing test...\r\n\r\n" );
 								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_PAUSETEST_Evt );
 								break;
 		}
@@ -418,16 +419,16 @@ static void messageDecode( void )
 	{
 		switch(systemConfig.sysStatus)
 		{
-		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "Command ignored - system not configured\r\n\r\n" );
+		case NO_CONFIG_STATUS:	sendMessage( "Command ignored - system not configured\r\n\r\n" );
 								break;
 
 		case ERROR_STATUS:
 		case FINISH_STATUS:
-		case READY_STATUS:		SEND_CDC_MESSAGE( "Command ignored - test not run\r\n\r\n" );
+		case READY_STATUS:		sendMessage( "Command ignored - test not run\r\n\r\n" );
 								break;
 
 		case PAUSE_STATUS:
-		case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "Terminating test...\r\n\r\n" );
+		case ACTIVE_STATUS:		sendMessage( "Terminating test...\r\n\r\n" );
 								osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STOPTEST_Evt );
 								break;
 		}
@@ -439,7 +440,7 @@ static void messageDecode( void )
 	{
 		switch(systemConfig.sysStatus)
 		{
-		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "Command ignored - system not configured\r\n\r\n" );
+		case NO_CONFIG_STATUS:	sendMessage( "Command ignored - system not configured\r\n\r\n" );
 								break;
 
 		case ERROR_STATUS:
@@ -447,7 +448,7 @@ static void messageDecode( void )
 		case READY_STATUS:
 		case ACTIVE_STATUS:
 		case FINISH_STATUS:		osSignalSet( MeasureThreadHandle, MEASURE_THREAD_STARTMESURE_Evt );
-								SEND_CDC_MESSAGE( "Take measure...\r\n\r\n" );
+								sendMessage( "Take measure...\r\n\r\n" );
 								break;
 		}
 		return;
@@ -458,7 +459,7 @@ static void messageDecode( void )
 	{
 		switch(systemConfig.sysStatus)
 		{
-		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "Command ignored - system not configured\r\n\r\n" );
+		case NO_CONFIG_STATUS:	sendMessage( "Command ignored - system not configured\r\n\r\n" );
 								break;
 
 		case ERROR_STATUS:
@@ -466,7 +467,7 @@ static void messageDecode( void )
 		case READY_STATUS:
 		case ACTIVE_STATUS:
 		case FINISH_STATUS:		osSignalSet( MeasureThreadHandle, MEASURE_THREAD_CHECK_Evt );
-								SEND_CDC_MESSAGE( "Start checking procedure...\r\n\r\n" );
+								sendMessage( "Start checking procedure...\r\n\r\n" );
 								break;
 		}
 		return;
@@ -482,7 +483,7 @@ static void messageDecode( void )
 		if( (systemConfig.sysStatus == ACTIVE_STATUS) || (systemConfig.sysStatus == PAUSE_STATUS) ) sendTestTimePass();
 		sendRealHV();
 		sendVDDA();
-		SEND_CDC_MESSAGE( "\r\n" );
+		sendMessage( "\r\n" );
 		return;
 	}
 
@@ -490,7 +491,7 @@ static void messageDecode( void )
 	if( strstr( usb_message, "READ SETTINGS" ) )
 	{
 		sendSystemSettings();
-		SEND_CDC_MESSAGE( "\r\n" );
+		sendMessage( "\r\n" );
 		return;
 	}
 
@@ -500,7 +501,7 @@ static void messageDecode( void )
 		switch(systemConfig.sysStatus)
 		{
 
-		case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "Command ignored - system not configured\r\n\r\n" );
+		case NO_CONFIG_STATUS:	sendMessage( "Command ignored - system not configured\r\n\r\n" );
 								break;
 
 		case FINISH_STATUS:		SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS ); // @suppress("No break at end of case")
@@ -510,7 +511,7 @@ static void messageDecode( void )
 		case ACTIVE_STATUS:
 								if(systemConfig.measureSavedPoints)
 								{
-									SEND_CDC_MESSAGE( "*********** BEGIN OF DATA ************\r\n" );
+									sendMessage( "*********** BEGIN OF DATA ************\r\n" );
 
 									for( uint16_t p = 0, len = 0; p < systemConfig.measureSavedPoints; p++, len = 0 )
 									{
@@ -523,15 +524,15 @@ static void messageDecode( void )
 											len += sprintf( &usb_message[len], "Temperature: %i oC\r\n", (int16_t)dataAttribute[p].temperatureMeasure );
 										else
 											len += sprintf( &usb_message[len], "Temperature: --- oC\r\n" );
-										SEND_CDC_MESSAGE( usb_message );
+										sendMessage( usb_message );
 										sendMeasureResult( &dataMeasure[p].resistanceValMOhm[0][0], dataAttribute[p].voltageMeasure );
-										SEND_CDC_MESSAGE( "\r\n" );
+										sendMessage( "\r\n" );
 									}
 
-									SEND_CDC_MESSAGE( "************ END OF DATA *************\r\n\r\n" );
+									sendMessage( "************ END OF DATA *************\r\n\r\n" );
 								}
 								else
-									SEND_CDC_MESSAGE( "No data to read.\r\n\r\n" );
+									sendMessage( "No data to read.\r\n\r\n" );
 								break;
 		}
 		return;
@@ -546,7 +547,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( testVol > 280 ) SEND_CDC_MESSAGE( "Test voltage  must be less then 280 Volts\r\n\r\n" )
+			if( testVol > 280 ) sendMessage( "Test voltage  must be less then 280 Volts\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.uTestVol, testVol );
@@ -555,11 +556,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -573,7 +574,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( measVol > 280 ) SEND_CDC_MESSAGE( "Measure voltage  must be less then 280 Volts\r\n\r\n" )
+			if( measVol > 280 ) sendMessage( "Measure voltage  must be less then 280 Volts\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.uMeasureVol, measVol );
@@ -582,11 +583,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -600,7 +601,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( errorVol_mV < 250 ) SEND_CDC_MESSAGE( "Error HV voltage  must be more then 250 mVolts\r\n\r\n" )
+			if( errorVol_mV < 250 ) sendMessage( "Error HV voltage  must be more then 250 mVolts\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.MaxErrorHV_mV, errorVol_mV );
@@ -609,11 +610,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -627,7 +628,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( Ki > 10000000 || Ki < 100 ) SEND_CDC_MESSAGE( "Current amplifier factor must be 100...10000000\r\n\r\n" )
+			if( Ki > 10000000 || Ki < 100 ) sendMessage( "Current amplifier factor must be 100...10000000\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.kiAmplifire, Ki );
@@ -636,11 +637,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -654,7 +655,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( Kd > 200 || Kd < 10 ) SEND_CDC_MESSAGE( "HV divider factor must be 10...200\r\n\r\n" )
+			if( Kd > 200 || Kd < 10 ) sendMessage( "HV divider factor must be 10...200\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.kdDivider, Kd );
@@ -663,11 +664,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -681,7 +682,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( testTime > 7*24 ) SEND_CDC_MESSAGE( "Testing time must be less then 168 hours\r\n\r\n" )
+			if( testTime > 7*24 ) sendMessage( "Testing time must be less then 168 hours\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.testingTimeSec, testTime * 3600 );
@@ -690,11 +691,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -708,7 +709,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( measPeriod < 1 ) SEND_CDC_MESSAGE( "Measuring period must be more then 30 minutes\r\n\r\n" )
+			if( measPeriod < 1 ) sendMessage( "Measuring period must be more then 30 minutes\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.measuringPeriodSec, measPeriod * 60 );
@@ -717,11 +718,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -735,7 +736,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( Td > 50000 || Td < 10 ) SEND_CDC_MESSAGE( "Time of Discharge must be 10...50000 mSec\r\n\r\n" )
+			if( Td > 50000 || Td < 10 ) sendMessage( "Time of Discharge must be 10...50000 mSec\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.dischargeTimeMs, Td );
@@ -744,11 +745,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -762,7 +763,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( Ta > 5000 || Ta < 10 ) SEND_CDC_MESSAGE( "Time of amplifier settle time must be 10...5000 mSec\r\n\r\n" )
+			if( Ta > 5000 || Ta < 10 ) sendMessage( "Time of amplifier settle time must be 10...5000 mSec\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.IAmplifierSettleTimeMs, Ta );
@@ -771,11 +772,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -789,7 +790,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( To > 10000 || To < 100 ) SEND_CDC_MESSAGE( "<OPTO> signal settle time must be 100...10000 mSec\r\n\r\n" )
+			if( To > 10000 || To < 100 ) sendMessage( "<OPTO> signal settle time must be 100...10000 mSec\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.optoSignalSettleTimeMs, To );
@@ -798,11 +799,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -816,7 +817,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( Th > 5000 || Th < 300 ) SEND_CDC_MESSAGE( "Time of HV max settle time must be 300...5000 mSec\r\n\r\n" )
+			if( Th > 5000 || Th < 300 ) sendMessage( "Time of HV max settle time must be 300...5000 mSec\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.HVMaxSettleTimeMs, Th );
@@ -825,11 +826,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -843,7 +844,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( Km > 16384 || Km < 16 ) SEND_CDC_MESSAGE( "ADC mean factor must be 16...16384\r\n\r\n" )
+			if( Km > 16384 || Km < 16 ) sendMessage( "ADC mean factor must be 16...16384\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.adcMeanFactor, Km );
@@ -852,11 +853,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -870,7 +871,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( DAC_P1 > 65535 || DAC_P1 < 16 ) SEND_CDC_MESSAGE( "time step of DAC must be 16...65535\r\n\r\n" )
+			if( DAC_P1 > 65535 || DAC_P1 < 16 ) sendMessage( "time step of DAC must be 16...65535\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.dacTrianglePeriodUs, DAC_P1 );
@@ -879,11 +880,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -904,7 +905,7 @@ static void messageDecode( void )
 				(DAC_P2 != 255 ) &&
 				(DAC_P2 != 127 ) &&
 				(DAC_P2 != 63  ) &&
-				(DAC_P2 != 31) 	) SEND_CDC_MESSAGE( "Triangle amplitude of DAC must be 31, 63, 127, 255, 511, 1023, 2047, 4095\r\n\r\n" )
+				(DAC_P2 != 31) 	) sendMessage( "Triangle amplitude of DAC must be 31, 63, 127, 255, 511, 1023, 2047, 4095\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.dacTriangleAmplitude, DAC_P2 );
@@ -913,11 +914,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -931,7 +932,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( Short_I > 3000 || Short_I < 100 ) SEND_CDC_MESSAGE( "Value of Short_I must be 100...3000\r\n\r\n" )
+			if( Short_I > 3000 || Short_I < 100 ) sendMessage( "Value of Short_I must be 100...3000\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.shortErrorTrshCurrent_nA, Short_I );
@@ -940,11 +941,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -958,7 +959,7 @@ static void messageDecode( void )
 
 		if( res )
 		{
-			if( Contact_C > 1000 || Contact_C < 0 ) SEND_CDC_MESSAGE( "Value of Contact_C must be 0...1000\r\n\r\n" )
+			if( Contact_C > 1000 || Contact_C < 0 ) sendMessage( "Value of Contact_C must be 0...1000\r\n\r\n" );
 			else
 			{
 				SAVE_SYSTEM_CNF( &systemConfig.contactErrorTrshCapacitance_pF, Contact_C );
@@ -967,11 +968,11 @@ static void messageDecode( void )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 				}
-				SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+				sendMessage( "Ok\r\n\r\n" );
 			}
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -988,17 +989,17 @@ static void messageDecode( void )
 			if( Result == 'C' )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.resultPresentation, RESULT_AS_CURRENT );
-					SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+					sendMessage( "Ok\r\n\r\n" );
 				}
 			else if( Result == 'R' )
 				{
 					SAVE_SYSTEM_CNF( &systemConfig.resultPresentation, RESULT_AS_RESISTANCE );
-					SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+					sendMessage( "Ok\r\n\r\n" );
 				}
-			else SEND_CDC_MESSAGE( "Value of Result must be R or C\r\n\r\n" )
+			else sendMessage( "Value of Result must be R or C\r\n\r\n" );
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong format\r\n\r\n" );
+			sendMessage( "Wrong format\r\n\r\n" );
 
 		return;
 	}
@@ -1047,7 +1048,7 @@ static void messageDecode( void )
 		if( CheckSysCnf() && (systemConfig.sysStatus == NO_CONFIG_STATUS) )
 						SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 
-		SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+		sendMessage( "Ok\r\n\r\n" );
 		return;
 	}
 
@@ -1061,10 +1062,10 @@ static void messageDecode( void )
 		if( res == 5 )
 		{
 			setRTC( &date );
-			SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+			sendMessage( "Ok\r\n\r\n" );
 		}
 		else
-			SEND_CDC_MESSAGE( "Wrong value or format\r\n\r\n" );
+			sendMessage( "Wrong value or format\r\n\r\n" );
 
 		return;
 	}
@@ -1077,14 +1078,14 @@ static void messageDecode( void )
 	{
 		if( strstr( ptr, "ON" ) )
 		{
-			SEND_CDC_MESSAGE("Echo switched ON\r\n\r\n");
+			sendMessage("Echo switched ON\r\n\r\n");
 			echoOFF = false;
 			return;
 		}
 
 		if( strstr( ptr, "OFF" ) )
 		{
-			SEND_CDC_MESSAGE("Echo switched OFF\r\n\r\n");
+			sendMessage("Echo switched OFF\r\n\r\n");
 			echoOFF = true;
 			return;
 		}
@@ -1098,7 +1099,7 @@ static void messageDecode( void )
 		{
 			SAVE_SYSTEM_CNF( &systemConfig.sysStatus, READY_STATUS );
 		}
-		SEND_CDC_MESSAGE( "Ok\r\n\r\n" );
+		sendMessage( "Ok\r\n\r\n" );
 
 		return;
 	}
@@ -1117,22 +1118,22 @@ static void messageDecode( void )
 				}
 				else
 				{
-					SEND_CDC_MESSAGE( usb_message );
+					sendMessage( usb_message );
 					len = 0;
 				}
 			}
 			else
 			{
-				if(len) SEND_CDC_MESSAGE( usb_message );
+				if(len) sendMessage( usb_message );
 				break;
 			}
 		}
-		SEND_CDC_MESSAGE( "\r\n" );
+		sendMessage( "\r\n" );
 		return;
 	}
 
 	//---------------------------------------------
-	SEND_CDC_MESSAGE( "Unknown command - enter HELP\r\n" );
+	sendMessage( "Unknown command - enter HELP\r\n" );
 }
 
 /*
@@ -1142,7 +1143,7 @@ static void	sendMemoryStatus(void)
 {
 	sprintf( usb_message, "Memory contains %lu Point(s) of Data\r\n", systemConfig.measureSavedPoints );
 
-	SEND_CDC_MESSAGE(usb_message);
+	sendMessage(usb_message);
 }
 
 /*
@@ -1154,7 +1155,7 @@ static void	sendSystemTime(void)
 
 	convertUnixTimeToDate( getRTC(), &date );
 	sprintf( usb_message, "System time %04hd-%02hd-%02hd %02hd:%02hd\r\n", date.year, date.month, date.day, date.hours, date.minutes );
-	SEND_CDC_MESSAGE(usb_message);
+	sendMessage(usb_message);
 }
 
 /*
@@ -1166,7 +1167,7 @@ static void	sendSystemTemperature(void)
 
 	if( t != SENSOR_NOT_CONNECTED )	sprintf( usb_message, "System temperature, oC: %i\r\n", t);
 	else							sprintf( usb_message, "System temperature - sensor not connected\r\n");
-	SEND_CDC_MESSAGE(usb_message);
+	sendMessage(usb_message);
 }
 
 /*
@@ -1177,7 +1178,7 @@ static void	sendRealHV(void)
 	uint32_t hv = getHighVoltagemV();
 
 	sprintf( usb_message, "Current High Voltage, UR= %3lu.%01lu V\r\n", hv / 1000, ( (hv % 1000) + 50) / 100 );
-	SEND_CDC_MESSAGE(usb_message);
+	sendMessage(usb_message);
 }
 
 /*
@@ -1188,7 +1189,7 @@ static void	sendVDDA(void)
 	uint32_t vdda = getVrefmV();
 
 	sprintf( usb_message, "System Voltage, VDD= %3lu.%03lu V\r\n", vdda / 1000, vdda % 1000);
-	SEND_CDC_MESSAGE(usb_message);
+	sendMessage(usb_message);
 }
 
 /*
@@ -1202,7 +1203,7 @@ static void	sendTestTimePass(void)
 	uint16_t  minutes = (pass_time - hours * 3600) / 60;
 
 	sprintf( usb_message, "Testing time passed  %u day(s), %u hour(s), %u minute(s)\r\n", days, hours, minutes);
-	SEND_CDC_MESSAGE(usb_message);
+	sendMessage(usb_message);
 }
 
 /*
@@ -1212,25 +1213,25 @@ static void	sendSystemStatus(void)
 {
 	switch(systemConfig.sysStatus)
 	{
-			case READY_STATUS:		SEND_CDC_MESSAGE( "System status: idle\r\n" );
+			case READY_STATUS:		sendMessage( "System status: idle\r\n" );
 									break;
 
-			case ACTIVE_STATUS:		SEND_CDC_MESSAGE( "System status: test running\r\n" );
+			case ACTIVE_STATUS:		sendMessage( "System status: test running\r\n" );
 									break;
 
-			case PAUSE_STATUS:		SEND_CDC_MESSAGE( "System status: test paused\r\n" );
+			case PAUSE_STATUS:		sendMessage( "System status: test paused\r\n" );
 									break;
 
-			case FINISH_STATUS:		SEND_CDC_MESSAGE( "System status: test finished\r\n" );
+			case FINISH_STATUS:		sendMessage( "System status: test finished\r\n" );
 									break;
 
-			case ERROR_STATUS:		SEND_CDC_MESSAGE( "System status: fail\r\n" );
+			case ERROR_STATUS:		sendMessage( "System status: fail\r\n" );
 									break;
 
 			default:				SAVE_SYSTEM_CNF( &systemConfig.sysStatus, NO_CONFIG_STATUS ); // @suppress("No break at end of case")
 
 
-			case NO_CONFIG_STATUS:	SEND_CDC_MESSAGE( "System status: not configured\r\n" );
+			case NO_CONFIG_STATUS:	sendMessage( "System status: not configured\r\n" );
 									break;
 	}
 }
@@ -1240,29 +1241,29 @@ static void	sendSystemStatus(void)
  */
 static void	sendSystemSettings( void )
 {
-	SEND_CDC_MESSAGE( "System settings:\r\n" );
+	sendMessage( "System settings:\r\n" );
 
 	sprintf( usb_message, "Result of measure presented as %s\r\n", systemConfig.resultPresentation == RESULT_AS_RESISTANCE ? "Resistance, MOhm" : "Current, nA" );
-	SEND_CDC_MESSAGE( usb_message );
+	sendMessage( usb_message );
 
 	sprintf( usb_message, "Test voltage, Vt= %lu V\r\nMeasure voltage, Vm= %lu V\r\nTest time, Tt= %lu hours\r\nMeasure period, Tp= %lu minutes\r\n",
 							systemConfig.uTestVol, systemConfig.uMeasureVol, systemConfig.testingTimeSec / 3600, systemConfig.measuringPeriodSec / 60);
-	SEND_CDC_MESSAGE( usb_message );
+	sendMessage( usb_message );
 
 	sprintf( usb_message, "Amplifier factor, Ki= %lu\r\nDivision factor, Kd= %lu\r\nDischarge time, Td= %lu msec\r\nAcceptable HV error, Ve= %lu mV\r\n",
 						systemConfig.kiAmplifire, systemConfig.kdDivider, systemConfig.dischargeTimeMs, systemConfig.MaxErrorHV_mV );
-	SEND_CDC_MESSAGE( usb_message );
+	sendMessage( usb_message );
 
 	sprintf( usb_message, "Amplifier settle time, Ta= %lu msec\r\nMax HV settle time, Th= %lu msec\r\n<OPTO> signal settle time, To=  %lu msec\r\nADC mean factor, Km= %lu \r\n",
 						systemConfig.IAmplifierSettleTimeMs, systemConfig.HVMaxSettleTimeMs, systemConfig.optoSignalSettleTimeMs, systemConfig.adcMeanFactor );
-	SEND_CDC_MESSAGE( usb_message );
+	sendMessage( usb_message );
 
 	sprintf( usb_message, "Step of DAC in triangle mode, DAC_P1= %lu uSec\r\nDAC-code triangle amplitude, DAC_P2= %lu\r\n"
 			"Short high current threshold, Short_I= %lu nA \r\nCapacitance low threshold, Contact_C= %lu pF \r\n",
 			systemConfig.dacTrianglePeriodUs, systemConfig.dacTriangleAmplitude, systemConfig.shortErrorTrshCurrent_nA, systemConfig.contactErrorTrshCapacitance_pF );
-	SEND_CDC_MESSAGE( usb_message );
+	sendMessage( usb_message );
 
-	SEND_CDC_MESSAGE( "\r\n" );
+	sendMessage( "\r\n" );
 }
 
 /*
@@ -1295,7 +1296,7 @@ static void	sendMeasureResult( uint32_t * data, uint32_t measVol )
 		}
 		// "\r\n"
 		len += sprintf( &usb_message[len], "\r\n" );
-		SEND_CDC_MESSAGE( usb_message );
+		sendMessage( usb_message );
 	}
 }
 
@@ -1309,8 +1310,8 @@ static void	sendMeasureError(uint8_t line, uint32_t * data)
 	len = sprintf( usb_message, "Error Line %u, Raw 1 - 16, State: Ok or Er\r\n", line + 1 );
 	for( uint32_t j = 0; j < MATRIX_RAWn; j++ )
 		{ len += sprintf( &usb_message[len], "%s  ", data[j] < RANGE_12BITS_90 ? "Ok" : "Er" );  }
-	SEND_CDC_MESSAGE( usb_message );
-	SEND_CDC_MESSAGE( "\r\n" );
+	sendMessage( usb_message );
+	sendMessage( "\r\n" );
 }
 
 /*
@@ -1325,9 +1326,9 @@ static void	sendCurrentTestResult(uint32_t * data)
 		for( uint32_t j = 0; j < MATRIX_RAWn; j++ )
 			len += sprintf( &usb_message[len], "%s  ", data[i * MATRIX_RAWn + j] < systemConfig.shortErrorTrshCurrent_nA ? "Ok" : "Er" );
 		len += sprintf( &usb_message[len], "\r\n" );
-		SEND_CDC_MESSAGE( usb_message );
+		sendMessage( usb_message );
 	}
-	SEND_CDC_MESSAGE( "\r\n" );
+	sendMessage( "\r\n" );
 }
 
 /*
@@ -1342,8 +1343,23 @@ static void sendCapacitanceTestResult(uint32_t * data)
 		for( uint32_t j = 0; j < MATRIX_RAWn; j++ )
 			len += sprintf( &usb_message[len], "%s  ", data[i * MATRIX_RAWn + j] > systemConfig.contactErrorTrshCapacitance_pF ? "Ok" : "Er" );
 		len += sprintf( &usb_message[len], "\r\n" );
-		SEND_CDC_MESSAGE( usb_message );
+		sendMessage( usb_message );
 	}
-	SEND_CDC_MESSAGE( "\r\n" );
+	sendMessage( "\r\n" );
 }
 
+static uint8_t	sendMessage	(char * message)
+{
+	if( isCableConnected() )
+	{
+		switch( sendCDCmessage(message) )
+		{
+			case USBD_OK:
+			case USBD_FAIL:		return 0;
+
+			case USBD_BUSY:		osDelay(10);
+								return sendCDCmessage(message);
+		}
+	}
+	return USBD_FAIL;
+}

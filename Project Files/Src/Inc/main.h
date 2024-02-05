@@ -21,6 +21,7 @@
 #include "usbd_desc.h"
 #include "usbd_cdc.h"
 #include "usbd_cdc_interface.h"
+#include "usbd_def.h"
 #include "usb_main.h"
 #include "measure_main.h"
 

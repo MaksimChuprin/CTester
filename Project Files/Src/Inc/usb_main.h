@@ -25,7 +25,19 @@
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 // #define SEND_CDC_MESSAGE(MSG)	{ uint8_t i = 5;  while( isCableConnected() && sendCDCmessage( (MSG) ) && --i ) osDelay(50); }
-#define SEND_CDC_MESSAGE(MSG)	{ if( isCableConnected() ) { sendCDCmessage( (MSG) ); osDelay(10); } }
+#define SEND_CDC_MESSAGE(MSG)	{													\
+								  if( isCableConnected() )							\
+								  { 												\
+									  switch( sendCDCmessage( (MSG) ) )				\
+									  {												\
+									  case USBD_OK:									\
+									  case USBD_FAIL:		break;					\
+									  case USBD_BUSY:		osDelay(10);			\
+								  							sendCDCmessage( (MSG) );\
+								  							break;					\
+									  }												\
+								  }													\
+								}
 /* Exported functions ------------------------------------------------------- */
 void 		UsbCDCThread		(const void *argument);
 bool 		isCableConnected	(void);
