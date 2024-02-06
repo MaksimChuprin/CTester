@@ -16,10 +16,16 @@ extern  dataAttribute_t				dataAttribute[];
 extern 	dataMeasure_t				dataMeasure[];
 
 /* Private typedef -----------------------------------------------------------*/
+typedef enum {
+	USB_DISCONNECTED = 0,
+	USB_CONNECTED,
+} usbState_t;
+
 /* Private define ------------------------------------------------------------*/
 #define RANGE_12BITS                ((int32_t) 4095)    /* Max digital value with a full range of 12 bits */
 #define RANGE_12BITS_90             ((int32_t) (RANGE_12BITS * 0.9))    /* 0.9 from Max digital value with a full range of 12 bits */
 #define HELP_END					0
+#define USBT_TICK_TIME_MS			100
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 static char 				usb_message[APP_CDC_TX_DATA_SIZE];
@@ -38,7 +44,9 @@ static void					sendCapacitanceTestResult	( uint32_t * data );
 static void					sendMeasureError			( uint8_t line, uint32_t * dataMeasure );
 static void					sendVDDA					( void );
 static void					sendTestTimePass			( void );
-static uint8_t				sendMessage				( char * message );
+static void 				greetingMessage				( void );
+static void					sendMessage					( char * message );
+static void					checkUsbConnection			( void );
 
 /* Constants ---------------------------------------------------------*/
 const char * helpStrings[] = {
@@ -69,7 +77,7 @@ const char * helpStrings[] = {
 		"Echo Off - switch echo off\r\n",
 		"Help - list available commands\r\n",
 		"******** fine tuning commands ********\r\n",
-		"Set Km=<value> - set ADC mean factor, 1 - 138 us\r\n",
+		"Set Km=<value> - set ADC mean factor, 1 - 189 us\r\n",
 		"Set DAC_P1=<value> - time step of DAC in triangle mode, uSec\r\n",
 		"Set DAC_P2=<value> - DAC-code triangle amplitude: 31, 63, 127, 255, 511, 1023, 2047, 4095\r\n",
 		"Set Short_I=<value> - set short high current threshold for error detect, nA \r\n",
@@ -78,29 +86,15 @@ const char * helpStrings[] = {
 };
 
 /* static variables ---------------------------------------------------------*/
+usbState_t	usbState = USB_DISCONNECTED;
 
 /**
-  * @brief  UsbCDCThread
-  * @param  argument: Not used
+  * @brief  greeting message
+  * @param  None
   * @retval None
   */
-void UsbCDCThread(const void *argument)
+static void greetingMessage(void)
 {
-	for(;; osDelay(500))
-	{
-		if( !isCableConnected() ) continue;
-
-		/* Init Device Library */
-		USBD_Init(&USBD_Device, &VCP_Desc, 0);
-		/* Add Supported Class */
-		USBD_RegisterClass(&USBD_Device, USBD_CDC_CLASS);
-		/* Add CDC Interface Class */
-		USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_fops);
-		/* Start Device Process */
-		USBD_Start(&USBD_Device);
-		/* */
-		osDelay(1000);
-
 		/* display sys info */
 		sendMessage( "\r\n********************************************\r\n" );
 		sendMessage( "Start Capacitor Termo-Testing System\r\nSW version: 0.0.3b\r\n" );
@@ -109,19 +103,42 @@ void UsbCDCThread(const void *argument)
 		sendSystemStatus();
 		sendMemoryStatus();
 		sendMessage( "********************************************\r\n\r\n" );
+}
 
-		// do connection
-		for(;;)
-		{
-			// wait message
-			osEvent event = osSignalWait( USB_THREAD_MESSAGEGOT_Evt | USB_THREAD_MEASURESTARTED_Evt | USB_THREAD_MEASUREREADY_Evt | USB_THREAD_TESTSTOPPED_Evt |
+/**
+  * @brief  UsbCDCThread
+  * @param  argument: Not used
+  * @retval None
+  */
+void UsbCDCThread(const void *argument)
+{
+	uint32_t	usbCheckClock 		= 0;
+	bool 		needSendGreeting 	= true;
+
+	/* Init Device Library */
+	USBD_Init(&USBD_Device, &VCP_Desc, 0);
+	/* Add Supported Class */
+	USBD_RegisterClass(&USBD_Device, USBD_CDC_CLASS);
+	/* Add CDC Interface Class */
+	USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_fops);
+	/* Start Device Process */
+	USBD_Start(&USBD_Device);
+	/* */
+	osDelay(1000);
+	/* */
+	checkUsbConnection();
+
+	for(;;)
+	{
+		// wait message
+		osEvent event = osSignalWait( USB_THREAD_MESSAGEGOT_Evt | USB_THREAD_MEASURESTARTED_Evt | USB_THREAD_MEASUREREADY_Evt | USB_THREAD_TESTSTOPPED_Evt |
 											USB_THREAD_TESTSTARTED_Evt | USB_THREAD_TESTPAUSED_Evt | USB_THREAD_MEASUREERROR_Evt |
-											USB_THREAD_CHECKCURRENT_Evt | USB_THREAD_CHECKCAP_Evt | USB_THREAD_CHECKHV_Evt | USB_THREAD_IDLEMODE_Evt, 100 );
+											USB_THREAD_CHECKCURRENT_Evt | USB_THREAD_CHECKCAP_Evt | USB_THREAD_CHECKHV_Evt | USB_THREAD_IDLEMODE_Evt, USBT_TICK_TIME_MS );
 
-			CLEAR_ALL_EVENTS;
+		CLEAR_ALL_EVENTS;
 
-			/*  measure error event */
-			if ( event.value.signals == USB_THREAD_MEASUREERROR_Evt )
+		/*  measure error event */
+		if ( event.value.signals == USB_THREAD_MEASUREERROR_Evt )
 			{
 				if( MEASURE_GET_ERROR_CODE( getErrorCode() ) & MEASURE_HV_ERROR )
 				{
@@ -314,14 +331,25 @@ void UsbCDCThread(const void *argument)
 				messageDecode();
 			}
 
-			/* check cable */
-			if( !isCableConnected() )
+			/* timeout  */
+			if( event.status == osEventTimeout )
 			{
-				USBD_DeInit(&USBD_Device);
-				break;
+				usbCheckClock += USBT_TICK_TIME_MS;
+
+				if( usbCheckClock >= 1000 )
+				{
+					usbCheckClock = 0;
+					checkUsbConnection();
+
+					if ( usbState == USB_DISCONNECTED )  needSendGreeting = true;
+					else if( needSendGreeting )
+					{
+						needSendGreeting = false;
+						greetingMessage();
+					}
+				}
 			}
 		} // for(;;)
-	} // for(;; osDelay(500))
 }
 
 /**
@@ -1348,18 +1376,43 @@ static void sendCapacitanceTestResult(uint32_t * data)
 	sendMessage( "\r\n" );
 }
 
-static uint8_t	sendMessage	(char * message)
+/*
+ *
+ */
+static void	sendMessage	(char * message)
 {
-	if( isCableConnected() )
-	{
-		switch( sendCDCmessage(message) )
-		{
-			case USBD_OK:
-			case USBD_FAIL:		return 0;
+	if( usbState == USB_DISCONNECTED ) return;
 
-			case USBD_BUSY:		osDelay(10);
-								return sendCDCmessage(message);
-		}
+	switch( sendCDCmessage(message) )
+	{
+			case USBD_OK:		osDelay(5); usbState = USB_CONNECTED; 		return;
+
+			case USBD_FAIL:					usbState = USB_DISCONNECTED; 	return;
+
+			case USBD_BUSY:		osDelay(5); uint8_t result = sendCDCmessage(message);
+
+								if( result == USBD_OK )
+								{
+									usbState = USB_CONNECTED;
+									osDelay(5);
+								}
+								else
+									usbState = USB_DISCONNECTED;
+								return;
 	}
-	return USBD_FAIL;
+}
+
+/*
+ *
+ */
+static void	checkUsbConnection(void)
+{
+	if ( sendCDCmessage("") == USBD_FAIL ) { usbState = USB_DISCONNECTED ; return; }
+
+	osDelay(5);
+
+	if ( sendCDCmessage("") == USBD_OK ) 	{ usbState = USB_CONNECTED ; return; }
+
+	usbState = USB_DISCONNECTED ;
+
 }
